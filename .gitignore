@@ -1,0 +1,27 @@
+.local/
+.venv/
+.opencode/
+__pycache__/
+*.py[cod]
+.ordo/repo.json
+.ordo.json
+*.swp
+
+# Flutter and Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+
+# Platform-specific generated output
+/android/app/debug
+/android/app/profile
+/android/app/release
