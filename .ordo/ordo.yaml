@@ -1,0 +1,209 @@
+version: 1
+defaults:
+  profile: ordo
+states:
+  common_state:
+    path: .ordo.json
+workflows:
+  global-status:
+    file: workflows/global-status.yml
+    description: Show local branch, worktree, cached upstream counts, task, and hook status
+    category: inspect
+    state_bindings:
+      common_state: common_state
+  create-task:
+    file: workflows/create-task.yml
+    description: Create a task in Backlog
+    category: task-lifecycle
+    with:
+      title:
+      body:
+  task-to-ready:
+    file: workflows/task-to-ready.yml
+    description: Move a task or bug to Ready
+    category: task-lifecycle
+    with:
+      issue_number:
+  set-active-task:
+    file: workflows/set-active-task.yml
+    description: Start or resume work on an issue
+    category: task-lifecycle
+    with:
+      issue_number:
+    state_bindings:
+      common_state: common_state
+  task-commit:
+    file: workflows/task-commit.yml
+    description: Stage and commit the active task worktree
+    category: task-lifecycle
+    when: Use after making active-task changes and before moving the task to review.
+    with:
+      message:
+    state_bindings:
+      common_state: common_state
+  task-to-review:
+    file: workflows/task-to-review.yml
+    description: Open the local diff and move a task to In review
+    category: task-lifecycle
+    state_bindings:
+      common_state: common_state
+  publish-task:
+    file: workflows/publish-task.yml
+    description: Push the prepared task branch and find or create its PR
+    category: task-lifecycle
+    when: Publish committed review changes, including updates to an existing PR, without waiting for CI or requesting merge.
+    state_bindings:
+      common_state: common_state
+  merge-task:
+    file: workflows/merge-task.yml
+    description: Ask GitHub to merge the published PR or observe a saved merge request
+    category: task-lifecycle
+    when: Run to request merge of the verified published head or observe a saved request; GitHub enforces merge eligibility. Never pushes or creates a PR.
+    with:
+      merge_method?:
+      base_branch?:
+    state_bindings:
+      common_state: common_state
+  close-task:
+    file: workflows/close-task.yml
+    description: Close a remotely merged task and clean up locally
+    category: task-lifecycle
+    with:
+      close_comment?:
+    state_bindings:
+      common_state: common_state
+  cancel-task:
+    file: workflows/cancel-task.yml
+    description: Cancel the active task with an English reason
+    category: task-lifecycle
+    with:
+      reason:
+    state_bindings:
+      common_state: common_state
+  current-task-context:
+    file: workflows/current-task-context.yml
+    description: Show the stored active task or story context for this repository
+    category: context
+    when: Use when you want to inspect the remembered active work context.
+    state_bindings:
+      common_state: common_state
+  issue-view:
+    file: workflows/issue-view.yml
+    description: Show one issue from this repository context without changing state
+    category: inspect
+    with:
+      number:
+  issue-view-comments:
+    file: workflows/issue-view-comments.yml
+    description: Show comments for one issue from this repository context without changing state
+    category: inspect
+    with:
+      number:
+      limit:
+  pr-view:
+    file: workflows/pr-view.yml
+    description: Show one pull request inspection snapshot without changing state
+    category: inspect
+    with:
+      pull_number:
+    when: Use when you need one normalized PR summary with comments, reviews, checks,
+      and timeline facts.
+  pr-digest:
+    file: workflows/pr-digest.yml
+    description: Show a richer pull request digest with review, checks, and timeline
+      highlights
+    category: inspect
+    when: Use when you need a human-oriented pull request digest rather than a compact
+      snapshot.
+    with:
+      pr_repository:
+      pull_number:
+  issue-comment:
+    file: workflows/issue-comment.yml
+    description: Add a comment to one issue from this repository context
+    category: collaboration
+    when: Use when you need to leave a comment on a task, bug, or story issue.
+    with:
+      number:
+      body:
+  verify-all-tests:
+    file: workflows/verify-all-tests.yml
+    description: Run the complete Flutter test suite
+    category: verify
+    when: Use when you need one canonical entrypoint for the local Flutter tests.
+  stories-backlog:
+    file: workflows/stories-backlog.yml
+    description: Show Story issues that are in Backlog in the project
+    category: inspect
+  stories-in-progress:
+    file: workflows/stories-in-progress.yml
+    description: Show Story issues that are In progress in the project
+    category: inspect
+  create-story:
+    file: workflows/create-story.yml
+    description: Create a new Story issue with a Tasks section
+    category: create
+    when: Use when you need a new story with a Tasks section.
+    with:
+      title:
+      body:
+  story-tasks-show:
+    file: workflows/story-tasks-show.yml
+    description: Show the raw Tasks section for one story issue
+    category: story
+    with:
+      issue_number:
+  story-task-add:
+    file: workflows/story-task-add.yml
+    description: Add one task reference to the Tasks section of a story issue
+    category: story
+    with:
+      issue_number:
+      task_repository:
+      task_issue_number:
+  story-tasks-ready:
+    file: workflows/story-tasks-ready.yml
+    description: Show Ready tasks referenced from a story Tasks section
+    category: story
+    with:
+      issue_number:
+  force-close-issue:
+    file: workflows/force-close-issue.yml
+    description: Close one issue directly, bypassing normal lifecycle checks
+    category: emergency
+    when: Use only for exceptional administrative closure such as stale umbrella issues, duplicates, or invalid planning artifacts. Do not use for routine task completion.
+    with:
+      number:
+      confirm_break_glass:
+      close_comment:
+  set-task-size:
+    file: workflows/set-task-size.yml
+    description: Update the project Size field for one open task in this repository
+    category: field-update
+    with:
+      issue_number:
+      size:
+  set-task-estimate:
+    file: workflows/set-task-estimate.yml
+    description: Update the project Estimate field for one open task in this repository
+    category: field-update
+    with:
+      issue_number:
+      estimate:
+  set-task-iteration:
+    file: workflows/set-task-iteration.yml
+    description: Update the project Iteration field for one open task in this repository
+    category: field-update
+    with:
+      issue_number:
+      iteration:
+  set-task-priority:
+    file: workflows/set-task-priority.yml
+    description: Update the project Priority field for one open task in this repository
+    category: field-update
+    with:
+      issue_number:
+      priority:
+profiles:
+  ordo:
+    file: profiles/ordo.yml

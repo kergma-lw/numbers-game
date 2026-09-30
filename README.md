@@ -1,17 +1,27 @@
-# numbers_game
+# Numbers Game
 
-A new Flutter project.
+Numbers Game is a number-grid puzzle. A move copies one cell's value into a
+different cell through addition or subtraction, while leaving the source cell
+unchanged. Rows and columns can also be swapped.
 
-## Getting Started
+The first playable mode asks the player to leave exactly one non-zero cell on
+the board. See [the rules for version 1](docs/rules-v1.md).
 
-This project is a starting point for a Flutter application.
+## Status
 
-A few resources to get you started if this is your first Flutter project:
+The repository currently contains a Flutter application scaffold for web,
+Android, and iOS. The game mechanics have not been implemented yet.
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## Run the web scaffold
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Install Flutter, then run:
+
+```sh
+flutter run -d chrome
+```
+
+## Documentation
+
+- [Rules for version 1](docs/rules-v1.md)
+- [Architecture](docs/architecture.md)
+- [Decision 0001: Flutter UI and a pure Dart game core](docs/decisions/0001-flutter-and-pure-dart-core.md)

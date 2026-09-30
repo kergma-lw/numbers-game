@@ -1,0 +1,37 @@
+version: 0
+workflow: story-tasks-ready
+inputs:
+  issue_number: {}
+  repository: {}
+  project_id: {}
+let:
+  story_project_issue: gh.project.issue(repository=inputs.repository, issue_number=inputs.issue_number, project_id=inputs.project_id)
+  story_body: gh.issue(repository=inputs.repository, issue_number=inputs.issue_number).body
+blocks:
+  - guards:
+      - git.repo.exists
+      - story_project_issue.exists
+      - story_project_issue.type == "Story"
+
+  - steps:
+      - name: Extract story task refs
+        value: '${markdown["Tasks"].list_items with{root: story_body}}'
+        register: task_refs
+
+      - name: Load ready story task item details in batch
+        uses: gh.project.items.details
+        register: ready_task_item_details
+        with:
+          project_id: inputs.project_id
+          content_kind: "Issue"
+          content_refs: step.task_refs.outputs.value
+          filters:
+            - field: "Status"
+              value: "Ready"
+
+      - name: Record story ready-task publication
+        publish:
+          summary: "Story ready tasks loaded"
+          repository: inputs.repository
+          issue_number: inputs.issue_number
+          task_items: step.ready_task_item_details.outputs.items

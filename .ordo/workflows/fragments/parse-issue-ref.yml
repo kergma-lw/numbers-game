@@ -1,0 +1,17 @@
+version: 0
+workflow: parse-issue-ref
+args:
+  item: string
+blocks:
+- steps:
+  - name: Parse issue repository
+    value: '${text.before("#") with{root: args.item}}'
+    register: parsed_repository
+  - name: Parse issue number
+    value: '${text.after("#") with{root: args.item}}'
+    register: parsed_issue_number
+  - name: Return parsed issue ref
+    result:
+      issue_ref: ${args.item}
+      repository: ${step.parsed_repository.outputs.value}
+      issue_number: ${step.parsed_issue_number.outputs.value}

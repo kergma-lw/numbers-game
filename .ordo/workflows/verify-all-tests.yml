@@ -1,0 +1,12 @@
+version: 0
+workflow: verify-all-tests
+blocks:
+- guards:
+  - git.repo.exists
+- steps:
+  - name: Run full Flutter test suite
+    uses: routine.verify.run-all-tests
+  - name: Publish test result
+    publish:
+      summary: "Full Flutter test suite passed"
+      recommendation: "Tests passed; ready to commit."

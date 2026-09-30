@@ -1,0 +1,7 @@
+name: ordo
+inputs:
+  repo_kind: flutter
+  repo_dir: /home/ww/projects/numbers-game
+  repository: kergma-lw/numbers-game
+  project_id: PVT_kwHOAahuQ84BlFIK
+working_directory: ${inputs.repo_dir}
