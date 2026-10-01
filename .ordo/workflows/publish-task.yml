@@ -34,7 +34,7 @@ blocks:
   - merge_attempted | is_boolean
   - merge_attempted == false or pull_number | is_integer
   - project.exists
-  - project.type | in(["Task", "Bug"])
+  - project.custom_fields | lookup("Work type") | first | field("value") | in(["Task", "Bug"])
   - project.status | in(["In review", "Done"])
 - steps:
   - name: Snapshot active context

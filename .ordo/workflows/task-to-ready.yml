@@ -23,7 +23,7 @@ blocks:
 - guards:
   - issue.state == "OPEN"
   - project_issue.exists
-  - project_issue.type == "Task" or project_issue.type == "Bug"
+  - project_issue.custom_fields | lookup("Work type") | first | field("value") == "Task" or project_issue.custom_fields | lookup("Work type") | first | field("value") == "Bug"
   - project_issue.status == "Backlog"
   - gh.project.field(project_id=inputs.project_id, field="Status").exists
   - gh.project.field.option(project_id=inputs.project_id, field="Status", option="Ready").exists

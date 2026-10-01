@@ -42,7 +42,7 @@ blocks:
       labels: step.issue.outputs.labels
       body: step.issue.outputs.body
       in_project: step.project_issue.outputs.exists
-      project_type: step.project_issue.outputs.type
+      project_type: step.project_issue.outputs.custom_fields | lookup("Work type") | first | field("value")
       project_status: step.project_issue.outputs.status
       project_priority: step.project_issue.outputs.priority
       project_size: step.project_issue.outputs.size

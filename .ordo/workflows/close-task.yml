@@ -35,7 +35,7 @@ blocks:
   - project.exists
   - gh.project.field(project_id=inputs.project_id, field="Status").exists
   - gh.project.field.option(project_id=inputs.project_id, field="Status", option="Done").exists
-  - project.type | in(["Task", "Bug"])
+  - project.custom_fields | lookup("Work type") | first | field("value") | in(["Task", "Bug"])
   - project.status | in(["In review", "Done"])
   - pr.merged == true
   - pr.merge_commit_sha | is_string

@@ -11,7 +11,7 @@ blocks:
   - guards:
       - git.repo.exists
       - story_project_issue.exists
-      - story_project_issue.type == "Story"
+      - story_project_issue.custom_fields | lookup("Work type") | first | field("value") == "Story"
 
   - steps:
       - name: Extract story task refs
