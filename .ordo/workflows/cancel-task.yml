@@ -36,7 +36,7 @@ blocks:
   - project.exists
   - gh.project.field(project_id=inputs.project_id, field="Status").exists
   - gh.project.field.option(project_id=inputs.project_id, field="Status", option="Done").exists
-  - project.type | in(["Task", "Bug"])
+  - project.custom_fields | lookup("Work type") | first | field("value") | in(["Task", "Bug"])
   - project.status | in(["Backlog", "Ready", "In progress", "In review", "Done"])
 - steps:
   - name: Snapshot context

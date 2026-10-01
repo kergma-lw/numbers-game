@@ -30,8 +30,8 @@ blocks:
   - issue.state == "OPEN"
   - project_issue.exists
   - project_issue.status != "Done"
-  - project_issue.type == "Story" or project_issue.type == "Task" or project_issue.type == "Bug"
-  - project_issue.type == "Story" or project_issue.status == "Ready" or project_issue.status == "In progress"
+  - project_issue.custom_fields | lookup("Work type") | first | field("value") == "Story" or project_issue.custom_fields | lookup("Work type") | first | field("value") == "Task" or project_issue.custom_fields | lookup("Work type") | first | field("value") == "Bug"
+  - project_issue.custom_fields | lookup("Work type") | first | field("value") == "Story" or project_issue.status == "Ready" or project_issue.status == "In progress"
 - steps:
   - name: Load branch issue
     uses: gh.issue
@@ -50,7 +50,7 @@ blocks:
     value:
       format: "{}/{}-{}"
       args:
-      - step.branch_project.outputs.type | lower
+      - step.branch_project.outputs.custom_fields | lookup("Work type") | first | field("value") | lower
       - inputs.issue_number
       - step.branch_issue.outputs.title | slug
     register: proposed_branch
@@ -126,7 +126,7 @@ blocks:
     state_set:
       state.common_state[inputs.repository].branch: ${step.branch.outputs.value}
   - name: Start task
-    if: step.branch_project.outputs.type != "Story" and step.branch_project.outputs.status == "Ready"
+    if: step.branch_project.outputs.custom_fields | lookup("Work type") | first | field("value") != "Story" and step.branch_project.outputs.status == "Ready"
     uses: gh.project.issue.field_single_select.set
     with:
       repository: inputs.repository
