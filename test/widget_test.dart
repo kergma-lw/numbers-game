@@ -73,7 +73,7 @@ void main() {
     expect(find.bySemanticsLabel('Cell 1, 2: 1'), findsOneWidget);
   });
 
-  testWidgets('shows an exchange indicator when hovering a valid target',
+  testWidgets('shows a vertical exchange indicator when hovering a row target',
       (WidgetTester tester) async {
     await tester.pumpWidget(const NumbersGameApp());
 
@@ -84,6 +84,7 @@ void main() {
     await tester.pump();
 
     expect(find.byKey(const Key('swap-indicator')), findsOneWidget);
+    expect(find.text('⇅'), findsOneWidget);
 
     await gesture.up();
     await tester.pumpAndSettle();

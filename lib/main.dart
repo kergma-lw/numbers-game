@@ -162,6 +162,7 @@ class _BoardScreenState extends State<BoardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final swapIndicator = _swapTarget?.kind == _LineKind.row ? '⇅' : '⇄';
     return Scaffold(
       appBar: AppBar(title: const Text('Numbers Game')),
       body: SafeArea(
@@ -261,11 +262,11 @@ class _BoardScreenState extends State<BoardScreen> {
                                     ),
                                   ),
                               if (_swapTarget != null)
-                                const Positioned.fill(
+                                Positioned.fill(
                                   child: IgnorePointer(
                                     child: Center(
                                       child: Text(
-                                        '⇄',
+                                        swapIndicator,
                                         key: Key('swap-indicator'),
                                         style: TextStyle(fontSize: 36),
                                       ),
