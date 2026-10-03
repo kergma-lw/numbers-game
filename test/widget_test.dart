@@ -180,6 +180,22 @@ void main() {
     expect(find.byKey(const Key('victory-message')), findsOneWidget);
     expect(find.text('You won!'), findsOneWidget);
   });
+
+  testWidgets('shows a loss message for a board with one negative cell',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(
+      NumbersGameApp(
+        initialGame: OneNonZeroGame(Board([
+          [0, 0],
+          [0, -1],
+        ])),
+      ),
+    );
+
+    expect(find.byKey(const Key('loss-message')), findsOneWidget);
+    expect(find.text('You lost!'), findsOneWidget);
+    expect(find.byKey(const Key('victory-message')), findsNothing);
+  });
 }
 
 Future<void> dragTo(

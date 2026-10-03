@@ -3,19 +3,38 @@ import 'package:numbers_game/game_core/board.dart';
 import 'package:numbers_game/game_core/one_non_zero_game.dart';
 
 void main() {
-  test('detects boards with exactly one non-zero cell', () {
-    expect(hasOneNonZeroCell(Board([
+  test('treats a single positive cell as a win', () {
+    final game = OneNonZeroGame(Board([
       [0, 0],
-      [0, 0],
-    ])), isFalse);
-    expect(hasOneNonZeroCell(Board([
+      [0, 7],
+    ]));
+
+    expect(game.isWon, isTrue);
+    expect(game.isLost, isFalse);
+  });
+
+  test('treats a single negative cell as a loss', () {
+    final game = OneNonZeroGame(Board([
       [0, 0],
       [0, -7],
-    ])), isTrue);
-    expect(hasOneNonZeroCell(Board([
+    ]));
+
+    expect(game.isWon, isFalse);
+    expect(game.isLost, isTrue);
+  });
+
+  test('does not finish with zero or multiple non-zero cells', () {
+    final zeroGame = OneNonZeroGame(Board([
+      [0, 0],
+      [0, 0],
+    ]));
+    final multipleValuesGame = OneNonZeroGame(Board([
       [1, 0],
-      [0, 2],
-    ])), isFalse);
+      [0, -2],
+    ]));
+
+    expect(zeroGame.isWon || zeroGame.isLost, isFalse);
+    expect(multipleValuesGame.isWon || multipleValuesGame.isLost, isFalse);
   });
 
   test('counts arithmetic moves and swaps', () {

@@ -15,8 +15,17 @@ class OneNonZeroGame {
   Board get currentBoard => _session.currentBoard;
   bool get canUndo => _session.canUndo;
 
-  /// Whether the current board has exactly one non-zero cell.
-  bool get isWon => hasOneNonZeroCell(currentBoard);
+  /// Whether the current board has exactly one positive cell.
+  bool get isWon {
+    final value = _singleNonZeroValue(currentBoard);
+    return value != null && value > 0;
+  }
+
+  /// Whether the current board has exactly one negative cell.
+  bool get isLost {
+    final value = _singleNonZeroValue(currentBoard);
+    return value != null && value < 0;
+  }
 
   /// Applies an arithmetic move and increments this mode's move count.
   OneNonZeroGame applyArithmeticMove({
@@ -45,18 +54,18 @@ class OneNonZeroGame {
   OneNonZeroGame restart() => OneNonZeroGame._(_session.restart(), 0);
 }
 
-/// Returns whether [board] contains exactly one non-zero cell.
-bool hasOneNonZeroCell(Board board) {
-  var nonZeroCount = 0;
+int? _singleNonZeroValue(Board board) {
+  int? nonZeroValue;
   for (var row = 0; row < board.rowCount; row++) {
     for (var column = 0; column < board.columnCount; column++) {
-      if (board.valueAt(CellPosition(row, column)) != 0) {
-        nonZeroCount++;
-        if (nonZeroCount > 1) {
-          return false;
+      final value = board.valueAt(CellPosition(row, column));
+      if (value != 0) {
+        if (nonZeroValue != null) {
+          return null;
         }
+        nonZeroValue = value;
       }
     }
   }
-  return nonZeroCount == 1;
+  return nonZeroValue;
 }

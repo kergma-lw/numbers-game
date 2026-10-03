@@ -257,6 +257,15 @@ class _BoardScreenState extends State<BoardScreen> {
                           textAlign: TextAlign.center,
                         ),
                       ),
+                    if (_game.isLost)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8),
+                        child: Text(
+                          'You lost!',
+                          key: Key('loss-message'),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
                     const SizedBox(height: 24),
                     LayoutBuilder(
                       builder: (context, constraints) {
