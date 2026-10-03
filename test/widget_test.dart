@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:numbers_game/main.dart';
 
@@ -11,6 +11,7 @@ void main() {
     expect(find.text('3'), findsOneWidget);
     expect(find.text('4'), findsOneWidget);
     expect(find.text('Select a source cell.'), findsOneWidget);
+    expect(undoButton(tester).onPressed, isNull);
   });
 
   testWidgets('selects a source cell', (WidgetTester tester) async {
@@ -44,6 +45,42 @@ void main() {
     await tester.pump();
 
     expect(find.text('Choose a different target cell.'), findsOneWidget);
+  });
+
+  testWidgets('undo restores the previous board and disables itself',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const NumbersGameApp());
+
+    await tester.tap(find.byKey(const Key('cell-0-0')));
+    await tester.tap(find.byKey(const Key('cell-0-1')));
+    await tester.pump();
+    expect(undoButton(tester).onPressed, isNotNull);
+
+    await tester.tap(find.byKey(const Key('undo-button')));
+    await tester.pump();
+
+    expect(find.text('Move undone.'), findsOneWidget);
+    expect(find.bySemanticsLabel('Cell 1, 2: 2'), findsOneWidget);
+    expect(undoButton(tester).onPressed, isNull);
+  });
+
+  testWidgets('restart restores the initial board and clears undo history',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const NumbersGameApp());
+
+    await dragTo(
+      tester,
+      const Key('row-handle-left-0'),
+      const Key('row-handle-left-1'),
+    );
+    expect(undoButton(tester).onPressed, isNotNull);
+
+    await tester.tap(find.byKey(const Key('restart-button')));
+    await tester.pump();
+
+    expect(find.text('Game restarted.'), findsOneWidget);
+    expect(find.bySemanticsLabel('Cell 1, 1: 1'), findsOneWidget);
+    expect(undoButton(tester).onPressed, isNull);
   });
 
   testWidgets('swaps rows by dragging a left handle', (WidgetTester tester) async {
@@ -136,3 +173,7 @@ Future<void> dragTo(
   await gesture.up();
   await tester.pumpAndSettle();
 }
+
+OutlinedButton undoButton(WidgetTester tester) => tester.widget<OutlinedButton>(
+      find.byKey(const Key('undo-button')),
+    );
