@@ -45,4 +45,93 @@ void main() {
 
     expect(find.text('Choose a different target cell.'), findsOneWidget);
   });
+
+  testWidgets('swaps rows by dragging a left handle', (WidgetTester tester) async {
+    await tester.pumpWidget(const NumbersGameApp());
+
+    await dragTo(
+      tester,
+      const Key('row-handle-left-0'),
+      const Key('row-handle-left-1'),
+    );
+
+    expect(find.bySemanticsLabel('Cell 1, 1: 3'), findsOneWidget);
+    expect(find.bySemanticsLabel('Cell 2, 1: 1'), findsOneWidget);
+  });
+
+  testWidgets('swaps columns by dragging a top handle',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const NumbersGameApp());
+
+    await dragTo(
+      tester,
+      const Key('column-handle-top-0'),
+      const Key('column-handle-top-1'),
+    );
+
+    expect(find.bySemanticsLabel('Cell 1, 1: 2'), findsOneWidget);
+    expect(find.bySemanticsLabel('Cell 1, 2: 1'), findsOneWidget);
+  });
+
+  testWidgets('shows an exchange indicator when hovering a valid target',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const NumbersGameApp());
+
+    final source = find.byKey(const Key('row-handle-right-0'));
+    final target = find.byKey(const Key('row-handle-right-1'));
+    final gesture = await tester.startGesture(tester.getCenter(source));
+    await gesture.moveTo(tester.getCenter(target));
+    await tester.pump();
+
+    expect(find.byKey(const Key('swap-indicator')), findsOneWidget);
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('cancels a swap dropped outside a target',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const NumbersGameApp());
+
+    final source = find.byKey(const Key('column-handle-bottom-0'));
+    final gesture = await tester.startGesture(tester.getCenter(source));
+    await gesture.moveTo(const Offset(0, 0));
+    await gesture.up();
+    await tester.pump();
+
+    expect(find.text('Swap cancelled.'), findsOneWidget);
+    expect(find.bySemanticsLabel('Cell 1, 1: 1'), findsOneWidget);
+  });
+
+  testWidgets('right and bottom handles duplicate swap controls',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const NumbersGameApp());
+
+    await dragTo(
+      tester,
+      const Key('row-handle-right-0'),
+      const Key('row-handle-right-1'),
+    );
+    await tester.pumpAndSettle();
+    await dragTo(
+      tester,
+      const Key('column-handle-bottom-0'),
+      const Key('column-handle-bottom-1'),
+    );
+
+    expect(find.bySemanticsLabel('Cell 1, 1: 4'), findsOneWidget);
+  });
+}
+
+Future<void> dragTo(
+  WidgetTester tester,
+  Key sourceKey,
+  Key targetKey,
+) async {
+  final source = find.byKey(sourceKey);
+  final target = find.byKey(targetKey);
+  final gesture = await tester.startGesture(tester.getCenter(source));
+  await gesture.moveTo(tester.getCenter(target));
+  await gesture.up();
+  await tester.pumpAndSettle();
 }
