@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:numbers_game/game_core/board.dart';
+import 'package:numbers_game/game_core/game_session.dart';
 
 const _swapAnimationDuration = Duration(milliseconds: 250);
 const _handleSize = 36.0;
@@ -33,10 +34,10 @@ class BoardScreen extends StatefulWidget {
 }
 
 class _BoardScreenState extends State<BoardScreen> {
-  Board _board = Board([
+  GameSession _game = GameSession(Board([
     [1, 2],
     [3, 4],
-  ]);
+  ]));
   CellPosition? _arithmeticSource;
   _LineTarget? _swapSource;
   _LineTarget? _swapTarget;
@@ -44,6 +45,8 @@ class _BoardScreenState extends State<BoardScreen> {
   List<int> _visualColumns = [0, 1];
   bool _isAnimatingSwap = false;
   String _feedback = 'Select a source cell.';
+
+  Board get _board => _game.currentBoard;
 
   void _selectCell(CellPosition position) {
     if (_isAnimatingSwap) {
@@ -67,7 +70,7 @@ class _BoardScreenState extends State<BoardScreen> {
     }
 
     setState(() {
-      _board = _board.applyArithmeticMove(source: source, target: position);
+      _game = _game.applyArithmeticMove(source: source, target: position);
       _arithmeticSource = null;
       _feedback = 'Move applied.';
     });
@@ -121,9 +124,9 @@ class _BoardScreenState extends State<BoardScreen> {
     }
 
     setState(() {
-      _board = source.kind == _LineKind.row
-          ? _board.swapRows(source.index, target.index)
-          : _board.swapColumns(source.index, target.index);
+      _game = source.kind == _LineKind.row
+          ? _game.swapRows(source.index, target.index)
+          : _game.swapColumns(source.index, target.index);
       _visualRows = rows;
       _visualColumns = columns;
       _swapSource = null;
@@ -160,6 +163,34 @@ class _BoardScreenState extends State<BoardScreen> {
       (_swapSource?.kind == kind && _swapSource?.index == index) ||
       (_swapTarget?.kind == kind && _swapTarget?.index == index);
 
+  void _undo() {
+    if (!_game.canUndo || _isAnimatingSwap) {
+      return;
+    }
+    setState(() {
+      _game = _game.undo();
+      _resetInteraction();
+      _feedback = 'Move undone.';
+    });
+  }
+
+  void _restart() {
+    setState(() {
+      _game = _game.restart();
+      _resetInteraction();
+      _feedback = 'Game restarted.';
+    });
+  }
+
+  void _resetInteraction() {
+    _arithmeticSource = null;
+    _swapSource = null;
+    _swapTarget = null;
+    _visualRows = _normalOrder(_board.rowCount);
+    _visualColumns = _normalOrder(_board.columnCount);
+    _isAnimatingSwap = false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final swapIndicator = _swapTarget?.kind == _LineKind.row ? '⇅' : '⇄';
@@ -180,6 +211,25 @@ class _BoardScreenState extends State<BoardScreen> {
                       'Select a source cell, then a target cell.',
                       style: Theme.of(context).textTheme.titleMedium,
                       textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 12,
+                      children: [
+                        OutlinedButton.icon(
+                          key: const Key('undo-button'),
+                          onPressed: _game.canUndo && !_isAnimatingSwap ? _undo : null,
+                          icon: const Icon(Icons.undo),
+                          label: const Text('Undo'),
+                        ),
+                        OutlinedButton.icon(
+                          key: const Key('restart-button'),
+                          onPressed: _restart,
+                          icon: const Icon(Icons.restart_alt),
+                          label: const Text('Restart'),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 24),
                     LayoutBuilder(
