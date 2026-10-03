@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:numbers_game/game_core/board.dart';
-import 'package:numbers_game/game_core/game_session.dart';
+import 'package:numbers_game/game_core/one_non_zero_game.dart';
 
 const _swapAnimationDuration = Duration(milliseconds: 250);
 const _handleSize = 36.0;
@@ -12,7 +12,9 @@ void main() {
 }
 
 class NumbersGameApp extends StatelessWidget {
-  const NumbersGameApp({super.key});
+  const NumbersGameApp({super.key, this.initialGame});
+
+  final OneNonZeroGame? initialGame;
 
   @override
   Widget build(BuildContext context) {
@@ -21,23 +23,22 @@ class NumbersGameApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
       ),
-      home: const BoardScreen(),
+      home: BoardScreen(initialGame: initialGame),
     );
   }
 }
 
 class BoardScreen extends StatefulWidget {
-  const BoardScreen({super.key});
+  const BoardScreen({super.key, this.initialGame});
+
+  final OneNonZeroGame? initialGame;
 
   @override
   State<BoardScreen> createState() => _BoardScreenState();
 }
 
 class _BoardScreenState extends State<BoardScreen> {
-  GameSession _game = GameSession(Board([
-    [1, 2],
-    [3, 4],
-  ]));
+  late OneNonZeroGame _game;
   CellPosition? _arithmeticSource;
   _LineTarget? _swapSource;
   _LineTarget? _swapTarget;
@@ -47,6 +48,16 @@ class _BoardScreenState extends State<BoardScreen> {
   String _feedback = 'Select a source cell.';
 
   Board get _board => _game.currentBoard;
+
+  @override
+  void initState() {
+    super.initState();
+    _game = widget.initialGame ??
+        OneNonZeroGame(Board([
+          [1, 2],
+          [3, 4],
+        ]));
+  }
 
   void _selectCell(CellPosition position) {
     if (_isAnimatingSwap) {
@@ -231,6 +242,21 @@ class _BoardScreenState extends State<BoardScreen> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Moves: ${_game.moveCount}',
+                      key: const Key('move-count'),
+                      textAlign: TextAlign.center,
+                    ),
+                    if (_game.isWon)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8),
+                        child: Text(
+                          'You won!',
+                          key: Key('victory-message'),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
                     const SizedBox(height: 24),
                     LayoutBuilder(
                       builder: (context, constraints) {

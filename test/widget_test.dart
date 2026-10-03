@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:numbers_game/game_core/board.dart';
+import 'package:numbers_game/game_core/one_non_zero_game.dart';
 import 'package:numbers_game/main.dart';
 
 void main() {
@@ -11,6 +13,7 @@ void main() {
     expect(find.text('3'), findsOneWidget);
     expect(find.text('4'), findsOneWidget);
     expect(find.text('Select a source cell.'), findsOneWidget);
+    expect(find.text('Moves: 0'), findsOneWidget);
     expect(undoButton(tester).onPressed, isNull);
   });
 
@@ -32,6 +35,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('Move applied.'), findsOneWidget);
+    expect(find.text('Moves: 1'), findsOneWidget);
     expect(find.text('2'), findsNothing);
     expect(find.text('3'), findsNWidgets(2));
   });
@@ -60,6 +64,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('Move undone.'), findsOneWidget);
+    expect(find.text('Moves: 0'), findsOneWidget);
     expect(find.bySemanticsLabel('Cell 1, 2: 2'), findsOneWidget);
     expect(undoButton(tester).onPressed, isNull);
   });
@@ -79,6 +84,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('Game restarted.'), findsOneWidget);
+    expect(find.text('Moves: 0'), findsOneWidget);
     expect(find.bySemanticsLabel('Cell 1, 1: 1'), findsOneWidget);
     expect(undoButton(tester).onPressed, isNull);
   });
@@ -158,6 +164,21 @@ void main() {
     );
 
     expect(find.bySemanticsLabel('Cell 1, 1: 4'), findsOneWidget);
+  });
+
+  testWidgets('shows a victory message for a winning board',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(
+      NumbersGameApp(
+        initialGame: OneNonZeroGame(Board([
+          [0, 0],
+          [0, 1],
+        ])),
+      ),
+    );
+
+    expect(find.byKey(const Key('victory-message')), findsOneWidget);
+    expect(find.text('You won!'), findsOneWidget);
   });
 }
 
