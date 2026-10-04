@@ -397,8 +397,13 @@ class _BoardScreenState extends State<BoardScreen> {
                              width: isRow ? boardSize : cellWidth,
                              height: isRow ? cellHeight : boardSize,
                              child: IgnorePointer(
-                               child: AnimatedContainer(
-                                 duration: const Duration(milliseconds: 120),
+                                child: AnimatedContainer(
+                                  key: Key(
+                                    isDropTarget
+                                        ? 'swap-target-highlight'
+                                        : 'swap-source-highlight',
+                                  ),
+                                  duration: const Duration(milliseconds: 120),
                                  decoration: BoxDecoration(
                                    color: isDropTarget
                                        ? colorScheme.secondaryContainer.withValues(
