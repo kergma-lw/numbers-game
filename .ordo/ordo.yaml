@@ -47,6 +47,14 @@ workflows:
     category: task-lifecycle
     state_bindings:
       common_state: common_state
+  task-reopen-review:
+    file: workflows/task-reopen-review.yml
+    description: Return an active task from In review to In progress
+    category: task-lifecycle
+    with:
+      reason:
+    state_bindings:
+      common_state: common_state
   publish-task:
     file: workflows/publish-task.yml
     description: Push the prepared task branch and find or create its PR

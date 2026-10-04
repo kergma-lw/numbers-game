@@ -116,6 +116,48 @@ void main() {
     expect(find.bySemanticsLabel('Cell 1, 2: 1'), findsOneWidget);
   });
 
+  testWidgets('undo uses the swap animation for a row swap',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const NumbersGameApp());
+
+    await dragTo(
+      tester,
+      const Key('row-handle-left-0'),
+      const Key('row-handle-left-1'),
+    );
+
+    await tester.tap(find.byKey(const Key('undo-button')));
+    await tester.pump();
+
+    expect(find.byKey(const Key('swap-source-highlight')), findsOneWidget);
+    expect(find.byKey(const Key('swap-target-highlight')), findsOneWidget);
+
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Cell 1, 1: 1'), findsOneWidget);
+    expect(find.bySemanticsLabel('Cell 2, 1: 3'), findsOneWidget);
+  });
+
+  testWidgets('undo uses the swap animation for a column swap',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const NumbersGameApp());
+
+    await dragTo(
+      tester,
+      const Key('column-handle-top-0'),
+      const Key('column-handle-top-1'),
+    );
+
+    await tester.tap(find.byKey(const Key('undo-button')));
+    await tester.pump();
+
+    expect(find.byKey(const Key('swap-source-highlight')), findsOneWidget);
+    expect(find.byKey(const Key('swap-target-highlight')), findsOneWidget);
+
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Cell 1, 1: 1'), findsOneWidget);
+    expect(find.bySemanticsLabel('Cell 1, 2: 2'), findsOneWidget);
+  });
+
   testWidgets('shows a vertical exchange indicator when hovering a row target',
       (WidgetTester tester) async {
     await tester.pumpWidget(const NumbersGameApp());

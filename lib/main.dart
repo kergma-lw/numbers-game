@@ -1,11 +1,13 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:numbers_game/game_core/board.dart';
 import 'package:numbers_game/game_core/one_non_zero_game.dart';
 
-const _swapAnimationDuration = Duration(milliseconds: 250);
+const _swapAnimationDuration = Duration(milliseconds: 380);
 const _handleSize = 36.0;
+const _cellGap = 4.0;
 
 void main() {
   runApp(const NumbersGameApp());
@@ -42,9 +44,15 @@ class _BoardScreenState extends State<BoardScreen> {
   CellPosition? _arithmeticSource;
   _LineTarget? _swapSource;
   _LineTarget? _swapTarget;
+  _LineTarget? _animatedSwapSource;
+  _LineTarget? _animatedSwapTarget;
   List<int> _visualRows = [0, 1];
   List<int> _visualColumns = [0, 1];
   bool _isAnimatingSwap = false;
+  bool _isUndoing = false;
+  Set<CellPosition> _undoingCells = {};
+  Timer? _undoAnimationTimer;
+  final List<_LineSwap?> _moveHistory = [];
   String _feedback = 'Select a source cell.';
 
   Board get _board => _game.currentBoard;
@@ -60,7 +68,7 @@ class _BoardScreenState extends State<BoardScreen> {
   }
 
   void _selectCell(CellPosition position) {
-    if (_isAnimatingSwap) {
+    if (_isAnimatingSwap || _isUndoing) {
       return;
     }
 
@@ -82,13 +90,14 @@ class _BoardScreenState extends State<BoardScreen> {
 
     setState(() {
       _game = _game.applyArithmeticMove(source: source, target: position);
+      _moveHistory.add(null);
       _arithmeticSource = null;
       _feedback = 'Move applied.';
     });
   }
 
   void _startSwap(_LineTarget source) {
-    if (_isAnimatingSwap) {
+    if (_isAnimatingSwap || _isUndoing) {
       return;
     }
     setState(() {
@@ -138,8 +147,11 @@ class _BoardScreenState extends State<BoardScreen> {
       _game = source.kind == _LineKind.row
           ? _game.swapRows(source.index, target.index)
           : _game.swapColumns(source.index, target.index);
+      _moveHistory.add(_LineSwap(source, target));
       _visualRows = rows;
       _visualColumns = columns;
+      _animatedSwapSource = source;
+      _animatedSwapTarget = target;
       _swapSource = null;
       _swapTarget = null;
       _isAnimatingSwap = true;
@@ -156,7 +168,11 @@ class _BoardScreenState extends State<BoardScreen> {
       });
       Future<void>.delayed(_swapAnimationDuration, () {
         if (mounted) {
-          setState(() => _isAnimatingSwap = false);
+          setState(() {
+            _animatedSwapSource = null;
+            _animatedSwapTarget = null;
+            _isAnimatingSwap = false;
+          });
         }
       });
     });
@@ -175,31 +191,108 @@ class _BoardScreenState extends State<BoardScreen> {
       (_swapTarget?.kind == kind && _swapTarget?.index == index);
 
   void _undo() {
-    if (!_game.canUndo || _isAnimatingSwap) {
+    if (!_game.canUndo || _isAnimatingSwap || _isUndoing) {
       return;
     }
+    final restoredGame = _game.undo();
+    final undoneMove = _moveHistory.isNotEmpty ? _moveHistory.removeLast() : null;
+    if (undoneMove != null) {
+      _animateUndoneSwap(restoredGame, undoneMove);
+      return;
+    }
+    final changedCells = <CellPosition>{
+      for (var row = 0; row < _board.rowCount; row++)
+        for (var column = 0; column < _board.columnCount; column++)
+          if (_board.valueAt(CellPosition(row, column)) !=
+              restoredGame.currentBoard.valueAt(CellPosition(row, column)))
+            CellPosition(row, column),
+    };
     setState(() {
-      _game = _game.undo();
+      _game = restoredGame;
       _resetInteraction();
+      _isUndoing = true;
+      _undoingCells = changedCells;
       _feedback = 'Move undone.';
+    });
+    _undoAnimationTimer = Timer(_swapAnimationDuration, () {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isUndoing = false;
+        _undoingCells = {};
+      });
+    });
+  }
+
+  void _animateUndoneSwap(OneNonZeroGame restoredGame, _LineSwap swap) {
+    final rows = _normalOrder(_board.rowCount);
+    final columns = _normalOrder(_board.columnCount);
+    if (swap.source.kind == _LineKind.row) {
+      _swapIndices(rows, swap.source.index, swap.target.index);
+    } else {
+      _swapIndices(columns, swap.source.index, swap.target.index);
+    }
+
+    setState(() {
+      _game = restoredGame;
+      _resetInteraction();
+      _visualRows = rows;
+      _visualColumns = columns;
+      _animatedSwapSource = swap.source;
+      _animatedSwapTarget = swap.target;
+      _isAnimatingSwap = true;
+      _feedback = 'Move undone.';
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _visualRows = _normalOrder(_board.rowCount);
+        _visualColumns = _normalOrder(_board.columnCount);
+      });
+      Future<void>.delayed(_swapAnimationDuration, () {
+        if (mounted) {
+          setState(() {
+            _animatedSwapSource = null;
+            _animatedSwapTarget = null;
+            _isAnimatingSwap = false;
+          });
+        }
+      });
     });
   }
 
   void _restart() {
     setState(() {
       _game = _game.restart();
+      _moveHistory.clear();
       _resetInteraction();
       _feedback = 'Game restarted.';
     });
   }
 
   void _resetInteraction() {
+    _undoAnimationTimer?.cancel();
+    _undoAnimationTimer = null;
     _arithmeticSource = null;
     _swapSource = null;
     _swapTarget = null;
+    _animatedSwapSource = null;
+    _animatedSwapTarget = null;
     _visualRows = _normalOrder(_board.rowCount);
     _visualColumns = _normalOrder(_board.columnCount);
     _isAnimatingSwap = false;
+    _isUndoing = false;
+    _undoingCells = {};
+  }
+
+  @override
+  void dispose() {
+    _undoAnimationTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -230,7 +323,9 @@ class _BoardScreenState extends State<BoardScreen> {
                       children: [
                         OutlinedButton.icon(
                           key: const Key('undo-button'),
-                          onPressed: _game.canUndo && !_isAnimatingSwap ? _undo : null,
+                          onPressed: _game.canUndo && !_isAnimatingSwap && !_isUndoing
+                              ? _undo
+                              : null,
                           icon: const Icon(Icons.undo),
                           label: const Text('Undo'),
                         ),
@@ -268,14 +363,62 @@ class _BoardScreenState extends State<BoardScreen> {
                       ),
                     const SizedBox(height: 24),
                     LayoutBuilder(
-                      builder: (context, constraints) {
-                        final boardSize = math.min(
-                          constraints.maxWidth - 2 * _handleSize,
-                          300,
-                        );
-                        final cellWidth = boardSize / _board.columnCount;
-                        final cellHeight = boardSize / _board.rowCount;
-                        return SizedBox(
+                       builder: (context, constraints) {
+                         final boardSize = math.min(
+                           constraints.maxWidth - 2 * _handleSize,
+                           300.0,
+                         );
+                         final cellWidth =
+                             (boardSize - _cellGap * (_board.columnCount - 1)) /
+                                 _board.columnCount;
+                         final cellHeight =
+                             (boardSize - _cellGap * (_board.rowCount - 1)) /
+                                 _board.rowCount;
+                         final colorScheme = Theme.of(context).colorScheme;
+                         final sourceHighlight =
+                             _swapSource ?? _animatedSwapSource;
+                         final targetHighlight =
+                             _swapTarget ?? _animatedSwapTarget;
+
+                         Widget lineHighlight(
+                           _LineTarget target, {
+                           required bool isDropTarget,
+                         }) {
+                           final isRow = target.kind == _LineKind.row;
+                           return Positioned(
+                             left: isRow
+                                 ? _handleSize
+                                 : _handleSize +
+                                     target.index * (cellWidth + _cellGap),
+                             top: isRow
+                                 ? _handleSize +
+                                     target.index * (cellHeight + _cellGap)
+                                 : _handleSize,
+                             width: isRow ? boardSize : cellWidth,
+                             height: isRow ? cellHeight : boardSize,
+                             child: IgnorePointer(
+                                child: AnimatedContainer(
+                                  key: Key(
+                                    isDropTarget
+                                        ? 'swap-target-highlight'
+                                        : 'swap-source-highlight',
+                                  ),
+                                  duration: const Duration(milliseconds: 120),
+                                 decoration: BoxDecoration(
+                                   color: isDropTarget
+                                       ? colorScheme.secondaryContainer.withValues(
+                                           alpha: 0.55,
+                                         )
+                                       : colorScheme.primaryContainer.withValues(
+                                           alpha: 0.35,
+                                         ),
+                                 ),
+                               ),
+                             ),
+                           );
+                         }
+
+                         return SizedBox(
                           width: boardSize + 2 * _handleSize,
                           height: boardSize + 2 * _handleSize,
                           child: Stack(
@@ -284,50 +427,57 @@ class _BoardScreenState extends State<BoardScreen> {
                                   column < _board.columnCount;
                                   column++) ...[
                                 _positionedHandle(
-                                  target: _LineTarget(_LineKind.column, column),
-                                  side: _HandleSide.top,
-                                  left: _handleSize + column * cellWidth,
+                                 target: _LineTarget(_LineKind.column, column),
+                                 side: _HandleSide.top,
+                                 left: _handleSize + column * (cellWidth + _cellGap),
                                   top: 0,
                                   width: cellWidth,
                                   height: _handleSize,
                                 ),
                                 _positionedHandle(
-                                  target: _LineTarget(_LineKind.column, column),
-                                  side: _HandleSide.bottom,
-                                  left: _handleSize + column * cellWidth,
+                                 target: _LineTarget(_LineKind.column, column),
+                                 side: _HandleSide.bottom,
+                                 left: _handleSize + column * (cellWidth + _cellGap),
                                   top: _handleSize + boardSize,
                                   width: cellWidth,
                                   height: _handleSize,
                                 ),
                               ],
-                              for (var row = 0; row < _board.rowCount; row++) ...[
+                               for (var row = 0; row < _board.rowCount; row++) ...[
                                 _positionedHandle(
-                                  target: _LineTarget(_LineKind.row, row),
-                                  side: _HandleSide.left,
-                                  left: 0,
-                                  top: _handleSize + row * cellHeight,
+                                 target: _LineTarget(_LineKind.row, row),
+                                 side: _HandleSide.left,
+                                 left: 0,
+                                 top: _handleSize + row * (cellHeight + _cellGap),
                                   width: _handleSize,
                                   height: cellHeight,
                                 ),
                                 _positionedHandle(
                                   target: _LineTarget(_LineKind.row, row),
-                                  side: _HandleSide.right,
-                                  left: _handleSize + boardSize,
-                                  top: _handleSize + row * cellHeight,
+                                 side: _HandleSide.right,
+                                 left: _handleSize + boardSize,
+                                 top: _handleSize + row * (cellHeight + _cellGap),
                                   width: _handleSize,
                                   height: cellHeight,
-                                ),
-                              ],
-                              for (var row = 0; row < _board.rowCount; row++)
+                                 ),
+                               ],
+                               if (sourceHighlight case final _LineTarget source)
+                                 lineHighlight(source, isDropTarget: false),
+                               if (targetHighlight case final _LineTarget target)
+                                 lineHighlight(target, isDropTarget: true),
+                               for (var row = 0; row < _board.rowCount; row++)
                                 for (var column = 0;
                                     column < _board.columnCount;
                                     column++)
                                   AnimatedPositioned(
-                                    duration: _swapAnimationDuration,
-                                    curve: Curves.easeInOut,
-                                    left: _handleSize +
-                                        _visualColumns[column] * cellWidth,
-                                    top: _handleSize + _visualRows[row] * cellHeight,
+                                     duration: _swapAnimationDuration,
+                                     curve: Curves.easeInOutCubicEmphasized,
+                                     left: _handleSize +
+                                         _visualColumns[column] *
+                                             (cellWidth + _cellGap),
+                                     top: _handleSize +
+                                         _visualRows[row] *
+                                             (cellHeight + _cellGap),
                                     width: cellWidth,
                                     height: cellHeight,
                                     child: _BoardCell(
@@ -335,15 +485,12 @@ class _BoardScreenState extends State<BoardScreen> {
                                       value: _board.valueAt(
                                         CellPosition(row, column),
                                       ),
-                                      selected: _arithmeticSource ==
+                                        selected: _arithmeticSource ==
+                                            CellPosition(row, column),
+                                        undoing: _undoingCells.contains(
                                           CellPosition(row, column),
-                                      swapHighlighted:
-                                          _isSwapLineActive(_LineKind.row, row) ||
-                                              _isSwapLineActive(
-                                                _LineKind.column,
-                                                column,
-                                              ),
-                                      onPressed: _selectCell,
+                                        ),
+                                        onPressed: _selectCell,
                                     ),
                                   ),
                               if (_swapTarget != null)
@@ -399,7 +546,7 @@ class _BoardScreenState extends State<BoardScreen> {
         target: target,
         side: side,
         isActive: _isSwapLineActive(target.kind, target.index),
-        enabled: !_isAnimatingSwap,
+        enabled: !_isAnimatingSwap && !_isUndoing,
         onDragStarted: _startSwap,
         onHover: _hoverSwapTarget,
         onLeave: _leaveSwapTarget,
@@ -415,14 +562,14 @@ class _BoardCell extends StatelessWidget {
     required this.position,
     required this.value,
     required this.selected,
-    required this.swapHighlighted,
+    required this.undoing,
     required this.onPressed,
   });
 
   final CellPosition position;
   final int value;
   final bool selected;
-  final bool swapHighlighted;
+  final bool undoing;
   final ValueChanged<CellPosition> onPressed;
 
   @override
@@ -430,26 +577,31 @@ class _BoardCell extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return Semantics(
       button: true,
-      selected: selected || swapHighlighted,
+      selected: selected,
       label: 'Cell ${position.row + 1}, ${position.column + 1}: $value',
-      child: OutlinedButton(
-        key: Key('cell-${position.row}-${position.column}'),
-        style: OutlinedButton.styleFrom(
-          backgroundColor: selected
-              ? colorScheme.primaryContainer
-              : swapHighlighted
-                  ? colorScheme.secondaryContainer
-                  : null,
-          padding: const EdgeInsets.all(8),
+      child: AnimatedScale(
+        scale: undoing ? 1.08 : 1,
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutBack,
+        child: OutlinedButton(
+          key: Key('cell-${position.row}-${position.column}'),
+          style: OutlinedButton.styleFrom(
+            backgroundColor: selected
+                ? colorScheme.primaryContainer
+                : undoing
+                    ? colorScheme.tertiaryContainer
+                    : null,
+            padding: const EdgeInsets.all(8),
+          ),
+          onPressed: () => onPressed(position),
+          child: Text('$value', style: Theme.of(context).textTheme.headlineMedium),
         ),
-        onPressed: () => onPressed(position),
-        child: Text('$value', style: Theme.of(context).textTheme.headlineMedium),
       ),
     );
   }
 }
 
-class _LineHandle extends StatelessWidget {
+class _LineHandle extends StatefulWidget {
   const _LineHandle({
     required this.target,
     required this.side,
@@ -473,34 +625,46 @@ class _LineHandle extends StatelessWidget {
   final VoidCallback onDragCancelled;
 
   @override
+  State<_LineHandle> createState() => _LineHandleState();
+}
+
+class _LineHandleState extends State<_LineHandle> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
     return DragTarget<_LineTarget>(
       onWillAcceptWithDetails: (details) {
-        if (!details.data.accepts(target)) {
+        if (!details.data.accepts(widget.target)) {
           return false;
         }
-        onHover(target);
+        widget.onHover(widget.target);
         return true;
       },
-      onLeave: (_) => onLeave(target),
-      onAcceptWithDetails: (details) => onAccept(details.data, target),
+      onLeave: (_) => widget.onLeave(widget.target),
+      onAcceptWithDetails: (details) => widget.onAccept(details.data, widget.target),
       builder: (context, candidateData, rejectedData) {
-        return Draggable<_LineTarget>(
-          data: target,
-          maxSimultaneousDrags: enabled ? 1 : 0,
-          onDragStarted: () => onDragStarted(target),
-          onDragEnd: (_) => onDragCancelled(),
-          feedback: Material(
-            color: Colors.transparent,
-            child: _handleIcon(context, active: true),
-          ),
-          childWhenDragging: Opacity(
-            opacity: 0.35,
-            child: _handleIcon(context, active: isActive),
-          ),
-          child: _handleIcon(
-            context,
-            active: isActive || candidateData.isNotEmpty,
+        return MouseRegion(
+          cursor: widget.enabled ? SystemMouseCursors.grab : MouseCursor.defer,
+          onEnter: (_) => setState(() => _isHovered = true),
+          onExit: (_) => setState(() => _isHovered = false),
+          child: Draggable<_LineTarget>(
+            data: widget.target,
+            maxSimultaneousDrags: widget.enabled ? 1 : 0,
+            onDragStarted: () => widget.onDragStarted(widget.target),
+            onDragEnd: (_) => widget.onDragCancelled(),
+            feedback: Material(
+              color: Colors.transparent,
+              child: _handleIcon(context, active: true),
+            ),
+            childWhenDragging: Opacity(
+              opacity: 0.35,
+              child: _handleIcon(context, active: widget.isActive),
+            ),
+            child: _handleIcon(
+              context,
+              active: widget.isActive || candidateData.isNotEmpty,
+            ),
           ),
         );
       },
@@ -508,18 +672,32 @@ class _LineHandle extends StatelessWidget {
   }
 
   Widget _handleIcon(BuildContext context, {required bool active}) {
-    final color = active
-        ? Theme.of(context).colorScheme.secondaryContainer
-        : Theme.of(context).colorScheme.surfaceContainerHighest;
+    final colorScheme = Theme.of(context).colorScheme;
+    final highlighted = active || _isHovered;
+    final backgroundColor = active
+        ? colorScheme.secondaryContainer
+        : _isHovered
+            ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.55)
+            : Colors.transparent;
     return Semantics(
-      label: '${side.label} handle for ${target.kind.label} ${target.index + 1}',
-      child: Container(
-        key: Key('${target.kind.name}-handle-${side.name}-${target.index}'),
-        color: color,
+      label:
+          '${widget.side.label} handle for ${widget.target.kind.label} ${widget.target.index + 1}',
+      child: AnimatedContainer(
+        key: Key(
+          '${widget.target.kind.name}-handle-${widget.side.name}-${widget.target.index}',
+        ),
+        duration: const Duration(milliseconds: 120),
         alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(8),
+        ),
         child: Icon(
-          target.kind == _LineKind.row ? Icons.drag_handle : Icons.drag_indicator,
-          size: 20,
+          widget.target.kind == _LineKind.row
+              ? Icons.drag_indicator
+              : Icons.drag_handle,
+          size: 16,
+          color: highlighted ? colorScheme.onSurfaceVariant : colorScheme.outline,
         ),
       ),
     );
@@ -560,6 +738,13 @@ class _LineTarget {
 
   @override
   int get hashCode => Object.hash(kind, index);
+}
+
+class _LineSwap {
+  const _LineSwap(this.source, this.target);
+
+  final _LineTarget source;
+  final _LineTarget target;
 }
 
 extension on String {
