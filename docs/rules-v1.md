@@ -33,7 +33,14 @@ The initial mode is **one non-zero cell**. The player wins when exactly one
 cell on the board is non-zero. The move counter records the number of turns
 taken.
 
+## Interactive tutorial
+
+The application includes an optional tutorial using a fixed small board. It
+guides the player through addition, subtraction, and a column swap before a
+short winning sequence. The tutorial may be skipped and can be launched again
+from normal play.
+
 ## Out of scope for Version 1
 
-Version 1 does not include predefined target boards, level generation,
-shortest-path hints, persistent saves, or a tutorial.
+Version 1 does not include predefined target boards outside the tutorial,
+level generation, or shortest-path hints.
