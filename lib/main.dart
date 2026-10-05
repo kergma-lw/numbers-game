@@ -4,6 +4,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:numbers_game/game_core/board.dart';
 import 'package:numbers_game/game_core/one_non_zero_game.dart';
+import 'package:numbers_game/tutorial.dart';
+import 'package:numbers_game/tutorial_progress_store.dart';
 
 const _swapAnimationDuration = Duration(milliseconds: 380);
 const _handleSize = 36.0;
@@ -13,10 +15,38 @@ void main() {
   runApp(const NumbersGameApp());
 }
 
-class NumbersGameApp extends StatelessWidget {
-  const NumbersGameApp({super.key, this.initialGame});
+class NumbersGameApp extends StatefulWidget {
+  const NumbersGameApp({
+    super.key,
+    this.progressStore,
+  });
 
-  final OneNonZeroGame? initialGame;
+  final TutorialProgressStore? progressStore;
+
+  @override
+  State<NumbersGameApp> createState() => _NumbersGameAppState();
+}
+
+class _NumbersGameAppState extends State<NumbersGameApp> {
+  late final TutorialProgressStore _progressStore;
+  late final Future<bool> _tutorialWasHandled;
+  bool? _showTutorial;
+
+  @override
+  void initState() {
+    super.initState();
+    _progressStore = widget.progressStore ?? SharedPreferencesTutorialProgressStore();
+    _tutorialWasHandled = _progressStore.hasCompletedOrDismissed();
+  }
+
+  Future<void> _finishTutorial() async {
+    await _progressStore.markCompletedOrDismissed();
+    if (mounted) {
+      setState(() => _showTutorial = false);
+    }
+  }
+
+  void _startTutorial() => setState(() => _showTutorial = true);
 
   @override
   Widget build(BuildContext context) {
@@ -25,15 +55,39 @@ class NumbersGameApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
       ),
-      home: BoardScreen(initialGame: initialGame),
+      home: FutureBuilder<bool>(
+        future: _tutorialWasHandled,
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          }
+          final showTutorial = _showTutorial ?? !snapshot.data!;
+          return BoardScreen(
+            key: ValueKey(showTutorial),
+            initialGame: showTutorial ? tutorialDefinition.initialGame : null,
+            tutorial: showTutorial ? tutorialDefinition : null,
+            onTutorialFinished: _finishTutorial,
+            onStartTutorial: showTutorial ? null : _startTutorial,
+          );
+        },
+      ),
     );
   }
 }
 
 class BoardScreen extends StatefulWidget {
-  const BoardScreen({super.key, this.initialGame});
+  const BoardScreen({
+    super.key,
+    this.initialGame,
+    this.tutorial,
+    this.onTutorialFinished,
+    this.onStartTutorial,
+  });
 
   final OneNonZeroGame? initialGame;
+  final TutorialDefinition? tutorial;
+  final Future<void> Function()? onTutorialFinished;
+  final VoidCallback? onStartTutorial;
 
   @override
   State<BoardScreen> createState() => _BoardScreenState();
@@ -54,8 +108,33 @@ class _BoardScreenState extends State<BoardScreen> {
   Timer? _undoAnimationTimer;
   final List<_LineSwap?> _moveHistory = [];
   String _feedback = 'Select a source cell.';
+  int _tutorialStepIndex = 0;
+  bool _tutorialCompleted = false;
 
   Board get _board => _game.currentBoard;
+  TutorialStep? get _tutorialStep => widget.tutorial == null || _tutorialCompleted
+      ? null
+      : widget.tutorial!.steps[_tutorialStepIndex];
+
+  bool get _isTutorial => widget.tutorial != null;
+
+  bool _isTutorialCellHighlighted(CellPosition position) {
+    final step = _tutorialStep;
+    if (step?.action != TutorialAction.arithmeticMove) {
+      return false;
+    }
+    return _arithmeticSource == null
+        ? step!.source == position
+        : step!.target == position;
+  }
+
+  bool _isTutorialLineHighlighted(_LineKind kind, int index) {
+    final step = _tutorialStep;
+    if (step?.action != TutorialAction.swapColumns || kind != _LineKind.column) {
+      return false;
+    }
+    return _swapSource == null ? step!.firstLine == index : step!.secondLine == index;
+  }
 
   @override
   void initState() {
@@ -65,6 +144,7 @@ class _BoardScreenState extends State<BoardScreen> {
           [1, 2],
           [3, 4],
         ]));
+    _feedback = _tutorialStep?.instruction ?? _feedback;
   }
 
   void _selectCell(CellPosition position) {
@@ -74,6 +154,11 @@ class _BoardScreenState extends State<BoardScreen> {
 
     final source = _arithmeticSource;
     if (source == null) {
+      final step = _tutorialStep;
+      if (step != null && (step.action != TutorialAction.arithmeticMove || step.source != position)) {
+        _showTutorialFeedback();
+        return;
+      }
       setState(() {
         _arithmeticSource = position;
         _feedback = 'Source selected. Choose a target cell.';
@@ -88,16 +173,30 @@ class _BoardScreenState extends State<BoardScreen> {
       return;
     }
 
+    final step = _tutorialStep;
+    if (step != null && !step.matchesArithmetic(source, position)) {
+      _showTutorialFeedback();
+      return;
+    }
+
     setState(() {
       _game = _game.applyArithmeticMove(source: source, target: position);
       _moveHistory.add(null);
       _arithmeticSource = null;
       _feedback = 'Move applied.';
     });
+    _advanceTutorial();
   }
 
   void _startSwap(_LineTarget source) {
     if (_isAnimatingSwap || _isUndoing) {
+      return;
+    }
+    final step = _tutorialStep;
+    if (step != null &&
+        (step.action != TutorialAction.swapColumns || source.kind != _LineKind.column ||
+            source.index != step.firstLine)) {
+      _showTutorialFeedback();
       return;
     }
     setState(() {
@@ -134,6 +233,13 @@ class _BoardScreenState extends State<BoardScreen> {
     if (!source.accepts(target) || _isAnimatingSwap) {
       return;
     }
+    final step = _tutorialStep;
+    if (step != null &&
+        (source.kind != _LineKind.column || !step.matchesColumnSwap(source.index, target.index))) {
+      _cancelSwap();
+      _showTutorialFeedback();
+      return;
+    }
 
     final rows = _normalOrder(_board.rowCount);
     final columns = _normalOrder(_board.columnCount);
@@ -157,6 +263,7 @@ class _BoardScreenState extends State<BoardScreen> {
       _isAnimatingSwap = true;
       _feedback = '${source.kind.label.capitalize()} swapped.';
     });
+    _advanceTutorial();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
@@ -196,6 +303,10 @@ class _BoardScreenState extends State<BoardScreen> {
     }
     final restoredGame = _game.undo();
     final undoneMove = _moveHistory.isNotEmpty ? _moveHistory.removeLast() : null;
+    if (_isTutorial && _tutorialStepIndex > 0) {
+      _tutorialStepIndex--;
+      _tutorialCompleted = false;
+    }
     if (undoneMove != null) {
       _animateUndoneSwap(restoredGame, undoneMove);
       return;
@@ -269,8 +380,32 @@ class _BoardScreenState extends State<BoardScreen> {
     setState(() {
       _game = _game.restart();
       _moveHistory.clear();
+      _tutorialStepIndex = 0;
+      _tutorialCompleted = false;
       _resetInteraction();
       _feedback = 'Game restarted.';
+    });
+  }
+
+  void _advanceTutorial() {
+    if (!_isTutorial) {
+      return;
+    }
+    setState(() {
+      if (_tutorialStepIndex == widget.tutorial!.steps.length - 1) {
+        _tutorialCompleted = true;
+        _feedback = 'Tutorial complete.';
+      } else {
+        _tutorialStepIndex++;
+        _feedback = widget.tutorial!.steps[_tutorialStepIndex].instruction;
+      }
+    });
+  }
+
+  void _showTutorialFeedback() {
+    setState(() {
+      _arithmeticSource = null;
+      _feedback = _tutorialStep?.instruction ?? 'Follow the tutorial instruction.';
     });
   }
 
@@ -311,17 +446,20 @@ class _BoardScreenState extends State<BoardScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      'Select a source cell, then a target cell.',
+                     Text(
+                       _tutorialCompleted
+                           ? 'Tutorial complete!'
+                           : _tutorialStep?.instruction ??
+                               'Select a source cell, then a target cell.',
                       style: Theme.of(context).textTheme.titleMedium,
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 12),
-                    Wrap(
+                     Wrap(
                       alignment: WrapAlignment.center,
                       spacing: 12,
                       children: [
-                        OutlinedButton.icon(
+                         OutlinedButton.icon(
                           key: const Key('undo-button'),
                           onPressed: _game.canUndo && !_isAnimatingSwap && !_isUndoing
                               ? _undo
@@ -333,10 +471,31 @@ class _BoardScreenState extends State<BoardScreen> {
                           key: const Key('restart-button'),
                           onPressed: _restart,
                           icon: const Icon(Icons.restart_alt),
-                          label: const Text('Restart'),
-                        ),
-                      ],
-                    ),
+                           label: const Text('Restart'),
+                         ),
+                         if (_isTutorial && !_tutorialCompleted)
+                           OutlinedButton(
+                             key: const Key('skip-tutorial-button'),
+                             onPressed: widget.onTutorialFinished,
+                             child: const Text('Skip tutorial'),
+                           ),
+                         if (!_isTutorial && widget.onStartTutorial != null)
+                           OutlinedButton(
+                             key: const Key('start-tutorial-button'),
+                             onPressed: widget.onStartTutorial,
+                             child: const Text('Tutorial'),
+                           ),
+                       ],
+                     ),
+                     if (_tutorialCompleted)
+                       Padding(
+                         padding: const EdgeInsets.only(top: 12),
+                         child: FilledButton(
+                           key: const Key('finish-tutorial-button'),
+                           onPressed: widget.onTutorialFinished,
+                           child: const Text('Play'),
+                         ),
+                       ),
                     const SizedBox(height: 12),
                     Text(
                       'Moves: ${_game.moveCount}',
@@ -380,7 +539,7 @@ class _BoardScreenState extends State<BoardScreen> {
                          final targetHighlight =
                              _swapTarget ?? _animatedSwapTarget;
 
-                         Widget lineHighlight(
+                          Widget lineHighlight(
                            _LineTarget target, {
                            required bool isDropTarget,
                          }) {
@@ -416,7 +575,26 @@ class _BoardScreenState extends State<BoardScreen> {
                                ),
                              ),
                            );
-                         }
+                          }
+
+                          Widget tutorialArrow({
+                            required Key key,
+                            required double left,
+                            required double top,
+                          }) => Positioned(
+                            left: left,
+                            top: top,
+                            width: 36,
+                            height: 36,
+                            child: IgnorePointer(
+                              child: Icon(
+                                Icons.arrow_downward,
+                                key: key,
+                                size: 36,
+                                color: colorScheme.tertiary,
+                              ),
+                            ),
+                          );
 
                          return SizedBox(
                           width: boardSize + 2 * _handleSize,
@@ -465,7 +643,7 @@ class _BoardScreenState extends State<BoardScreen> {
                                  lineHighlight(source, isDropTarget: false),
                                if (targetHighlight case final _LineTarget target)
                                  lineHighlight(target, isDropTarget: true),
-                               for (var row = 0; row < _board.rowCount; row++)
+                                for (var row = 0; row < _board.rowCount; row++)
                                 for (var column = 0;
                                     column < _board.columnCount;
                                     column++)
@@ -480,18 +658,48 @@ class _BoardScreenState extends State<BoardScreen> {
                                              (cellHeight + _cellGap),
                                     width: cellWidth,
                                     height: cellHeight,
-                                    child: _BoardCell(
+                                     child: _BoardCell(
                                       position: CellPosition(row, column),
                                       value: _board.valueAt(
                                         CellPosition(row, column),
                                       ),
-                                        selected: _arithmeticSource ==
-                                            CellPosition(row, column),
+                                         selected: _arithmeticSource ==
+                                             CellPosition(row, column),
                                         undoing: _undoingCells.contains(
                                           CellPosition(row, column),
                                         ),
                                         onPressed: _selectCell,
                                     ),
+                                     ),
+                              for (var row = 0; row < _board.rowCount; row++)
+                                for (var column = 0;
+                                    column < _board.columnCount;
+                                    column++)
+                                  if (_isTutorialCellHighlighted(
+                                    CellPosition(row, column),
+                                  ))
+                                    tutorialArrow(
+                                      key: Key('tutorial-arrow-cell-$row-$column'),
+                                      left: _handleSize +
+                                          column * (cellWidth + _cellGap) +
+                                          (cellWidth - 36) / 2,
+                                      top: _handleSize +
+                                          row * (cellHeight + _cellGap) -
+                                          12,
+                                    ),
+                              for (var column = 0;
+                                  column < _board.columnCount;
+                                  column++)
+                                if (_isTutorialLineHighlighted(
+                                  _LineKind.column,
+                                  column,
+                                ))
+                                  tutorialArrow(
+                                    key: Key('tutorial-arrow-column-$column'),
+                                    left: _handleSize +
+                                        column * (cellWidth + _cellGap) +
+                                        (cellWidth - 36) / 2,
+                                    top: 0,
                                   ),
                               if (_swapTarget != null)
                                 Positioned.fill(

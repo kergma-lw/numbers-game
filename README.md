@@ -9,8 +9,9 @@ the board. See [the rules for version 1](docs/rules-v1.md).
 
 ## Status
 
-The repository currently contains a Flutter application scaffold for web,
-Android, and iOS. The game mechanics have not been implemented yet.
+The repository contains a playable Flutter application for web, Android, and
+iOS. It supports arithmetic moves, row and column swaps, undo, restart, and a
+short interactive tutorial.
 
 ## Run the web scaffold
 
