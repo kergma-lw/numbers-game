@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:numbers_game/game_core/board.dart';
 import 'package:numbers_game/game_core/one_non_zero_game.dart';
+import 'package:numbers_game/game_state_store.dart';
 import 'package:numbers_game/tutorial.dart';
 import 'package:numbers_game/tutorial_progress_store.dart';
 
@@ -19,9 +20,11 @@ class NumbersGameApp extends StatefulWidget {
   const NumbersGameApp({
     super.key,
     this.progressStore,
+    this.gameStateStore,
   });
 
   final TutorialProgressStore? progressStore;
+  final GameStateStore? gameStateStore;
 
   @override
   State<NumbersGameApp> createState() => _NumbersGameAppState();
@@ -29,15 +32,23 @@ class NumbersGameApp extends StatefulWidget {
 
 class _NumbersGameAppState extends State<NumbersGameApp> {
   late final TutorialProgressStore _progressStore;
-  late final Future<bool> _tutorialWasHandled;
+  late final GameStateStore _gameStateStore;
+  late final Future<_AppState> _appState;
   bool? _showTutorial;
 
   @override
   void initState() {
     super.initState();
     _progressStore = widget.progressStore ?? SharedPreferencesTutorialProgressStore();
-    _tutorialWasHandled = _progressStore.hasCompletedOrDismissed();
+    _gameStateStore = widget.gameStateStore ?? SharedPreferencesGameStateStore();
+    _appState = _loadAppState();
   }
+
+  Future<_AppState> _loadAppState() async => _AppState(
+        tutorialWasHandled: await _progressStore.hasCompletedOrDismissed(),
+        settings: await _gameStateStore.loadSettings(),
+        savedGame: await _gameStateStore.loadCurrentGame(),
+      );
 
   Future<void> _finishTutorial() async {
     await _progressStore.markCompletedOrDismissed();
@@ -48,6 +59,16 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
 
   void _startTutorial() => setState(() => _showTutorial = true);
 
+  Future<void> _saveGame(GameSettings settings, OneNonZeroGame game) =>
+      _gameStateStore.saveCurrentGame(SavedGame(settings: settings, game: game));
+
+  Future<OneNonZeroGame> _startNewGame(GameSettings settings) async {
+    await _gameStateStore.clearCurrentGame();
+    final game = newGame(settings);
+    await _saveGame(settings, game);
+    return game;
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -55,19 +76,26 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
       ),
-      home: FutureBuilder<bool>(
-        future: _tutorialWasHandled,
+      home: FutureBuilder<_AppState>(
+        future: _appState,
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Scaffold(body: Center(child: CircularProgressIndicator()));
           }
-          final showTutorial = _showTutorial ?? !snapshot.data!;
+          final appState = snapshot.data!;
+          final showTutorial = _showTutorial ?? !appState.tutorialWasHandled;
+          final savedGame = appState.savedGame;
+          final settings = savedGame?.settings ?? appState.settings;
           return BoardScreen(
             key: ValueKey(showTutorial),
-            initialGame: showTutorial ? tutorialDefinition.initialGame : null,
+            initialGame: showTutorial
+                ? tutorialDefinition.initialGame
+                : savedGame?.game ?? newGame(settings),
             tutorial: showTutorial ? tutorialDefinition : null,
             onTutorialFinished: _finishTutorial,
             onStartTutorial: showTutorial ? null : _startTutorial,
+            onGameChanged: showTutorial ? null : (game) => _saveGame(settings, game),
+            onNewGame: showTutorial ? null : () => _startNewGame(settings),
           );
         },
       ),
@@ -82,12 +110,16 @@ class BoardScreen extends StatefulWidget {
     this.tutorial,
     this.onTutorialFinished,
     this.onStartTutorial,
+    this.onGameChanged,
+    this.onNewGame,
   });
 
   final OneNonZeroGame? initialGame;
   final TutorialDefinition? tutorial;
   final Future<void> Function()? onTutorialFinished;
   final VoidCallback? onStartTutorial;
+  final Future<void> Function(OneNonZeroGame game)? onGameChanged;
+  final Future<OneNonZeroGame> Function()? onNewGame;
 
   @override
   State<BoardScreen> createState() => _BoardScreenState();
@@ -144,6 +176,8 @@ class _BoardScreenState extends State<BoardScreen> {
           [1, 2],
           [3, 4],
         ]));
+    _visualRows = _normalOrder(_board.rowCount);
+    _visualColumns = _normalOrder(_board.columnCount);
     _feedback = _tutorialStep?.instruction ?? _feedback;
   }
 
@@ -185,6 +219,7 @@ class _BoardScreenState extends State<BoardScreen> {
       _arithmeticSource = null;
       _feedback = 'Move applied.';
     });
+    _persistGame();
     _advanceTutorial();
   }
 
@@ -263,6 +298,7 @@ class _BoardScreenState extends State<BoardScreen> {
       _isAnimatingSwap = true;
       _feedback = '${source.kind.label.capitalize()} swapped.';
     });
+    _persistGame();
     _advanceTutorial();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -325,6 +361,7 @@ class _BoardScreenState extends State<BoardScreen> {
       _undoingCells = changedCells;
       _feedback = 'Move undone.';
     });
+    _persistGame();
     _undoAnimationTimer = Timer(_swapAnimationDuration, () {
       if (!mounted) {
         return;
@@ -355,6 +392,7 @@ class _BoardScreenState extends State<BoardScreen> {
       _isAnimatingSwap = true;
       _feedback = 'Move undone.';
     });
+    _persistGame();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
@@ -384,6 +422,33 @@ class _BoardScreenState extends State<BoardScreen> {
       _tutorialCompleted = false;
       _resetInteraction();
       _feedback = 'Game restarted.';
+    });
+    _persistGame();
+  }
+
+  void _persistGame() {
+    final onGameChanged = widget.onGameChanged;
+    if (onGameChanged != null) {
+      unawaited(onGameChanged(_game));
+    }
+  }
+
+  Future<void> _startNewGame() async {
+    final onNewGame = widget.onNewGame;
+    if (onNewGame == null) {
+      return;
+    }
+    final game = await onNewGame();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _game = game;
+      _moveHistory.clear();
+      _tutorialStepIndex = 0;
+      _tutorialCompleted = false;
+      _resetInteraction();
+      _feedback = 'New game started.';
     });
   }
 
@@ -467,12 +532,19 @@ class _BoardScreenState extends State<BoardScreen> {
                           icon: const Icon(Icons.undo),
                           label: const Text('Undo'),
                         ),
-                        OutlinedButton.icon(
-                          key: const Key('restart-button'),
+                          OutlinedButton.icon(
+                            key: const Key('restart-button'),
                           onPressed: _restart,
                           icon: const Icon(Icons.restart_alt),
-                           label: const Text('Restart'),
-                         ),
+                            label: const Text('Restart'),
+                          ),
+                          if (widget.onNewGame != null)
+                            OutlinedButton.icon(
+                              key: const Key('new-game-button'),
+                              onPressed: _startNewGame,
+                              icon: const Icon(Icons.add),
+                              label: const Text('New game'),
+                            ),
                          if (_isTutorial && !_tutorialCompleted)
                            OutlinedButton(
                              key: const Key('skip-tutorial-button'),
@@ -953,6 +1025,18 @@ class _LineSwap {
 
   final _LineTarget source;
   final _LineTarget target;
+}
+
+class _AppState {
+  const _AppState({
+    required this.tutorialWasHandled,
+    required this.settings,
+    required this.savedGame,
+  });
+
+  final bool tutorialWasHandled;
+  final GameSettings settings;
+  final SavedGame? savedGame;
 }
 
 extension on String {

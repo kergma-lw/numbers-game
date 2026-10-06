@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:numbers_game/game_core/board.dart';
 import 'package:numbers_game/game_core/one_non_zero_game.dart';
+import 'package:numbers_game/game_state_store.dart';
 import 'package:numbers_game/main.dart';
 import 'package:numbers_game/tutorial.dart';
 import 'package:numbers_game/tutorial_progress_store.dart';
@@ -290,7 +291,12 @@ void main() {
   testWidgets('completed tutorial is not opened automatically and can be restarted',
       (WidgetTester tester) async {
     final progress = _FakeTutorialProgressStore(handled: true);
-    await tester.pumpWidget(NumbersGameApp(progressStore: progress));
+    await tester.pumpWidget(
+      NumbersGameApp(
+        progressStore: progress,
+        gameStateStore: _FakeGameStateStore(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('start-tutorial-button')), findsOneWidget);
@@ -306,11 +312,65 @@ void main() {
 
   testWidgets('first launch opens the tutorial', (WidgetTester tester) async {
     await tester.pumpWidget(
-      NumbersGameApp(progressStore: _FakeTutorialProgressStore(handled: false)),
+      NumbersGameApp(
+        progressStore: _FakeTutorialProgressStore(handled: false),
+        gameStateStore: _FakeGameStateStore(),
+      ),
     );
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('skip-tutorial-button')), findsOneWidget);
+  });
+
+  testWidgets('restores the saved game automatically', (WidgetTester tester) async {
+    final savedGame = OneNonZeroGame(Board([
+      [1, 2],
+      [3, 4],
+    ])).applyArithmeticMove(
+      source: const CellPosition(0, 0),
+      target: const CellPosition(0, 1),
+    );
+    await tester.pumpWidget(
+      NumbersGameApp(
+        progressStore: _FakeTutorialProgressStore(handled: true),
+        gameStateStore: _FakeGameStateStore(
+          currentGame: SavedGame(settings: const GameSettings(), game: savedGame),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Moves: 1'), findsOneWidget);
+    expect(find.bySemanticsLabel('Cell 1, 2: 3'), findsOneWidget);
+  });
+
+  testWidgets('new game retains settings and replaces the saved session',
+      (WidgetTester tester) async {
+    final store = _FakeGameStateStore(
+      settings: const GameSettings(boardSize: 3),
+      currentGame: SavedGame(
+        settings: const GameSettings(boardSize: 3),
+        game: OneNonZeroGame(Board([
+          [1, 2, 3],
+          [4, 5, 6],
+          [7, 8, 9],
+        ])).swapRows(0, 1),
+      ),
+    );
+    await tester.pumpWidget(
+      NumbersGameApp(
+        progressStore: _FakeTutorialProgressStore(handled: true),
+        gameStateStore: store,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('new-game-button')));
+    await tester.pumpAndSettle();
+
+    expect(store.clearCount, 1);
+    expect(store.settings.boardSize, 3);
+    expect(store.currentGame!.game.moveCount, 0);
+    expect(find.bySemanticsLabel('Cell 3, 3: 9'), findsOneWidget);
   });
 
   testWidgets('tutorial restart returns to its first step', (WidgetTester tester) async {
@@ -345,6 +405,39 @@ class _FakeTutorialProgressStore implements TutorialProgressStore {
   @override
   Future<void> markCompletedOrDismissed() async {
     handled = true;
+  }
+}
+
+class _FakeGameStateStore implements GameStateStore {
+  _FakeGameStateStore({
+    this.settings = const GameSettings(),
+    this.currentGame,
+  });
+
+  GameSettings settings;
+  SavedGame? currentGame;
+  int clearCount = 0;
+
+  @override
+  Future<void> clearCurrentGame() async {
+    clearCount++;
+    currentGame = null;
+  }
+
+  @override
+  Future<SavedGame?> loadCurrentGame() async => currentGame;
+
+  @override
+  Future<GameSettings> loadSettings() async => settings;
+
+  @override
+  Future<void> saveCurrentGame(SavedGame game) async {
+    currentGame = game;
+  }
+
+  @override
+  Future<void> saveSettings(GameSettings settings) async {
+    this.settings = settings;
   }
 }
 

@@ -9,10 +9,18 @@ class OneNonZeroGame {
 
   const OneNonZeroGame._(this._session, this.moveCount);
 
+  /// Restores a game with its undo history and move count intact.
+  factory OneNonZeroGame.restore({
+    required GameSession session,
+    required int moveCount,
+  }) =>
+      OneNonZeroGame._(session, moveCount);
+
   final GameSession _session;
   final int moveCount;
 
   Board get currentBoard => _session.currentBoard;
+  GameSession get session => _session;
   bool get canUndo => _session.canUndo;
 
   /// Whether the current board has exactly one positive cell.

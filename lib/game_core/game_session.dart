@@ -9,9 +9,20 @@ class GameSession {
 
   const GameSession._(this._initialBoard, this.currentBoard, this._history);
 
+  /// Restores a session previously saved by the application.
+  factory GameSession.restore({
+    required Board initialBoard,
+    required Board currentBoard,
+    required List<Board> history,
+  }) =>
+      GameSession._(initialBoard, currentBoard, List<Board>.unmodifiable(history));
+
   final Board _initialBoard;
   final Board currentBoard;
   final List<Board> _history;
+
+  Board get initialBoard => _initialBoard;
+  List<Board> get history => _history;
 
   /// Whether an earlier board state can be restored.
   bool get canUndo => _history.isNotEmpty;
