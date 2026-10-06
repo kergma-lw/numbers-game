@@ -58,12 +58,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.all(24),
         children: [
           Text('Game mode', style: Theme.of(context).textTheme.titleMedium),
-          RadioListTile<GameMode>(
-            key: const Key('game-mode-one-non-zero'),
-            title: const Text('One non-zero'),
-            value: GameMode.oneNonZero,
+          RadioGroup<GameMode>(
             groupValue: widget.settings.mode,
-            onChanged: null,
+            onChanged: (_) {},
+            child: RadioListTile<GameMode>(
+              key: const Key('game-mode-one-non-zero'),
+              title: const Text('One non-zero'),
+              value: GameMode.oneNonZero,
+            ),
           ),
           const SizedBox(height: 24),
           Text('Board size', style: Theme.of(context).textTheme.titleMedium),
