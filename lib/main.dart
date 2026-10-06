@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:numbers_game/game_core/board.dart';
 import 'package:numbers_game/game_core/one_non_zero_game.dart';
 import 'package:numbers_game/game_state_store.dart';
+import 'package:numbers_game/settings_screen.dart';
 import 'package:numbers_game/tutorial.dart';
 import 'package:numbers_game/tutorial_progress_store.dart';
 
@@ -34,6 +35,7 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
   late final TutorialProgressStore _progressStore;
   late final GameStateStore _gameStateStore;
   late final Future<_AppState> _appState;
+  GameSettings? _settings;
   bool? _showTutorial;
 
   @override
@@ -69,6 +71,19 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
     return game;
   }
 
+  Future<void> _openSettings(BuildContext context, GameSettings settings) async {
+    final updatedSettings = await Navigator.of(context).push<GameSettings>(
+      MaterialPageRoute(builder: (_) => SettingsScreen(settings: settings)),
+    );
+    if (updatedSettings == null) {
+      return;
+    }
+    await _gameStateStore.saveSettings(updatedSettings);
+    if (mounted) {
+      setState(() => _settings = updatedSettings);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -85,7 +100,7 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
           final appState = snapshot.data!;
           final showTutorial = _showTutorial ?? !appState.tutorialWasHandled;
           final savedGame = appState.savedGame;
-          final settings = savedGame?.settings ?? appState.settings;
+          final settings = _settings ?? appState.settings;
           return BoardScreen(
             key: ValueKey(showTutorial),
             initialGame: showTutorial
@@ -96,6 +111,7 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
             onStartTutorial: showTutorial ? null : _startTutorial,
             onGameChanged: showTutorial ? null : (game) => _saveGame(settings, game),
             onNewGame: showTutorial ? null : () => _startNewGame(settings),
+            onOpenSettings: showTutorial ? null : () => _openSettings(context, settings),
           );
         },
       ),
@@ -112,6 +128,7 @@ class BoardScreen extends StatefulWidget {
     this.onStartTutorial,
     this.onGameChanged,
     this.onNewGame,
+    this.onOpenSettings,
   });
 
   final OneNonZeroGame? initialGame;
@@ -120,6 +137,7 @@ class BoardScreen extends StatefulWidget {
   final VoidCallback? onStartTutorial;
   final Future<void> Function(OneNonZeroGame game)? onGameChanged;
   final Future<OneNonZeroGame> Function()? onNewGame;
+  final Future<void> Function()? onOpenSettings;
 
   @override
   State<BoardScreen> createState() => _BoardScreenState();
@@ -499,7 +517,18 @@ class _BoardScreenState extends State<BoardScreen> {
   Widget build(BuildContext context) {
     final swapIndicator = _swapTarget?.kind == _LineKind.row ? '⇅' : '⇄';
     return Scaffold(
-      appBar: AppBar(title: const Text('Numbers Game')),
+      appBar: AppBar(
+        title: const Text('Numbers Game'),
+        actions: [
+          if (widget.onOpenSettings != null)
+            IconButton(
+              key: const Key('settings-button'),
+              icon: const Icon(Icons.settings),
+              tooltip: 'Settings',
+              onPressed: () => unawaited(widget.onOpenSettings!()),
+            ),
+        ],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Center(
@@ -595,10 +624,7 @@ class _BoardScreenState extends State<BoardScreen> {
                     const SizedBox(height: 24),
                     LayoutBuilder(
                        builder: (context, constraints) {
-                         final boardSize = math.min(
-                           constraints.maxWidth - 2 * _handleSize,
-                           300.0,
-                         );
+                          final boardSize = constraints.maxWidth - 2 * _handleSize;
                          final cellWidth =
                              (boardSize - _cellGap * (_board.columnCount - 1)) /
                                  _board.columnCount;

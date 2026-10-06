@@ -25,7 +25,7 @@ class GameSettings {
   factory GameSettings.fromJson(Map<String, Object?> json) {
     final mode = GameMode.values.where((mode) => mode.name == json['mode']).firstOrNull;
     final boardSize = json['boardSize'];
-    if (mode == null || boardSize is! int || boardSize < 1) {
+    if (mode == null || boardSize is! int || boardSize < 2) {
       throw const FormatException('Invalid game settings');
     }
     return GameSettings(mode: mode, boardSize: boardSize);
