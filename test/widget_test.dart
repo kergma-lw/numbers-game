@@ -4,6 +4,7 @@ import 'package:numbers_game/game_core/board.dart';
 import 'package:numbers_game/game_core/one_non_zero_game.dart';
 import 'package:numbers_game/game_state_store.dart';
 import 'package:numbers_game/main.dart';
+import 'package:numbers_game/settings_screen.dart';
 import 'package:numbers_game/tutorial.dart';
 import 'package:numbers_game/tutorial_progress_store.dart';
 
@@ -371,6 +372,58 @@ void main() {
     expect(store.settings.boardSize, 3);
     expect(store.currentGame!.game.moveCount, 0);
     expect(find.bySemanticsLabel('Cell 3, 3: 9'), findsOneWidget);
+  });
+
+  testWidgets('settings update future games without changing the current game',
+      (WidgetTester tester) async {
+    final currentGame = OneNonZeroGame(Board([
+      [1, 2],
+      [3, 4],
+    ])).applyArithmeticMove(
+      source: const CellPosition(0, 0),
+      target: const CellPosition(0, 1),
+    );
+    final store = _FakeGameStateStore(
+      currentGame: SavedGame(settings: const GameSettings(), game: currentGame),
+    );
+    await tester.pumpWidget(
+      NumbersGameApp(
+        progressStore: _FakeTutorialProgressStore(handled: true),
+        gameStateStore: store,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('settings-button')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('game-mode-one-non-zero')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('increase-board-size-button')));
+    await tester.tap(find.byKey(const Key('save-settings-button')));
+    await tester.pumpAndSettle();
+
+    expect(store.settings.boardSize, 3);
+    expect(find.text('Moves: 1'), findsOneWidget);
+    expect(find.bySemanticsLabel('Cell 1, 2: 3'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('new-game-button')));
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Cell 3, 3: 9'), findsOneWidget);
+  });
+
+  testWidgets('settings keep the board size at two or more', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: SettingsScreen(settings: GameSettings())),
+    );
+
+    final decreaseButton = tester.widget<IconButton>(
+      find.byKey(const Key('decrease-board-size-button')),
+    );
+    await tester.pump();
+
+    expect(decreaseButton.onPressed, isNull);
+    expect(find.byKey(const Key('board-size-value')), findsOneWidget);
+    expect(find.text('2 × 2'), findsOneWidget);
   });
 
   testWidgets('tutorial restart returns to its first step', (WidgetTester tester) async {

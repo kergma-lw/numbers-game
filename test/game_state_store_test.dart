@@ -41,6 +41,18 @@ void main() {
     expect(preferences.containsKey('game_settings'), isFalse);
     expect(preferences.containsKey('current_game'), isFalse);
   });
+
+  test('persists settings for a later store instance', () async {
+    SharedPreferences.setMockInitialValues({});
+    await SharedPreferencesGameStateStore().saveSettings(
+      const GameSettings(boardSize: 3),
+    );
+
+    final restoredSettings = await SharedPreferencesGameStateStore().loadSettings();
+
+    expect(restoredSettings.mode, GameMode.oneNonZero);
+    expect(restoredSettings.boardSize, 3);
+  });
 }
 
 List<int> values(Board board) => [
