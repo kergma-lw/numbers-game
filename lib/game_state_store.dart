@@ -216,8 +216,6 @@ Map<String, Object> _modeSettingsToJson(GameMode mode, ModeSettings settings) {
   switch ((mode, settings)) {
     case (GameMode.oneNonZero, OneNonZeroSettings settings):
       return settings.toJson();
-    case (GameMode.oneNonZero, _):
-      throw ArgumentError.value(settings, 'settings', 'Invalid settings for mode');
   }
 }
 
