@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:numbers_game/game_core/board.dart';
 import 'package:numbers_game/game_core/game_session.dart';
@@ -7,46 +8,94 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 enum GameMode { oneNonZero }
 
-/// User preferences used when a new game is created.
-class GameSettings {
-  const GameSettings({
-    this.mode = GameMode.oneNonZero,
-    this.boardSize = 2,
-  });
+sealed class ModeSettings {
+  const ModeSettings();
+}
 
-  final GameMode mode;
+class OneNonZeroSettings extends ModeSettings {
+  const OneNonZeroSettings({
+    this.boardSize = 4,
+    this.maxInitialValue = 10,
+  })  : assert(boardSize >= 2),
+        assert(maxInitialValue >= 1);
+
   final int boardSize;
+  final int maxInitialValue;
 
   Map<String, Object> toJson() => {
-        'mode': mode.name,
         'boardSize': boardSize,
+        'maxInitialValue': maxInitialValue,
       };
 
-  factory GameSettings.fromJson(Map<String, Object?> json) {
-    final mode = GameMode.values.where((mode) => mode.name == json['mode']).firstOrNull;
+  factory OneNonZeroSettings.fromJson(Map<String, Object?> json) {
     final boardSize = json['boardSize'];
-    if (mode == null || boardSize is! int || boardSize < 2) {
-      throw const FormatException('Invalid game settings');
+    final maxInitialValue = json['maxInitialValue'];
+    if (boardSize is! int ||
+        boardSize < 2 ||
+        maxInitialValue is! int ||
+        maxInitialValue < 1) {
+      throw const FormatException('Invalid One Non-Zero settings');
     }
-    return GameSettings(mode: mode, boardSize: boardSize);
+    return OneNonZeroSettings(
+      boardSize: boardSize,
+      maxInitialValue: maxInitialValue,
+    );
+  }
+}
+
+/// Preferences for the application and each supported game mode.
+class AppSettings {
+  const AppSettings({
+    this.selectedMode = GameMode.oneNonZero,
+    this.oneNonZeroSettings = const OneNonZeroSettings(),
+  });
+
+  final GameMode selectedMode;
+  final OneNonZeroSettings oneNonZeroSettings;
+
+  Map<String, Object> toJson() => {
+        'selectedMode': selectedMode.name,
+        'modes': {
+          GameMode.oneNonZero.name: oneNonZeroSettings.toJson(),
+        },
+      };
+
+  factory AppSettings.fromJson(Map<String, Object?> json) {
+    final selectedMode =
+        GameMode.values.where((mode) => mode.name == json['selectedMode']).firstOrNull;
+    final modes = _jsonMap(json['modes']);
+    if (selectedMode == null) {
+      throw const FormatException('Invalid application settings');
+    }
+    return AppSettings(
+      selectedMode: selectedMode,
+      oneNonZeroSettings: OneNonZeroSettings.fromJson(
+        _jsonMap(modes[GameMode.oneNonZero.name]),
+      ),
+    );
   }
 }
 
 /// The complete state of one resumable game.
 class SavedGame {
   const SavedGame({
+    this.mode = GameMode.oneNonZero,
     required this.settings,
     required this.game,
-  });
+  }) : assert(
+          mode != GameMode.oneNonZero || settings is OneNonZeroSettings,
+        );
 
-  static const formatVersion = 1;
+  static const formatVersion = 2;
 
-  final GameSettings settings;
+  final GameMode mode;
+  final ModeSettings settings;
   final OneNonZeroGame game;
 
   Map<String, Object> toJson() => {
         'version': formatVersion,
-        'settings': settings.toJson(),
+        'mode': mode.name,
+        'settings': _modeSettingsToJson(mode, settings),
         'game': {
           'initialBoard': _boardToJson(game.session.initialBoard),
           'currentBoard': _boardToJson(game.currentBoard),
@@ -59,7 +108,11 @@ class SavedGame {
     if (json['version'] != formatVersion) {
       throw const FormatException('Unsupported saved game version');
     }
-    final settings = GameSettings.fromJson(_jsonMap(json['settings']));
+    final mode = GameMode.values.where((mode) => mode.name == json['mode']).firstOrNull;
+    if (mode == null) {
+      throw const FormatException('Invalid saved game mode');
+    }
+    final settings = _modeSettingsFromJson(mode, _jsonMap(json['settings']));
     final game = _jsonMap(json['game']);
     final history = _jsonList(game['history']).map(_boardFromJson).toList();
     final moveCount = game['moveCount'];
@@ -67,6 +120,7 @@ class SavedGame {
       throw const FormatException('Invalid move count');
     }
     return SavedGame(
+      mode: mode,
       settings: settings,
       game: OneNonZeroGame.restore(
         session: GameSession.restore(
@@ -81,8 +135,8 @@ class SavedGame {
 }
 
 abstract interface class GameStateStore {
-  Future<GameSettings> loadSettings();
-  Future<void> saveSettings(GameSettings settings);
+  Future<AppSettings> loadSettings();
+  Future<void> saveSettings(AppSettings settings);
   Future<SavedGame?> loadCurrentGame();
   Future<void> saveCurrentGame(SavedGame game);
   Future<void> clearCurrentGame();
@@ -93,21 +147,21 @@ class SharedPreferencesGameStateStore implements GameStateStore {
   static const _currentGameKey = 'current_game';
 
   @override
-  Future<GameSettings> loadSettings() async {
+  Future<AppSettings> loadSettings() async {
     final value = (await SharedPreferences.getInstance()).getString(_settingsKey);
     if (value == null) {
-      return const GameSettings();
+      return const AppSettings();
     }
     try {
-      return GameSettings.fromJson(_jsonMap(jsonDecode(value)));
+      return AppSettings.fromJson(_jsonMap(jsonDecode(value)));
     } on FormatException {
       await (await SharedPreferences.getInstance()).remove(_settingsKey);
-      return const GameSettings();
+      return const AppSettings();
     }
   }
 
   @override
-  Future<void> saveSettings(GameSettings settings) async {
+  Future<void> saveSettings(AppSettings settings) async {
     await (await SharedPreferences.getInstance()).setString(
       _settingsKey,
       jsonEncode(settings.toJson()),
@@ -143,17 +197,32 @@ class SharedPreferencesGameStateStore implements GameStateStore {
   }
 }
 
-OneNonZeroGame newGame(GameSettings settings) {
-  switch (settings.mode) {
+OneNonZeroGame newOneNonZeroGame(
+  OneNonZeroSettings settings, {
+  Random? random,
+}) {
+  final generator = random ?? Random();
+  final cells = List<List<int>>.generate(
+    settings.boardSize,
+    (_) => List<int>.generate(
+      settings.boardSize,
+      (_) => generator.nextInt(settings.maxInitialValue) + 1,
+    ),
+  );
+  return OneNonZeroGame(Board(cells));
+}
+
+Map<String, Object> _modeSettingsToJson(GameMode mode, ModeSettings settings) {
+  switch ((mode, settings)) {
+    case (GameMode.oneNonZero, OneNonZeroSettings settings):
+      return settings.toJson();
+  }
+}
+
+ModeSettings _modeSettingsFromJson(GameMode mode, Map<String, Object?> json) {
+  switch (mode) {
     case GameMode.oneNonZero:
-      final cells = List<List<int>>.generate(
-        settings.boardSize,
-        (row) => List<int>.generate(
-          settings.boardSize,
-          (column) => row * settings.boardSize + column + 1,
-        ),
-      );
-      return OneNonZeroGame(Board(cells));
+      return OneNonZeroSettings.fromJson(json);
   }
 }
 

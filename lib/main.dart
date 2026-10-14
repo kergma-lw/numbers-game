@@ -34,7 +34,8 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
   late final TutorialProgressStore _progressStore;
   late final GameStateStore _gameStateStore;
   late final Future<_AppState> _appState;
-  GameSettings? _settings;
+  AppSettings? _settings;
+  OneNonZeroSettings? _activeOneNonZeroSettings;
   bool? _showTutorial;
 
   @override
@@ -45,11 +46,17 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
     _appState = _loadAppState();
   }
 
-  Future<_AppState> _loadAppState() async => _AppState(
-        tutorialWasHandled: await _progressStore.hasCompletedOrDismissed(),
-        settings: await _gameStateStore.loadSettings(),
-        savedGame: await _gameStateStore.loadCurrentGame(),
-      );
+  Future<_AppState> _loadAppState() async {
+    final settings = await _gameStateStore.loadSettings();
+    final savedGame = await _gameStateStore.loadCurrentGame();
+    _activeOneNonZeroSettings = savedGame?.settings as OneNonZeroSettings? ??
+        settings.oneNonZeroSettings;
+    return _AppState(
+      tutorialWasHandled: await _progressStore.hasCompletedOrDismissed(),
+      settings: settings,
+      savedGame: savedGame,
+    );
+  }
 
   Future<void> _finishTutorial() async {
     await _progressStore.markCompletedOrDismissed();
@@ -60,18 +67,20 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
 
   void _startTutorial() => setState(() => _showTutorial = true);
 
-  Future<void> _saveGame(GameSettings settings, OneNonZeroGame game) =>
-      _gameStateStore.saveCurrentGame(SavedGame(settings: settings, game: game));
+  Future<void> _saveGame(OneNonZeroGame game) => _gameStateStore.saveCurrentGame(
+        SavedGame(settings: _activeOneNonZeroSettings!, game: game),
+      );
 
-  Future<OneNonZeroGame> _startNewGame(GameSettings settings) async {
+  Future<OneNonZeroGame> _startNewGame(AppSettings settings) async {
     await _gameStateStore.clearCurrentGame();
-    final game = newGame(settings);
-    await _saveGame(settings, game);
+    _activeOneNonZeroSettings = settings.oneNonZeroSettings;
+    final game = newOneNonZeroGame(_activeOneNonZeroSettings!);
+    await _saveGame(game);
     return game;
   }
 
-  Future<void> _openSettings(BuildContext context, GameSettings settings) async {
-    final updatedSettings = await Navigator.of(context).push<GameSettings>(
+  Future<void> _openSettings(BuildContext context, AppSettings settings) async {
+    final updatedSettings = await Navigator.of(context).push<AppSettings>(
       MaterialPageRoute(builder: (_) => SettingsScreen(settings: settings)),
     );
     if (updatedSettings == null) {
@@ -104,11 +113,11 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
             key: ValueKey(showTutorial),
             initialGame: showTutorial
                 ? tutorialDefinition.initialGame
-                : savedGame?.game ?? newGame(settings),
+                : savedGame?.game ?? newOneNonZeroGame(settings.oneNonZeroSettings),
             tutorial: showTutorial ? tutorialDefinition : null,
             onTutorialFinished: _finishTutorial,
             onStartTutorial: showTutorial ? null : _startTutorial,
-            onGameChanged: showTutorial ? null : (game) => _saveGame(settings, game),
+            onGameChanged: showTutorial ? null : _saveGame,
             onNewGame: showTutorial ? null : () => _startNewGame(settings),
             onOpenSettings: showTutorial ? null : () => _openSettings(context, settings),
           );
@@ -899,7 +908,22 @@ class _BoardCell extends StatelessWidget {
             padding: const EdgeInsets.all(8),
           ),
           onPressed: () => onPressed(position),
-          child: Text('$value', style: Theme.of(context).textTheme.headlineMedium),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final fontSize = (constraints.biggest.shortestSide * 0.55)
+                  .clamp(12.0, 32.0)
+                  .toDouble();
+              return FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  '$value',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontSize: fontSize,
+                      ),
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -1060,7 +1084,7 @@ class _AppState {
   });
 
   final bool tutorialWasHandled;
-  final GameSettings settings;
+  final AppSettings settings;
   final SavedGame? savedGame;
 }
 

@@ -21,6 +21,24 @@ void main() {
     expect(undoButton(tester).onPressed, isNull);
   });
 
+  testWidgets('scales a large cell value to fit the board cell',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: BoardScreen(
+          initialGame: OneNonZeroGame(Board([
+            [123456789, 1],
+            [1, 1],
+          ])),
+        ),
+      ),
+    );
+
+    expect(find.text('123456789'), findsOneWidget);
+    expect(find.byType(FittedBox), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('selects a source cell', (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: BoardScreen()));
 
@@ -335,7 +353,7 @@ void main() {
       NumbersGameApp(
         progressStore: _FakeTutorialProgressStore(handled: true),
         gameStateStore: _FakeGameStateStore(
-          currentGame: SavedGame(settings: const GameSettings(), game: savedGame),
+          currentGame: SavedGame(settings: const OneNonZeroSettings(), game: savedGame),
         ),
       ),
     );
@@ -348,9 +366,11 @@ void main() {
   testWidgets('new game retains settings and replaces the saved session',
       (WidgetTester tester) async {
     final store = _FakeGameStateStore(
-      settings: const GameSettings(boardSize: 3),
+      settings: const AppSettings(
+        oneNonZeroSettings: OneNonZeroSettings(boardSize: 3, maxInitialValue: 30),
+      ),
       currentGame: SavedGame(
-        settings: const GameSettings(boardSize: 3),
+        settings: const OneNonZeroSettings(boardSize: 3, maxInitialValue: 30),
         game: OneNonZeroGame(Board([
           [1, 2, 3],
           [4, 5, 6],
@@ -369,9 +389,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(store.clearCount, 1);
-    expect(store.settings.boardSize, 3);
+    expect(store.settings.oneNonZeroSettings.boardSize, 3);
     expect(store.currentGame!.game.moveCount, 0);
-    expect(find.bySemanticsLabel('Cell 3, 3: 9'), findsOneWidget);
+    expect(
+      (store.currentGame!.settings as OneNonZeroSettings).maxInitialValue,
+      30,
+    );
+    expect(find.byKey(const Key('cell-2-2')), findsOneWidget);
   });
 
   testWidgets('settings update future games without changing the current game',
@@ -384,7 +408,7 @@ void main() {
       target: const CellPosition(0, 1),
     );
     final store = _FakeGameStateStore(
-      currentGame: SavedGame(settings: const GameSettings(), game: currentGame),
+      currentGame: SavedGame(settings: const OneNonZeroSettings(), game: currentGame),
     );
     await tester.pumpWidget(
       NumbersGameApp(
@@ -399,21 +423,37 @@ void main() {
     expect(find.byKey(const Key('game-mode-one-non-zero')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('increase-board-size-button')));
+    await tester.tap(find.byKey(const Key('increase-maximum-initial-value-button')));
     await tester.tap(find.byKey(const Key('save-settings-button')));
     await tester.pumpAndSettle();
 
-    expect(store.settings.boardSize, 3);
+    expect(store.settings.oneNonZeroSettings.boardSize, 5);
+    expect(store.settings.oneNonZeroSettings.maxInitialValue, 30);
     expect(find.text('Moves: 1'), findsOneWidget);
     expect(find.bySemanticsLabel('Cell 1, 2: 3'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('new-game-button')));
     await tester.pumpAndSettle();
-    expect(find.bySemanticsLabel('Cell 3, 3: 9'), findsOneWidget);
+    expect(find.byKey(const Key('cell-4-4')), findsOneWidget);
+    expect(
+      (store.currentGame!.settings as OneNonZeroSettings).boardSize,
+      5,
+    );
+    expect(
+      (store.currentGame!.settings as OneNonZeroSettings).maxInitialValue,
+      30,
+    );
   });
 
   testWidgets('settings keep the board size at two or more', (WidgetTester tester) async {
     await tester.pumpWidget(
-      const MaterialApp(home: SettingsScreen(settings: GameSettings())),
+      const MaterialApp(
+        home: SettingsScreen(
+          settings: AppSettings(
+            oneNonZeroSettings: OneNonZeroSettings(boardSize: 2),
+          ),
+        ),
+      ),
     );
 
     final decreaseButton = tester.widget<IconButton>(
@@ -424,6 +464,15 @@ void main() {
     expect(decreaseButton.onPressed, isNull);
     expect(find.byKey(const Key('board-size-value')), findsOneWidget);
     expect(find.text('2 × 2'), findsOneWidget);
+    expect(find.text('10'), findsOneWidget);
+    expect(
+      tester
+          .widget<IconButton>(
+            find.byKey(const Key('decrease-maximum-initial-value-button')),
+          )
+          .onPressed,
+      isNotNull,
+    );
   });
 
   testWidgets('tutorial restart returns to its first step', (WidgetTester tester) async {
@@ -463,11 +512,11 @@ class _FakeTutorialProgressStore implements TutorialProgressStore {
 
 class _FakeGameStateStore implements GameStateStore {
   _FakeGameStateStore({
-    this.settings = const GameSettings(),
+    this.settings = const AppSettings(),
     this.currentGame,
   });
 
-  GameSettings settings;
+  AppSettings settings;
   SavedGame? currentGame;
   int clearCount = 0;
 
@@ -481,7 +530,7 @@ class _FakeGameStateStore implements GameStateStore {
   Future<SavedGame?> loadCurrentGame() async => currentGame;
 
   @override
-  Future<GameSettings> loadSettings() async => settings;
+  Future<AppSettings> loadSettings() async => settings;
 
   @override
   Future<void> saveCurrentGame(SavedGame game) async {
@@ -489,7 +538,7 @@ class _FakeGameStateStore implements GameStateStore {
   }
 
   @override
-  Future<void> saveSettings(GameSettings settings) async {
+  Future<void> saveSettings(AppSettings settings) async {
     this.settings = settings;
   }
 }
