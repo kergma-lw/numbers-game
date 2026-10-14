@@ -8,6 +8,7 @@ const _minimumCellTouchSize = 48.0;
 const _cellGap = 4.0;
 const _boardHandleSize = 36.0;
 const _maximumContentWidth = 420.0;
+const _initialValuePresets = [5, 10, 30, 100];
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({
@@ -15,7 +16,7 @@ class SettingsScreen extends StatefulWidget {
     required this.settings,
   });
 
-  final GameSettings settings;
+  final AppSettings settings;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -23,17 +24,22 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   late int _boardSize;
+  late int _maxInitialValue;
 
   @override
   void initState() {
     super.initState();
-    _boardSize = widget.settings.boardSize;
+    _boardSize = widget.settings.oneNonZeroSettings.boardSize;
+    _maxInitialValue = widget.settings.oneNonZeroSettings.maxInitialValue;
   }
 
   void _save() {
-    Navigator.of(context).pop(GameSettings(
-      mode: widget.settings.mode,
-      boardSize: _boardSize,
+    Navigator.of(context).pop(AppSettings(
+      selectedMode: widget.settings.selectedMode,
+      oneNonZeroSettings: OneNonZeroSettings(
+        boardSize: _boardSize,
+        maxInitialValue: _maxInitialValue,
+      ),
     ));
   }
 
@@ -49,6 +55,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  int get _initialValuePresetIndex {
+    final index = _initialValuePresets.indexOf(_maxInitialValue);
+    return index < 0 ? 0 : index;
+  }
+
   @override
   Widget build(BuildContext context) {
     final maximumBoardSize = _maximumBoardSize(context);
@@ -59,7 +70,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           Text('Game mode', style: Theme.of(context).textTheme.titleMedium),
           RadioGroup<GameMode>(
-            groupValue: widget.settings.mode,
+            groupValue: widget.settings.selectedMode,
             onChanged: (_) {},
             child: RadioListTile<GameMode>(
               key: const Key('game-mode-one-non-zero'),
@@ -104,6 +115,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Text(
             'The largest size keeps every cell at least 48 dp wide.',
             textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          Text('Maximum initial value', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                key: const Key('decrease-maximum-initial-value-button'),
+                tooltip: 'Decrease maximum initial value',
+                onPressed: _initialValuePresetIndex > 0
+                    ? () => setState(
+                          () => _maxInitialValue =
+                              _initialValuePresets[_initialValuePresetIndex - 1],
+                        )
+                    : null,
+                icon: const Icon(Icons.remove),
+              ),
+              SizedBox(
+                width: 96,
+                child: Text(
+                  '$_maxInitialValue',
+                  key: const Key('maximum-initial-value-value'),
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+              ),
+              IconButton(
+                key: const Key('increase-maximum-initial-value-button'),
+                tooltip: 'Increase maximum initial value',
+                onPressed: _initialValuePresetIndex < _initialValuePresets.length - 1
+                    ? () => setState(
+                          () => _maxInitialValue =
+                              _initialValuePresets[_initialValuePresetIndex + 1],
+                        )
+                    : null,
+                icon: const Icon(Icons.add),
+              ),
+            ],
           ),
           const SizedBox(height: 24),
           FilledButton(

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:numbers_game/game_core/board.dart';
 import 'package:numbers_game/game_core/one_non_zero_game.dart';
@@ -17,10 +19,11 @@ void main() {
         .swapRows(0, 1);
 
     final restored = SavedGame.fromJson(
-      SavedGame(settings: const GameSettings(), game: original).toJson(),
+      SavedGame(settings: const OneNonZeroSettings(), game: original).toJson(),
     );
 
-    expect(restored.settings.mode, GameMode.oneNonZero);
+    expect(restored.mode, GameMode.oneNonZero);
+    expect((restored.settings as OneNonZeroSettings).maxInitialValue, 10);
     expect(restored.game.moveCount, 2);
     expect(values(restored.game.currentBoard), [3, 4, 1, 3]);
     expect(values(restored.game.undo().currentBoard), [1, 3, 3, 4]);
@@ -34,7 +37,7 @@ void main() {
     });
     final store = SharedPreferencesGameStateStore();
 
-    expect(await store.loadSettings(), isA<GameSettings>());
+    expect(await store.loadSettings(), isA<AppSettings>());
     expect(await store.loadCurrentGame(), isNull);
 
     final preferences = await SharedPreferences.getInstance();
@@ -45,13 +48,29 @@ void main() {
   test('persists settings for a later store instance', () async {
     SharedPreferences.setMockInitialValues({});
     await SharedPreferencesGameStateStore().saveSettings(
-      const GameSettings(boardSize: 3),
+      const AppSettings(
+        oneNonZeroSettings: OneNonZeroSettings(boardSize: 3, maxInitialValue: 30),
+      ),
     );
 
     final restoredSettings = await SharedPreferencesGameStateStore().loadSettings();
 
-    expect(restoredSettings.mode, GameMode.oneNonZero);
-    expect(restoredSettings.boardSize, 3);
+    expect(restoredSettings.selectedMode, GameMode.oneNonZero);
+    expect(restoredSettings.oneNonZeroSettings.boardSize, 3);
+    expect(restoredSettings.oneNonZeroSettings.maxInitialValue, 30);
+  });
+
+  test('generates a board within the configured range', () {
+    final game = newOneNonZeroGame(
+      const OneNonZeroSettings(boardSize: 3, maxInitialValue: 5),
+      random: Random(1),
+    );
+
+    expect(game.currentBoard.rowCount, 3);
+    expect(game.currentBoard.columnCount, 3);
+    for (final value in values(game.currentBoard)) {
+      expect(value, inInclusiveRange(1, 5));
+    }
   });
 }
 
