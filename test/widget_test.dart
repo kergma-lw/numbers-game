@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:numbers_game/game_core/board.dart';
+import 'package:numbers_game/game_core/game_session.dart';
+import 'package:numbers_game/game_core/historical_date_game.dart';
 import 'package:numbers_game/game_core/one_non_zero_game.dart';
 import 'package:numbers_game/game_state_store.dart';
 import 'package:numbers_game/main.dart';
@@ -261,6 +263,42 @@ void main() {
     expect(find.byKey(const Key('victory-message')), findsNothing);
   });
 
+  testWidgets('renders a Historical Date event and keeps framed cells playable',
+      (WidgetTester tester) async {
+    final target = Board([
+      [0, 20, 7, 1969, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+    ]);
+    final game = HistoricalDateGame(
+      session: GameSession(target),
+      targetBoard: target,
+      event: HistoricalEvent(
+        title: 'Apollo 11 Moon landing',
+        description: 'Apollo 11 astronauts first landed on the Moon.',
+        date: DateTime.utc(1969, 7, 20),
+      ),
+      frame: const DateFrame(0, 1),
+      format: const DateFrameFormat(
+        order: [DateComponent.day, DateComponent.month, DateComponent.year],
+        separator: '.',
+      ),
+      moveCount: 0,
+    );
+    await tester.pumpWidget(MaterialApp(home: BoardScreen(initialGame: game)));
+
+    expect(find.byKey(const Key('historical-event-card')), findsOneWidget);
+    expect(find.text('Apollo 11 Moon landing'), findsOneWidget);
+    expect(find.byKey(const Key('historical-event-date')), findsOneWidget);
+    expect(find.text('20.7.1969'), findsOneWidget);
+    expect(find.byKey(const Key('historical-date-frame')), findsOneWidget);
+    expect(find.byKey(const Key('historical-date-separator-1')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('cell-0-1')));
+    await tester.tap(find.byKey(const Key('cell-0-2')));
+    await tester.pump();
+    expect(find.text('Moves: 1'), findsOneWidget);
+  });
+
   testWidgets('tutorial advances only after its expected actions',
       (WidgetTester tester) async {
     var finished = false;
@@ -473,6 +511,18 @@ void main() {
           .onPressed,
       isNotNull,
     );
+  });
+
+  testWidgets('settings select Historical Date mode', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: SettingsScreen(settings: AppSettings())),
+    );
+
+    await tester.tap(find.byKey(const Key('game-mode-historical-date')));
+    await tester.pump();
+
+    expect(find.byKey(const Key('game-mode-historical-date')), findsOneWidget);
+    expect(find.byKey(const Key('board-size-value')), findsNothing);
   });
 
   testWidgets('tutorial restart returns to its first step', (WidgetTester tester) async {

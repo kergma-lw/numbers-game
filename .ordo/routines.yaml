@@ -21,10 +21,11 @@ routines:
     - runtime_unavailable
   verify.run-all-tests:
     kind: action
-    summary: Run the complete Flutter test suite.
+    summary: Run Flutter static analysis and the complete test suite.
     implementation:
       argv:
       - ".ordo/scripts/run-all-tests.sh"
     failure_modes:
+    - analysis_failed
     - tests_failed
     - runtime_unavailable

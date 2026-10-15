@@ -23,23 +23,26 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  late GameMode _selectedMode;
   late int _boardSize;
   late int _maxInitialValue;
 
   @override
   void initState() {
     super.initState();
+    _selectedMode = widget.settings.selectedMode;
     _boardSize = widget.settings.oneNonZeroSettings.boardSize;
     _maxInitialValue = widget.settings.oneNonZeroSettings.maxInitialValue;
   }
 
   void _save() {
     Navigator.of(context).pop(AppSettings(
-      selectedMode: widget.settings.selectedMode,
+      selectedMode: _selectedMode,
       oneNonZeroSettings: OneNonZeroSettings(
         boardSize: _boardSize,
         maxInitialValue: _maxInitialValue,
       ),
+      historicalDateSettings: widget.settings.historicalDateSettings,
     ));
   }
 
@@ -70,14 +73,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           Text('Game mode', style: Theme.of(context).textTheme.titleMedium),
           RadioGroup<GameMode>(
-            groupValue: widget.settings.selectedMode,
-            onChanged: (_) {},
-            child: RadioListTile<GameMode>(
-              key: const Key('game-mode-one-non-zero'),
-              title: const Text('One non-zero'),
-              value: GameMode.oneNonZero,
+            groupValue: _selectedMode,
+            onChanged: (mode) {
+              if (mode != null) {
+                setState(() => _selectedMode = mode);
+              }
+            },
+            child: Column(
+              children: [
+                RadioListTile<GameMode>(
+                  key: const Key('game-mode-one-non-zero'),
+                  title: const Text('One non-zero'),
+                  value: GameMode.oneNonZero,
+                ),
+                const RadioListTile<GameMode>(
+                  key: Key('game-mode-historical-date'),
+                  title: Text('Historical date'),
+                  subtitle: Text('Restore the date of a known event.'),
+                  value: GameMode.historicalDate,
+                ),
+              ],
             ),
           ),
+          if (_selectedMode == GameMode.oneNonZero) ...[
           const SizedBox(height: 24),
           Text('Board size', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
@@ -155,6 +173,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ],
           ),
+          ],
           const SizedBox(height: 24),
           FilledButton(
             key: const Key('save-settings-button'),

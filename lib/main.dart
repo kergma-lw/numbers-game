@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:numbers_game/game_core/board.dart';
+import 'package:numbers_game/game_core/historical_date_game.dart';
 import 'package:numbers_game/game_core/one_non_zero_game.dart';
+import 'package:numbers_game/game_core/playable_game.dart';
 import 'package:numbers_game/game_state_store.dart';
 import 'package:numbers_game/settings_screen.dart';
 import 'package:numbers_game/tutorial.dart';
@@ -35,7 +37,8 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
   late final GameStateStore _gameStateStore;
   late final Future<_AppState> _appState;
   AppSettings? _settings;
-  OneNonZeroSettings? _activeOneNonZeroSettings;
+  GameMode? _activeMode;
+  ModeSettings? _activeSettings;
   bool? _showTutorial;
 
   @override
@@ -49,8 +52,8 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
   Future<_AppState> _loadAppState() async {
     final settings = await _gameStateStore.loadSettings();
     final savedGame = await _gameStateStore.loadCurrentGame();
-    _activeOneNonZeroSettings = savedGame?.settings as OneNonZeroSettings? ??
-        settings.oneNonZeroSettings;
+    _activeMode = savedGame?.mode ?? settings.selectedMode;
+    _activeSettings = savedGame?.settings ?? _settingsForMode(settings, _activeMode!);
     return _AppState(
       tutorialWasHandled: await _progressStore.hasCompletedOrDismissed(),
       settings: settings,
@@ -67,14 +70,23 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
 
   void _startTutorial() => setState(() => _showTutorial = true);
 
-  Future<void> _saveGame(OneNonZeroGame game) => _gameStateStore.saveCurrentGame(
-        SavedGame(settings: _activeOneNonZeroSettings!, game: game),
+  ModeSettings _settingsForMode(AppSettings settings, GameMode mode) => switch (mode) {
+        GameMode.oneNonZero => settings.oneNonZeroSettings,
+        GameMode.historicalDate => settings.historicalDateSettings,
+      };
+
+  Future<void> _saveGame(PlayableGame game) => _gameStateStore.saveCurrentGame(
+        SavedGame(mode: _activeMode!, settings: _activeSettings!, game: game),
       );
 
-  Future<OneNonZeroGame> _startNewGame(AppSettings settings) async {
+  Future<PlayableGame> _startNewGame(AppSettings settings) async {
     await _gameStateStore.clearCurrentGame();
-    _activeOneNonZeroSettings = settings.oneNonZeroSettings;
-    final game = newOneNonZeroGame(_activeOneNonZeroSettings!);
+    _activeMode = settings.selectedMode;
+    _activeSettings = _settingsForMode(settings, _activeMode!);
+    final game = switch (_activeMode!) {
+      GameMode.oneNonZero => newOneNonZeroGame(_activeSettings! as OneNonZeroSettings),
+      GameMode.historicalDate => newHistoricalDateGame(),
+    };
     await _saveGame(game);
     return game;
   }
@@ -113,7 +125,11 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
             key: ValueKey(showTutorial),
             initialGame: showTutorial
                 ? tutorialDefinition.initialGame
-                : savedGame?.game ?? newOneNonZeroGame(settings.oneNonZeroSettings),
+                : savedGame?.game ??
+                    switch (settings.selectedMode) {
+                      GameMode.oneNonZero => newOneNonZeroGame(settings.oneNonZeroSettings),
+                      GameMode.historicalDate => newHistoricalDateGame(),
+                    },
             tutorial: showTutorial ? tutorialDefinition : null,
             onTutorialFinished: _finishTutorial,
             onStartTutorial: showTutorial ? null : _startTutorial,
@@ -139,12 +155,12 @@ class BoardScreen extends StatefulWidget {
     this.onOpenSettings,
   });
 
-  final OneNonZeroGame? initialGame;
+  final PlayableGame? initialGame;
   final TutorialDefinition? tutorial;
   final Future<void> Function()? onTutorialFinished;
   final VoidCallback? onStartTutorial;
-  final Future<void> Function(OneNonZeroGame game)? onGameChanged;
-  final Future<OneNonZeroGame> Function()? onNewGame;
+  final Future<void> Function(PlayableGame game)? onGameChanged;
+  final Future<PlayableGame> Function()? onNewGame;
   final Future<void> Function()? onOpenSettings;
 
   @override
@@ -152,7 +168,7 @@ class BoardScreen extends StatefulWidget {
 }
 
 class _BoardScreenState extends State<BoardScreen> {
-  late OneNonZeroGame _game;
+  late PlayableGame _game;
   CellPosition? _arithmeticSource;
   _LineTarget? _swapSource;
   _LineTarget? _swapTarget;
@@ -170,6 +186,8 @@ class _BoardScreenState extends State<BoardScreen> {
   bool _tutorialCompleted = false;
 
   Board get _board => _game.currentBoard;
+  HistoricalDateGame? get _historicalGame =>
+      _game is HistoricalDateGame ? _game as HistoricalDateGame : null;
   TutorialStep? get _tutorialStep => widget.tutorial == null || _tutorialCompleted
       ? null
       : widget.tutorial!.steps[_tutorialStepIndex];
@@ -399,7 +417,7 @@ class _BoardScreenState extends State<BoardScreen> {
     });
   }
 
-  void _animateUndoneSwap(OneNonZeroGame restoredGame, _LineSwap swap) {
+  void _animateUndoneSwap(PlayableGame restoredGame, _LineSwap swap) {
     final rows = _normalOrder(_board.rowCount);
     final columns = _normalOrder(_board.columnCount);
     if (swap.source.kind == _LineKind.row) {
@@ -555,8 +573,10 @@ class _BoardScreenState extends State<BoardScreen> {
                                'Select a source cell, then a target cell.',
                       style: Theme.of(context).textTheme.titleMedium,
                       textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 12),
+                     ),
+                     if (_historicalGame case final HistoricalDateGame game)
+                       _HistoricalEventCard(game: game),
+                     const SizedBox(height: 12),
                      Wrap(
                       alignment: WrapAlignment.center,
                       spacing: 12,
@@ -632,13 +652,13 @@ class _BoardScreenState extends State<BoardScreen> {
                     const SizedBox(height: 24),
                     LayoutBuilder(
                        builder: (context, constraints) {
-                          final boardSize = constraints.maxWidth - 2 * _handleSize;
-                         final cellWidth =
-                             (boardSize - _cellGap * (_board.columnCount - 1)) /
-                                 _board.columnCount;
-                         final cellHeight =
-                             (boardSize - _cellGap * (_board.rowCount - 1)) /
-                                 _board.rowCount;
+                           final boardWidth = constraints.maxWidth - 2 * _handleSize;
+                          final cellWidth =
+                              (boardWidth - _cellGap * (_board.columnCount - 1)) /
+                                  _board.columnCount;
+                          final cellHeight = cellWidth;
+                          final boardHeight = cellHeight * _board.rowCount +
+                              _cellGap * (_board.rowCount - 1);
                          final colorScheme = Theme.of(context).colorScheme;
                          final sourceHighlight =
                              _swapSource ?? _animatedSwapSource;
@@ -659,8 +679,8 @@ class _BoardScreenState extends State<BoardScreen> {
                                  ? _handleSize +
                                      target.index * (cellHeight + _cellGap)
                                  : _handleSize,
-                             width: isRow ? boardSize : cellWidth,
-                             height: isRow ? cellHeight : boardSize,
+                              width: isRow ? boardWidth : cellWidth,
+                              height: isRow ? cellHeight : boardHeight,
                              child: IgnorePointer(
                                 child: AnimatedContainer(
                                   key: Key(
@@ -703,8 +723,8 @@ class _BoardScreenState extends State<BoardScreen> {
                           );
 
                          return SizedBox(
-                          width: boardSize + 2 * _handleSize,
-                          height: boardSize + 2 * _handleSize,
+                           width: boardWidth + 2 * _handleSize,
+                           height: boardHeight + 2 * _handleSize,
                           child: Stack(
                             children: [
                               for (var column = 0;
@@ -722,7 +742,7 @@ class _BoardScreenState extends State<BoardScreen> {
                                  target: _LineTarget(_LineKind.column, column),
                                  side: _HandleSide.bottom,
                                  left: _handleSize + column * (cellWidth + _cellGap),
-                                  top: _handleSize + boardSize,
+                                   top: _handleSize + boardHeight,
                                   width: cellWidth,
                                   height: _handleSize,
                                 ),
@@ -739,7 +759,7 @@ class _BoardScreenState extends State<BoardScreen> {
                                 _positionedHandle(
                                   target: _LineTarget(_LineKind.row, row),
                                  side: _HandleSide.right,
-                                 left: _handleSize + boardSize,
+                                  left: _handleSize + boardWidth,
                                  top: _handleSize + row * (cellHeight + _cellGap),
                                   width: _handleSize,
                                   height: cellHeight,
@@ -747,8 +767,10 @@ class _BoardScreenState extends State<BoardScreen> {
                                ],
                                if (sourceHighlight case final _LineTarget source)
                                  lineHighlight(source, isDropTarget: false),
-                               if (targetHighlight case final _LineTarget target)
-                                 lineHighlight(target, isDropTarget: true),
+                                if (targetHighlight case final _LineTarget target)
+                                  lineHighlight(target, isDropTarget: true),
+                               if (_historicalGame case final HistoricalDateGame game)
+                                 _dateFrameDecoration(game, cellWidth, cellHeight),
                                 for (var row = 0; row < _board.rowCount; row++)
                                 for (var column = 0;
                                     column < _board.columnCount;
@@ -869,6 +891,77 @@ class _BoardScreenState extends State<BoardScreen> {
       ),
     );
   }
+
+  Widget _dateFrameDecoration(
+    HistoricalDateGame game,
+    double cellWidth,
+    double cellHeight,
+  ) {
+    final width = cellWidth * 3 + _cellGap * 2;
+    return Positioned(
+      key: const Key('historical-date-frame'),
+      left: _handleSize + game.frame.column * (cellWidth + _cellGap),
+      top: _handleSize + game.frame.row * (cellHeight + _cellGap),
+      width: width,
+      height: cellHeight,
+      child: IgnorePointer(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: Theme.of(context).colorScheme.tertiary,
+              width: 2,
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Stack(
+            children: [
+              for (var index = 1; index < 3; index++)
+                Positioned(
+                  left: index * cellWidth + (index - 0.5) * _cellGap - 4,
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: Text(
+                      game.format.separator,
+                      key: Key('historical-date-separator-$index'),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoricalEventCard extends StatelessWidget {
+  const _HistoricalEventCard({required this.game});
+
+  final HistoricalDateGame game;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        key: const Key('historical-event-card'),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(game.event.title, style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 4),
+              Text(
+                game.formattedDate,
+                key: const Key('historical-event-date'),
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 4),
+              Text(game.event.description),
+            ],
+          ),
+        ),
+      );
 }
 
 class _BoardCell extends StatelessWidget {
