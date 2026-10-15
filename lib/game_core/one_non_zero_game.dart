@@ -18,6 +18,7 @@ class OneNonZeroGame implements PlayableGame {
       OneNonZeroGame._(session, moveCount);
 
   final GameSession _session;
+  @override
   final int moveCount;
 
   @override

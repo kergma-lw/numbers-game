@@ -10,4 +10,5 @@ else
   exit 127
 fi
 
+"${flutter_bin}" analyze
 exec "${flutter_bin}" test

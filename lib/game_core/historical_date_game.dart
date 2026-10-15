@@ -130,13 +130,13 @@ class DateFrame {
 /// A mode won by restoring a known historical date in its framed target cells.
 class HistoricalDateGame implements PlayableGame {
   HistoricalDateGame({
-    required GameSession session,
+    required this._session,
     required this.targetBoard,
     required this.event,
     required this.frame,
     required this.format,
     required this.moveCount,
-  }) : _session = session;
+  });
 
   final GameSession _session;
   final Board targetBoard;

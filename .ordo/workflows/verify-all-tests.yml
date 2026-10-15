@@ -4,9 +4,9 @@ blocks:
 - guards:
   - git.repo.exists
 - steps:
-  - name: Run full Flutter test suite
+  - name: Run Flutter analysis and full test suite
     uses: routine.verify.run-all-tests
   - name: Publish test result
     publish:
-      summary: "Full Flutter test suite passed"
-      recommendation: "Tests passed; ready to commit."
+      summary: "Flutter analysis and full test suite passed"
+      recommendation: "Verification passed; ready to commit."
