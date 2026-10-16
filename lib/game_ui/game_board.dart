@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:numbers_game/game_core/board.dart';
 import 'package:numbers_game/game_core/historical_date_game.dart';
 
-const _handleSize = 36.0;
-const _cellGap = 4.0;
+const _handleSize = 28.0;
+const _cellGap = 8.0;
 
 enum BoardLineKind {
   row('row'),
@@ -63,6 +63,7 @@ class GameBoard extends StatelessWidget {
     this.historicalGame,
     this.isTutorialCellHighlighted,
     this.isTutorialLineHighlighted,
+    this.useOneNonZeroStyle = false,
   });
 
   final Board board;
@@ -84,17 +85,24 @@ class GameBoard extends StatelessWidget {
   final HistoricalDateGame? historicalGame;
   final bool Function(CellPosition)? isTutorialCellHighlighted;
   final bool Function(BoardLineKind, int)? isTutorialLineHighlighted;
+  final bool useOneNonZeroStyle;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final boardWidth = constraints.maxWidth - 2 * _handleSize;
+        final boardInset = useOneNonZeroStyle ? 20.0 : 0.0;
+        final handleGap = useOneNonZeroStyle ? 7.0 : 0.0;
+        final boardWidth = constraints.maxWidth - 2 * _handleSize - 2 * handleGap - 2 * boardInset;
         final cellWidth = (boardWidth - _cellGap * (board.columnCount - 1)) /
             board.columnCount;
         final cellHeight = cellWidth;
         final boardHeight =
             cellHeight * board.rowCount + _cellGap * (board.rowCount - 1);
+        final frameWidth = boardWidth + 2 * boardInset;
+        final frameHeight = boardHeight + 2 * boardInset;
+        final handleCellWidth = (frameWidth - _cellGap * (board.columnCount - 1)) / board.columnCount;
+        final handleCellHeight = (frameHeight - _cellGap * (board.rowCount - 1)) / board.rowCount;
         final colorScheme = Theme.of(context).colorScheme;
 
         Widget lineHighlight(
@@ -104,11 +112,11 @@ class GameBoard extends StatelessWidget {
           final isRow = target.kind == BoardLineKind.row;
           return Positioned(
             left: isRow
-                ? _handleSize
-                : _handleSize + target.index * (cellWidth + _cellGap),
+                ? _handleSize + handleGap + boardInset
+                : _handleSize + handleGap + boardInset + target.index * (cellWidth + _cellGap),
             top: isRow
-                ? _handleSize + target.index * (cellHeight + _cellGap)
-                : _handleSize,
+                ? _handleSize + handleGap + boardInset + target.index * (cellHeight + _cellGap)
+                : _handleSize + handleGap + boardInset,
             width: isRow ? boardWidth : cellWidth,
             height: isRow ? cellHeight : boardHeight,
             child: IgnorePointer(
@@ -147,25 +155,59 @@ class GameBoard extends StatelessWidget {
         );
 
         return SizedBox(
-          width: boardWidth + 2 * _handleSize,
-          height: boardHeight + 2 * _handleSize,
+          width: frameWidth + 2 * _handleSize + 2 * handleGap,
+          height: frameHeight + 2 * _handleSize + 2 * handleGap,
           child: Stack(
             children: [
+              Positioned(
+                left: _handleSize + handleGap,
+                top: _handleSize + handleGap,
+                width: frameWidth,
+                height: frameHeight,
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                    gradient: useOneNonZeroStyle
+                        ? const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color.fromRGBO(24, 62, 78, .86), Color.fromRGBO(17, 42, 61, .90)],
+                          )
+                        : null,
+                    color: useOneNonZeroStyle ? null : colorScheme.surfaceContainer,
+                    border: Border.all(color: colorScheme.primary.withValues(alpha: useOneNonZeroStyle ? .34 : .32)),
+                  borderRadius: useOneNonZeroStyle
+                      ? const BorderRadius.only(
+                          topLeft: Radius.circular(25),
+                          topRight: Radius.circular(17),
+                          bottomLeft: Radius.circular(22),
+                          bottomRight: Radius.circular(18),
+                        )
+                      : BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withValues(alpha: .22), blurRadius: 28),
+                      if (useOneNonZeroStyle)
+                        BoxShadow(color: colorScheme.primary.withValues(alpha: .10), blurRadius: 28, spreadRadius: -4),
+                    ],
+                    ),
+                  ),
+                ),
+              ),
               for (var column = 0; column < board.columnCount; column++) ...[
                 _positionedHandle(
                   target: BoardLineTarget(BoardLineKind.column, column),
                   side: BoardHandleSide.top,
-                  left: _handleSize + column * (cellWidth + _cellGap),
+                  left: _handleSize + handleGap + column * (handleCellWidth + _cellGap),
                   top: 0,
-                  width: cellWidth,
+                  width: handleCellWidth,
                   height: _handleSize,
                 ),
                 _positionedHandle(
                   target: BoardLineTarget(BoardLineKind.column, column),
                   side: BoardHandleSide.bottom,
-                  left: _handleSize + column * (cellWidth + _cellGap),
-                  top: _handleSize + boardHeight,
-                  width: cellWidth,
+                  left: _handleSize + handleGap + column * (handleCellWidth + _cellGap),
+                  top: _handleSize + handleGap + frameHeight,
+                  width: handleCellWidth,
                   height: _handleSize,
                 ),
               ],
@@ -174,17 +216,17 @@ class GameBoard extends StatelessWidget {
                   target: BoardLineTarget(BoardLineKind.row, row),
                   side: BoardHandleSide.left,
                   left: 0,
-                  top: _handleSize + row * (cellHeight + _cellGap),
+                  top: _handleSize + handleGap + row * (handleCellHeight + _cellGap),
                   width: _handleSize,
-                  height: cellHeight,
+                  height: handleCellHeight,
                 ),
                 _positionedHandle(
                   target: BoardLineTarget(BoardLineKind.row, row),
                   side: BoardHandleSide.right,
-                  left: _handleSize + boardWidth,
-                  top: _handleSize + row * (cellHeight + _cellGap),
+                  left: _handleSize + handleGap + frameWidth,
+                  top: _handleSize + handleGap + row * (handleCellHeight + _cellGap),
                   width: _handleSize,
-                  height: cellHeight,
+                  height: handleCellHeight,
                 ),
               ],
               if (sourceLineHighlight case final source?)
@@ -204,9 +246,9 @@ class GameBoard extends StatelessWidget {
                         ? Duration.zero
                         : const Duration(milliseconds: 380),
                     curve: Curves.easeInOutCubicEmphasized,
-                    left: _handleSize +
+                    left: _handleSize + handleGap + boardInset +
                         visualColumns[column] * (cellWidth + _cellGap),
-                    top: _handleSize +
+                    top: _handleSize + handleGap + boardInset +
                         visualRows[row] * (cellHeight + _cellGap),
                     width: cellWidth,
                     height: cellHeight,
@@ -215,6 +257,7 @@ class GameBoard extends StatelessWidget {
                       value: board.valueAt(CellPosition(row, column)),
                       selected: selectedCell == CellPosition(row, column),
                       undoing: undoingCells.contains(CellPosition(row, column)),
+                      useOneNonZeroStyle: useOneNonZeroStyle,
                       disableAnimations: disableAnimations,
                       onPressed: onCellPressed,
                     ),
@@ -224,16 +267,16 @@ class GameBoard extends StatelessWidget {
                   if (isTutorialCellHighlighted?.call(CellPosition(row, column)) ?? false)
                     tutorialArrow(
                       key: Key('tutorial-arrow-cell-$row-$column'),
-                      left: _handleSize +
+                      left: _handleSize + handleGap + boardInset +
                           column * (cellWidth + _cellGap) +
                           (cellWidth - 36) / 2,
-                      top: _handleSize + row * (cellHeight + _cellGap) - 12,
+                      top: _handleSize + handleGap + boardInset + row * (cellHeight + _cellGap) - 12,
                     ),
               for (var column = 0; column < board.columnCount; column++)
                 if (isTutorialLineHighlighted?.call(BoardLineKind.column, column) ?? false)
                   tutorialArrow(
                     key: Key('tutorial-arrow-column-$column'),
-                    left: _handleSize +
+                    left: _handleSize + handleGap + boardInset +
                         column * (cellWidth + _cellGap) +
                         (cellWidth - 36) / 2,
                     top: 0,
@@ -275,6 +318,7 @@ class GameBoard extends StatelessWidget {
           isActive: sourceLineHighlight == target || targetLineHighlight == target,
           enabled: !isAnimatingSwap && !isUndoing,
           disableAnimations: disableAnimations,
+          useOneNonZeroStyle: useOneNonZeroStyle,
           onDragStarted: onDragStarted,
           onHover: onHover,
           onLeave: onLeave,
@@ -292,6 +336,7 @@ class GameCell extends StatelessWidget {
     required this.selected,
     required this.undoing,
     required this.disableAnimations,
+    this.useOneNonZeroStyle = false,
     required this.onPressed,
   });
 
@@ -300,6 +345,7 @@ class GameCell extends StatelessWidget {
   final bool selected;
   final bool undoing;
   final bool disableAnimations;
+  final bool useOneNonZeroStyle;
   final ValueChanged<CellPosition> onPressed;
 
   @override
@@ -315,32 +361,77 @@ class GameCell extends StatelessWidget {
             ? Duration.zero
             : const Duration(milliseconds: 180),
         curve: Curves.easeOutBack,
-        child: OutlinedButton(
+        child: DecoratedBox(
+          decoration: useOneNonZeroStyle && !undoing
+              ? BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: selected
+                        ? const [Color.fromRGBO(90, 168, 158, .95), Color.fromRGBO(35, 103, 110, .98)]
+                        : const [Color.fromRGBO(54, 100, 113, .92), Color.fromRGBO(28, 65, 82, .96)],
+                  ),
+                  boxShadow: selected
+                      ? const [BoxShadow(color: Color.fromRGBO(116, 215, 196, .28), blurRadius: 20)]
+                      : null,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(position.row.isEven ? 14 : 20),
+                    topRight: Radius.circular(position.column.isEven ? 20 : 14),
+                    bottomLeft: Radius.circular(position.column.isEven ? 14 : 20),
+                    bottomRight: Radius.circular(position.row.isEven ? 20 : 14),
+                  ),
+                )
+              : const BoxDecoration(),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (useOneNonZeroStyle && !undoing)
+                const IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                        center: Alignment(-.32, -.52),
+                        radius: .72,
+                        colors: [Color.fromRGBO(190, 255, 243, .13), Colors.transparent],
+                      ),
+                    ),
+                  ),
+                ),
+          OutlinedButton(
           key: Key('cell-${position.row}-${position.column}'),
           style: OutlinedButton.styleFrom(
-            backgroundColor: selected
-                ? colorScheme.primaryContainer
-                : undoing
-                    ? colorScheme.tertiaryContainer
-                    : null,
+            backgroundColor: selected || undoing
+                ? (useOneNonZeroStyle ? Colors.transparent : (selected ? colorScheme.primaryContainer : colorScheme.tertiaryContainer))
+                : useOneNonZeroStyle ? Colors.transparent : colorScheme.surfaceContainerHighest,
+            foregroundColor: colorScheme.onSurface,
+            side: useOneNonZeroStyle
+                ? BorderSide(color: selected ? const Color(0xffb9fff1) : const Color.fromRGBO(116, 215, 196, .17))
+                : null,
             padding: const EdgeInsets.all(8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(position.row.isEven ? 14 : 20),
+                topRight: Radius.circular(position.column.isEven ? 20 : 14),
+                bottomLeft: Radius.circular(position.column.isEven ? 14 : 20),
+                bottomRight: Radius.circular(position.row.isEven ? 20 : 14),
+              ),
+            ),
           ),
           onPressed: () => onPressed(position),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
+          child: LayoutBuilder(builder: (context, constraints) {
               final fontSize = (constraints.biggest.shortestSide * 0.55)
-                  .clamp(12.0, 32.0)
+                  .clamp(12.0, useOneNonZeroStyle ? 36.0 : 32.0)
                   .toDouble();
               return FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
                   '$value',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontSize: fontSize,
-                      ),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: fontSize, color: colorScheme.onSurface, fontFamily: useOneNonZeroStyle ? 'monospace' : null),
                 ),
               );
-            },
+            }),
+          ),
+            ],
           ),
         ),
       ),
@@ -356,6 +447,7 @@ class EdgeSwapHandle extends StatefulWidget {
     required this.isActive,
     required this.enabled,
     required this.disableAnimations,
+    this.useOneNonZeroStyle = false,
     required this.onDragStarted,
     required this.onHover,
     required this.onLeave,
@@ -368,6 +460,7 @@ class EdgeSwapHandle extends StatefulWidget {
   final bool isActive;
   final bool enabled;
   final bool disableAnimations;
+  final bool useOneNonZeroStyle;
   final ValueChanged<BoardLineTarget> onDragStarted;
   final ValueChanged<BoardLineTarget> onHover;
   final ValueChanged<BoardLineTarget> onLeave;
@@ -418,7 +511,9 @@ class _EdgeSwapHandleState extends State<EdgeSwapHandle> {
         ? colorScheme.secondaryContainer
         : _isHovered
             ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.55)
-            : Colors.transparent;
+            : widget.useOneNonZeroStyle
+                ? const Color.fromRGBO(35, 86, 99, .40)
+                : Colors.transparent;
     return Semantics(
       label: '${widget.side.label} handle for ${widget.target.kind.label} ${widget.target.index + 1}',
       child: AnimatedContainer(
@@ -429,12 +524,15 @@ class _EdgeSwapHandleState extends State<EdgeSwapHandle> {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: backgroundColor,
+          border: widget.useOneNonZeroStyle
+              ? const Border.fromBorderSide(BorderSide(color: Color.fromRGBO(116, 215, 196, .23)))
+              : null,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(
           widget.target.kind == BoardLineKind.row
-              ? Icons.drag_indicator
-              : Icons.drag_handle,
+              ? Icons.more_horiz
+              : Icons.more_vert,
           size: 16,
           color: highlighted ? colorScheme.onSurfaceVariant : colorScheme.outline,
         ),

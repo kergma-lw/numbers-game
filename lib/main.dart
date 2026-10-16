@@ -579,10 +579,52 @@ class _BoardScreenState extends State<BoardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Numbers Game'),
+    final isOneNonZero = !_isTutorial && _game is OneNonZeroGame;
+    final baseTheme = Theme.of(context);
+    final theme = isOneNonZero
+        ? baseTheme.copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: Color(0xff74d7c4),
+              onPrimary: Color(0xff102f38),
+              primaryContainer: Color(0xff5aa89e),
+              onPrimaryContainer: Color(0xffb9fff1),
+              secondary: Color(0xfff4b94c),
+              secondaryContainer: Color(0xffa37d48),
+              tertiary: Color(0xffb9fff1),
+              tertiaryContainer: Color(0xff234a59),
+              surface: Color(0xff131a2a),
+              onSurface: Color(0xfff4eddf),
+              surfaceContainer: Color(0xff183e4e),
+              surfaceContainerHighest: Color(0xff366471),
+              outline: Color(0xff74d7c4),
+            ),
+            scaffoldBackgroundColor: const Color(0xff131a2a),
+          )
+        : baseTheme;
+    return Theme(
+      data: theme,
+      child: Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: isOneNonZero && _board.rowCount > 2 ? null : AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+         title: Text(isOneNonZero ? 'ONE NON-ZERO' : 'Numbers Game'),
+        centerTitle: true,
         actions: [
+          if (isOneNonZero)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Text(
+                  '${_game.moveCount.toString().padLeft(2, '0')} moves',
+                  style: const TextStyle(
+                    color: Color(0xff74d7c4),
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ),
           if (widget.onOpenSettings != null)
             IconButton(
               key: const Key('settings-button'),
@@ -592,18 +634,67 @@ class _BoardScreenState extends State<BoardScreen> {
             ),
         ],
       ),
-      body: SafeArea(
+      body: Container(
+        decoration: isOneNonZero
+            ? const BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment(-.55, -.7),
+                  radius: 1.3,
+                  colors: [Color(0xff1f5364), Color(0xff131a2a)],
+                ),
+              )
+            : null,
+        child: Stack(
+          children: [
+            if (isOneNonZero) ...[
+              const Positioned(
+                top: 54,
+                left: -18,
+                child: IgnorePointer(
+                  child: Text('1 − 1', style: TextStyle(color: Color(0x0df4eddf), fontSize: 110, fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const Positioned(
+                right: -16,
+                bottom: 24,
+                child: IgnorePointer(
+                  child: Text('0 + 4', style: TextStyle(color: Color(0x0df4eddf), fontSize: 110, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+        SafeArea(
         child: SingleChildScrollView(
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
+              constraints: BoxConstraints(maxWidth: isOneNonZero && _board.rowCount > 2 ? 620 : 420),
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                     Text(
+                   children: [
+                      if (isOneNonZero && _board.rowCount > 2)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: Row(
+                            children: [
+                              const Text('← Back to menu', style: TextStyle(color: Color(0xffbcb6aa), fontSize: 12)),
+                              const Expanded(child: Center(child: Text('ONE NON-ZERO', style: TextStyle(color: Color(0xfff4eddf), fontFamily: 'serif', fontSize: 23, letterSpacing: 1.2)))),
+                              Row(mainAxisSize: MainAxisSize.min, children: [
+                                Text('${_game.moveCount.toString().padLeft(2, '0')} moves', style: const TextStyle(color: Color(0xff74d7c4), fontFamily: 'monospace', fontSize: 12)),
+                                if (widget.onOpenSettings != null)
+                                  IconButton(
+                                    key: const Key('settings-button'),
+                                    icon: const Icon(Icons.settings_outlined, size: 18),
+                                    tooltip: 'Settings',
+                                    onPressed: () => unawaited(widget.onOpenSettings!()),
+                                  ),
+                              ]),
+                            ],
+                          ),
+                        ),
+                      if (!isOneNonZero)
+                      Text(
                        _tutorialCompleted
                            ? 'Tutorial complete!'
                            : _tutorialStep?.instruction ??
@@ -613,6 +704,8 @@ class _BoardScreenState extends State<BoardScreen> {
                      ),
                       if (_historicalGame case final HistoricalDateGame game)
                         HistoricalEventPanel(game: game),
+                      if (isOneNonZero && _board.rowCount > 2)
+                        const _OneNonZeroObjective(),
                      const SizedBox(height: 12),
                       GameActionControls(
                        children: [
@@ -643,11 +736,11 @@ class _BoardScreenState extends State<BoardScreen> {
                              onPressed: widget.onTutorialFinished,
                              child: const Text('Skip tutorial'),
                            ),
-                         if (!_isTutorial && widget.onStartTutorial != null)
-                           OutlinedButton(
-                             key: const Key('start-tutorial-button'),
-                             onPressed: widget.onStartTutorial,
-                             child: const Text('Tutorial'),
+                          if (!_isTutorial && !isOneNonZero && widget.onStartTutorial != null)
+                            OutlinedButton(
+                              key: const Key('start-tutorial-button'),
+                              onPressed: widget.onStartTutorial,
+                              child: Text(isOneNonZero ? '? Rules' : 'Tutorial'),
                            ),
                        ],
                      ),
@@ -670,7 +763,8 @@ class _BoardScreenState extends State<BoardScreen> {
                        undoingCells: _undoingCells,
                        isAnimatingSwap: _isAnimatingSwap,
                        isUndoing: _isUndoing,
-                       disableAnimations: _disableAnimations,
+                        disableAnimations: _disableAnimations,
+                       useOneNonZeroStyle: isOneNonZero && _board.rowCount > 2,
                        sourceLineHighlight: _swapSource ?? _animatedSwapSource,
                        targetLineHighlight: _swapTarget ?? _animatedSwapTarget,
                        historicalGame: _historicalGame,
@@ -684,11 +778,12 @@ class _BoardScreenState extends State<BoardScreen> {
                        onDragCancelled: _cancelSwap,
                      ),
                      const SizedBox(height: 24),
-                     GameStatusPanel(
+                      GameStatusPanel(
                        moveCount: _game.moveCount,
                        feedback: _feedback,
                        isWon: _game.isWon,
-                       isLost: _game.isLost,
+                        isLost: _game.isLost,
+                        showMoveCount: !isOneNonZero || _board.rowCount <= 2,
                      ),
                   ],
                 ),
@@ -696,10 +791,47 @@ class _BoardScreenState extends State<BoardScreen> {
             ),
           ),
         ),
+          ),
+          ],
+        ),
+        ),
       ),
     );
   }
 
+}
+
+class _OneNonZeroObjective extends StatelessWidget {
+  const _OneNonZeroObjective();
+
+  @override
+  Widget build(BuildContext context) => Container(
+        margin: const EdgeInsets.only(top: 18),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xff234a59), Color(0xff1b3146)],
+          ),
+          border: Border.all(color: const Color(0x3d74d7c4)),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(15),
+            bottomLeft: Radius.circular(18),
+            bottomRight: Radius.circular(14),
+          ),
+          boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 20)],
+        ),
+        child: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Leave one positive number.', style: TextStyle(fontFamily: 'serif', fontSize: 21, color: Color(0xfff4eddf))),
+            SizedBox(height: 3),
+            Text('Turn every other cell into 0.', style: TextStyle(color: Color(0xffbcb6aa), fontSize: 13)),
+          ],
+        ),
+      );
 }
 
 class _LineSwap {

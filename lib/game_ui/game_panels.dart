@@ -25,17 +25,19 @@ class GameStatusPanel extends StatelessWidget {
     required this.feedback,
     required this.isWon,
     required this.isLost,
+    this.showMoveCount = true,
   });
 
   final int moveCount;
   final String feedback;
   final bool isWon;
   final bool isLost;
+  final bool showMoveCount;
 
   @override
   Widget build(BuildContext context) => Column(
         children: [
-          Text('Moves: $moveCount', key: const Key('move-count')),
+          if (showMoveCount) Text('Moves: $moveCount', key: const Key('move-count')),
           if (isWon)
             const Padding(
               padding: EdgeInsets.only(top: 8),
