@@ -52,6 +52,8 @@ class GameBoard extends StatelessWidget {
     required this.isAnimatingSwap,
     required this.isUndoing,
     required this.disableAnimations,
+    this.resolvingCell,
+    this.resolvingEquation,
     required this.onCellPressed,
     required this.onDragStarted,
     required this.onHover,
@@ -74,6 +76,8 @@ class GameBoard extends StatelessWidget {
   final bool isAnimatingSwap;
   final bool isUndoing;
   final bool disableAnimations;
+  final CellPosition? resolvingCell;
+  final String? resolvingEquation;
   final ValueChanged<CellPosition> onCellPressed;
   final ValueChanged<BoardLineTarget> onDragStarted;
   final ValueChanged<BoardLineTarget> onHover;
@@ -158,6 +162,7 @@ class GameBoard extends StatelessWidget {
           width: frameWidth + 2 * _handleSize + 2 * handleGap,
           height: frameHeight + 2 * _handleSize + 2 * handleGap,
           child: Stack(
+            clipBehavior: Clip.none,
             children: [
               Positioned(
                 left: _handleSize + handleGap,
@@ -257,9 +262,50 @@ class GameBoard extends StatelessWidget {
                       value: board.valueAt(CellPosition(row, column)),
                       selected: selectedCell == CellPosition(row, column),
                       undoing: undoingCells.contains(CellPosition(row, column)),
+                      resolving: resolvingCell == CellPosition(row, column),
+                      dimmed: resolvingCell != null && resolvingCell != CellPosition(row, column),
                       useOneNonZeroStyle: useOneNonZeroStyle,
                       disableAnimations: disableAnimations,
                       onPressed: onCellPressed,
+                    ),
+                  ),
+              if (resolvingCell case final cell?)
+                if (resolvingEquation case final formula?)
+                  Positioned(
+                    left: _handleSize + handleGap + boardInset + cell.column * (cellWidth + _cellGap),
+                    top: _handleSize + handleGap + boardInset + cell.row * (cellHeight + _cellGap),
+                    width: cellWidth,
+                    height: cellHeight,
+                    child: IgnorePointer(
+                      child: TweenAnimationBuilder<double>(
+                        key: ValueKey(formula), tween: Tween(begin: 1, end: 2.2),
+                        duration: disableAnimations ? Duration.zero : const Duration(milliseconds: 2200),
+                        builder: (context, scale, child) {
+                          final progress = ((scale - 1) / 1.2).clamp(0.0, 1.0);
+                          final opacity = progress < .42
+                              ? .7 + progress / .42 * .3
+                              : progress < .62
+                                  ? 1.0
+                                  : progress < .88
+                                      ? 1 - (progress - .62) / .26 * .85
+                                      : .15 * (1 - (progress - .88) / .12);
+                          return Opacity(opacity: opacity, child: Transform.scale(scale: scale, child: child));
+                        },
+                        child: Container(
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Color.fromRGBO(18, 66, 76, .99), Color.fromRGBO(38, 113, 111, .98)],
+                            ),
+                            border: Border.all(color: const Color(0xffb9fff1)),
+                            borderRadius: BorderRadius.circular(18),
+                            boxShadow: const [BoxShadow(color: Color.fromRGBO(116, 215, 196, .55), blurRadius: 28)],
+                          ),
+                          child: Text(formula, style: TextStyle(color: colorScheme.onSurface, fontFamily: 'monospace', fontSize: 22, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
                     ),
                   ),
               for (var row = 0; row < board.rowCount; row++)
@@ -336,6 +382,9 @@ class GameCell extends StatelessWidget {
     required this.selected,
     required this.undoing,
     required this.disableAnimations,
+    this.resolving = false,
+    this.dimmed = false,
+    this.equation,
     this.useOneNonZeroStyle = false,
     required this.onPressed,
   });
@@ -345,6 +394,9 @@ class GameCell extends StatelessWidget {
   final bool selected;
   final bool undoing;
   final bool disableAnimations;
+  final bool resolving;
+  final bool dimmed;
+  final String? equation;
   final bool useOneNonZeroStyle;
   final ValueChanged<CellPosition> onPressed;
 
@@ -355,13 +407,16 @@ class GameCell extends StatelessWidget {
       button: true,
       selected: selected,
       label: 'Cell ${position.row + 1}, ${position.column + 1}: $value',
-      child: AnimatedScale(
+      child: AnimatedOpacity(
+        opacity: dimmed ? .34 : 1,
+        duration: disableAnimations ? Duration.zero : const Duration(milliseconds: 180),
+        child: AnimatedScale(
         scale: undoing ? 1.08 : 1,
         duration: disableAnimations
             ? Duration.zero
             : const Duration(milliseconds: 180),
         curve: Curves.easeOutBack,
-        child: DecoratedBox(
+          child: DecoratedBox(
           decoration: useOneNonZeroStyle && !undoing
               ? BoxDecoration(
                   gradient: LinearGradient(
@@ -383,6 +438,7 @@ class GameCell extends StatelessWidget {
                 )
               : const BoxDecoration(),
           child: Stack(
+            clipBehavior: Clip.none,
             fit: StackFit.expand,
             children: [
               if (useOneNonZeroStyle && !undoing)
@@ -431,9 +487,34 @@ class GameCell extends StatelessWidget {
               );
             }),
           ),
+          if (equation case final formula?)
+            IgnorePointer(
+              child: TweenAnimationBuilder<double>(
+                key: ValueKey(formula),
+                tween: Tween(begin: 1, end: 2.2),
+                duration: disableAnimations ? Duration.zero : const Duration(milliseconds: 2200),
+                curve: Curves.easeOutCubic,
+                builder: (context, scale, child) => Opacity(
+                  opacity: disableAnimations ? 0 : (1 - ((scale - 1) / 1.2)).clamp(0.0, 1.0),
+                  child: Transform.scale(scale: scale, child: child),
+                ),
+                child: Center(
+                  child: Text(
+                    formula,
+                    style: TextStyle(
+                      color: colorScheme.onSurface,
+                      fontFamily: 'monospace',
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
             ],
           ),
         ),
+      ),
       ),
     );
   }

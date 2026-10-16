@@ -209,6 +209,10 @@ class _BoardScreenState extends State<BoardScreen> {
   bool _isUndoing = false;
   Set<CellPosition> _undoingCells = {};
   Timer? _undoAnimationTimer;
+  bool _isResolving = false;
+  CellPosition? _resolvingCell;
+  String? _resolvingEquation;
+  Timer? _resolutionTimer;
   final List<_LineSwap?> _moveHistory = [];
   String _feedback = 'Select a source cell.';
   int _tutorialStepIndex = 0;
@@ -256,7 +260,7 @@ class _BoardScreenState extends State<BoardScreen> {
   }
 
   void _selectCell(CellPosition position) {
-    if (_isAnimatingSwap || _isUndoing) {
+    if (_isAnimatingSwap || _isUndoing || _isResolving) {
       return;
     }
 
@@ -287,18 +291,40 @@ class _BoardScreenState extends State<BoardScreen> {
       return;
     }
 
+    final sourceValue = _board.valueAt(source);
+    final targetValue = _board.valueAt(position);
+    final adds = position.row > source.row ||
+        (position.row == source.row && position.column > source.column);
+    final result = adds ? sourceValue + targetValue : sourceValue - targetValue;
+    final disableAnimations = _disableAnimations;
     setState(() {
       _game = _game.applyArithmeticMove(source: source, target: position);
       _moveHistory.add(null);
       _arithmeticSource = null;
-      _feedback = 'Move applied.';
+      _isResolving = !disableAnimations;
+      _resolvingCell = disableAnimations ? null : position;
+      _resolvingEquation = disableAnimations ? null : '${_formatOperand(sourceValue)} ${adds ? '+' : '−'} ${_formatOperand(targetValue)}';
+      _feedback = '$sourceValue ${adds ? '+' : '−'} $targetValue = $result. Choose a source cell.';
     });
     _persistGame();
     _advanceTutorial();
+    if (!disableAnimations) {
+      _resolutionTimer = Timer(const Duration(milliseconds: 2210), () {
+        if (mounted) {
+          setState(() {
+            _isResolving = false;
+            _resolvingCell = null;
+            _resolvingEquation = null;
+          });
+        }
+      });
+    }
   }
 
+  String _formatOperand(int value) => value < 0 ? '($value)' : '$value';
+
   void _startSwap(BoardLineTarget source) {
-    if (_isAnimatingSwap || _isUndoing) {
+    if (_isAnimatingSwap || _isUndoing || _isResolving) {
       return;
     }
     final step = _tutorialStep;
@@ -408,7 +434,7 @@ class _BoardScreenState extends State<BoardScreen> {
   }
 
   void _undo() {
-    if (!_game.canUndo || _isAnimatingSwap || _isUndoing) {
+    if (!_game.canUndo || _isAnimatingSwap || _isUndoing || _isResolving) {
       return;
     }
     final restoredGame = _game.undo();
@@ -558,6 +584,7 @@ class _BoardScreenState extends State<BoardScreen> {
 
   void _resetInteraction() {
     _undoAnimationTimer?.cancel();
+    _resolutionTimer?.cancel();
     _undoAnimationTimer = null;
     _arithmeticSource = null;
     _swapSource = null;
@@ -569,11 +596,15 @@ class _BoardScreenState extends State<BoardScreen> {
     _isAnimatingSwap = false;
     _isUndoing = false;
     _undoingCells = {};
+    _isResolving = false;
+    _resolvingCell = null;
+    _resolvingEquation = null;
   }
 
   @override
   void dispose() {
     _undoAnimationTimer?.cancel();
+    _resolutionTimer?.cancel();
     super.dispose();
   }
 
@@ -764,6 +795,8 @@ class _BoardScreenState extends State<BoardScreen> {
                        isAnimatingSwap: _isAnimatingSwap,
                        isUndoing: _isUndoing,
                         disableAnimations: _disableAnimations,
+                       resolvingCell: _resolvingCell,
+                       resolvingEquation: _resolvingEquation,
                        useOneNonZeroStyle: isOneNonZero && _board.rowCount > 2,
                        sourceLineHighlight: _swapSource ?? _animatedSwapSource,
                        targetLineHighlight: _swapTarget ?? _animatedSwapTarget,

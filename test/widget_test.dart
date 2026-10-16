@@ -103,7 +103,7 @@ void main() {
     await tester.tap(find.byKey(const Key('cell-0-1')));
     await tester.pump();
 
-    expect(find.text('Move applied.'), findsOneWidget);
+    expect(find.text('1 + 2 = 3. Choose a source cell.'), findsOneWidget);
     expect(find.text('Moves: 1'), findsOneWidget);
     expect(find.text('2'), findsNothing);
     expect(find.text('3'), findsNWidgets(2));
@@ -126,7 +126,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('cell-0-0')));
     await tester.tap(find.byKey(const Key('cell-0-1')));
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 2210));
     expect(undoButton(tester).onPressed, isNotNull);
 
     await tester.tap(find.byKey(const Key('undo-button')));
