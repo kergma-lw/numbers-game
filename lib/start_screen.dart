@@ -50,6 +50,49 @@ class StartScreen extends StatelessWidget {
                         color: Color(0x12f4eddf), fontSize: 112, fontWeight: FontWeight.bold)),
               ),
             ),
+            const Positioned(
+              left: 46,
+              top: 390,
+              child: IgnorePointer(
+                child: Text('( 0 ) = 1',
+                    style: TextStyle(
+                        color: Color(0x3074d7c4),
+                        fontFamily: 'monospace',
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold)),
+              ),
+            ),
+            const Positioned(
+              right: 34,
+              top: 142,
+              child: IgnorePointer(
+                child: Text('∞ − 1',
+                    style: TextStyle(
+                        color: Color(0x30ec765d),
+                        fontFamily: 'monospace',
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold)),
+              ),
+            ),
+            Positioned(
+              right: -34,
+              top: 330,
+              child: IgnorePointer(
+                child: Container(
+                  width: 132,
+                  height: 132,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0x3374d7c4)),
+                    gradient: const RadialGradient(
+                      center: Alignment(-.35, -.45),
+                      colors: [Color(0x4574d7c4), Color(0x18131a2a), Colors.transparent],
+                    ),
+                    boxShadow: const [BoxShadow(color: Color(0x2274d7c4), blurRadius: 32)],
+                  ),
+                ),
+              ),
+            ),
             SafeArea(
               child: Center(
                 child: SingleChildScrollView(
@@ -73,9 +116,27 @@ class StartScreen extends StatelessWidget {
                             border: Border.all(color: const Color(0x30ede0bf)),
                             borderRadius: BorderRadius.circular(22),
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(18),
-                            child: Column(
+                          child: Stack(
+                            children: [
+                              const Positioned(
+                                top: 10,
+                                right: 12,
+                                child: IgnorePointer(
+                                  child: SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.fromBorderSide(BorderSide(color: Color(0x38f4b94c))),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(18),
+                                child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 if (savedGame != null) ...[
@@ -108,7 +169,9 @@ class StartScreen extends StatelessWidget {
                                   Expanded(child: _ModeCard(key: const Key('start-historical-date-button'), icon: '12·04·61', title: 'Historical Date', detail: 'Rebuild a date from an event', color: const Color(0xffec765d), onPressed: () => onStartMode(GameMode.historicalDate))),
                                 ]),
                               ],
-                            ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 10),
