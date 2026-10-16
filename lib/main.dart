@@ -9,6 +9,7 @@ import 'package:numbers_game/game_ui/game_board.dart';
 import 'package:numbers_game/game_ui/game_panels.dart';
 import 'package:numbers_game/game_state_store.dart';
 import 'package:numbers_game/settings_screen.dart';
+import 'package:numbers_game/start_screen.dart';
 import 'package:numbers_game/tutorial.dart';
 import 'package:numbers_game/tutorial_progress_store.dart';
 
@@ -40,6 +41,8 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
   GameMode? _activeMode;
   ModeSettings? _activeSettings;
   bool? _showTutorial;
+  bool _showGame = false;
+  PlayableGame? _gameToOpen;
 
   @override
   void initState() {
@@ -79,9 +82,9 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
         SavedGame(mode: _activeMode!, settings: _activeSettings!, game: game),
       );
 
-  Future<PlayableGame> _startNewGame(AppSettings settings) async {
+  Future<PlayableGame> _startNewGame(AppSettings settings, [GameMode? mode]) async {
     await _gameStateStore.clearCurrentGame();
-    _activeMode = settings.selectedMode;
+    _activeMode = mode ?? _activeMode ?? settings.selectedMode;
     _activeSettings = _settingsForMode(settings, _activeMode!);
     final game = switch (_activeMode!) {
       GameMode.oneNonZero => newOneNonZeroGame(_activeSettings! as OneNonZeroSettings),
@@ -90,6 +93,23 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
     await _saveGame(game);
     return game;
   }
+
+  Future<void> _startMode(AppSettings settings, GameMode mode) async {
+    final game = await _startNewGame(settings, mode);
+    if (mounted) {
+      setState(() {
+        _gameToOpen = game;
+        _showGame = true;
+      });
+    }
+  }
+
+  void _continueGame(SavedGame savedGame) => setState(() {
+        _activeMode = savedGame.mode;
+        _activeSettings = savedGame.settings;
+        _gameToOpen = savedGame.game;
+        _showGame = true;
+      });
 
   Future<void> _openSettings(BuildContext context, AppSettings settings) async {
     final updatedSettings = await Navigator.of(context).push<AppSettings>(
@@ -118,14 +138,23 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
             return const Scaffold(body: Center(child: CircularProgressIndicator()));
           }
           final appState = snapshot.data!;
-          final showTutorial = _showTutorial ?? !appState.tutorialWasHandled;
+          final showTutorial = _showTutorial ?? false;
           final savedGame = appState.savedGame;
           final settings = _settings ?? appState.settings;
+          if (!_showGame && !showTutorial) {
+            return StartScreen(
+              savedGame: savedGame,
+              onContinue: savedGame == null ? () {} : () => _continueGame(savedGame),
+              onStartMode: (mode) => _startMode(settings, mode),
+              onTutorial: _startTutorial,
+              onSettings: () => unawaited(_openSettings(context, settings)),
+            );
+          }
           return BoardScreen(
             key: ValueKey(showTutorial),
             initialGame: showTutorial
                 ? tutorialDefinition.initialGame
-                : savedGame?.game ??
+                : _gameToOpen ?? savedGame?.game ??
                     switch (settings.selectedMode) {
                       GameMode.oneNonZero => newOneNonZeroGame(settings.oneNonZeroSettings),
                       GameMode.historicalDate => newHistoricalDateGame(),

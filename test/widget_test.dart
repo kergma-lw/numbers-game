@@ -390,7 +390,7 @@ void main() {
     expect(finished, isTrue);
   });
 
-  testWidgets('completed tutorial is not opened automatically and can be restarted',
+  testWidgets('tutorial can be started from the start screen',
       (WidgetTester tester) async {
     final progress = _FakeTutorialProgressStore(handled: true);
     await tester.pumpWidget(
@@ -401,18 +401,18 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('start-tutorial-button')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('start-tutorial-button')));
+    expect(find.byKey(const Key('how-to-play-button')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('how-to-play-button')));
     await tester.pump();
     expect(find.byKey(const Key('skip-tutorial-button')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('skip-tutorial-button')));
     await tester.pumpAndSettle();
     expect(progress.handled, isTrue);
-    expect(find.byKey(const Key('start-tutorial-button')), findsOneWidget);
+    expect(find.byKey(const Key('how-to-play-button')), findsOneWidget);
   });
 
-  testWidgets('first launch opens the tutorial', (WidgetTester tester) async {
+  testWidgets('first launch opens the start screen', (WidgetTester tester) async {
     await tester.pumpWidget(
       NumbersGameApp(
         progressStore: _FakeTutorialProgressStore(handled: false),
@@ -421,10 +421,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('skip-tutorial-button')), findsOneWidget);
+    expect(find.byKey(const Key('how-to-play-button')), findsOneWidget);
   });
 
-  testWidgets('restores the saved game automatically', (WidgetTester tester) async {
+  testWidgets('continues the saved game from the start screen', (WidgetTester tester) async {
     final savedGame = OneNonZeroGame(Board([
       [1, 2],
       [3, 4],
@@ -442,6 +442,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.byKey(const Key('continue-game-button')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('continue-game-button')));
+    await tester.pumpAndSettle();
     expect(find.text('Moves: 1'), findsOneWidget);
     expect(find.bySemanticsLabel('Cell 1, 2: 3'), findsOneWidget);
   });
@@ -467,6 +470,8 @@ void main() {
         gameStateStore: store,
       ),
     );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('continue-game-button')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('new-game-button')));
     await tester.pumpAndSettle();
@@ -499,6 +504,8 @@ void main() {
         gameStateStore: store,
       ),
     );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('continue-game-button')));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('settings-button')));
