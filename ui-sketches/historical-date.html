@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Historical Date — Numbers Game</title>
+    <link rel="stylesheet" href="styles/puzzle-board.css?v=2" />
+    <link rel="stylesheet" href="styles/historical-date.css?v=2" />
+  </head>
+  <body class="puzzle-screen historical-date">
+    <div aria-hidden="true" class="ghost top">19 · 69</div>
+    <div aria-hidden="true" class="ghost bottom">20 . 07</div>
+    <main>
+      <header class="topbar">
+        <a class="back" href="index.html">← Back to menu</a>
+        <h1>HISTORICAL DATE</h1>
+        <span class="moves">00 moves</span>
+      </header>
+
+      <section class="objective">
+        <p class="eyebrow">Restore the date</p>
+        <time class="target-date" datetime="1969-07-20">July 20, 1969</time>
+        <strong>Apollo 11 Moon landing</strong>
+        <span>Apollo 11 astronauts first landed on the Moon.</span>
+      </section>
+
+      <div class="controls" aria-label="Game actions">
+        <button class="control" disabled id="undo-button" type="button">↶ Undo</button>
+        <button class="control" id="restart-button" type="button">↺ Restart</button>
+        <button class="control" type="button">? Rules</button>
+      </div>
+
+      <section aria-label="Historical date board" class="board-wrap">
+        <div class="handles handle-top" aria-label="Column swap handles"><button data-index="0" data-kind="column" type="button">⋮</button><button data-index="1" data-kind="column" type="button">⋮</button><button data-index="2" data-kind="column" type="button">⋮</button><button data-index="3" data-kind="column" type="button">⋮</button><button data-index="4" data-kind="column" type="button">⋮</button></div>
+        <div class="handles handle-bottom" aria-label="Column swap handles"><button data-index="0" data-kind="column" type="button">⋮</button><button data-index="1" data-kind="column" type="button">⋮</button><button data-index="2" data-kind="column" type="button">⋮</button><button data-index="3" data-kind="column" type="button">⋮</button><button data-index="4" data-kind="column" type="button">⋮</button></div>
+        <div class="handles handle-left" aria-label="Row swap handles"><button data-index="0" data-kind="row" type="button">⋯</button><button data-index="1" data-kind="row" type="button">⋯</button><button data-index="2" data-kind="row" type="button">⋯</button></div>
+        <div class="handles handle-right" aria-label="Row swap handles"><button data-index="0" data-kind="row" type="button">⋯</button><button data-index="1" data-kind="row" type="button">⋯</button><button data-index="2" data-kind="row" type="button">⋯</button></div>
+        <div class="board">
+          <button class="cell" type="button">−8</button><button class="cell" type="button">5</button><button class="cell" type="button">21</button><button class="cell" type="button">1964</button><button class="cell" type="button">−1</button>
+          <button class="cell" type="button">11</button><button class="cell" type="button">4</button><button class="cell" type="button">1960</button><button class="cell" type="button">9</button><button class="cell" type="button">2</button>
+          <button class="cell" type="button">0</button><button class="cell" type="button">−3</button><button class="cell" type="button">7</button><button class="cell" type="button">14</button><button class="cell" type="button">1</button>
+          <div aria-hidden="true" class="date-frame"><span class="date-separator">/</span><span class="date-separator">/</span></div>
+        </div>
+      </section>
+
+      <p class="instruction" id="game-feedback"><strong>Choose a source cell.</strong> Rebuild the date inside the gold frame.</p>
+      <p class="help">Drag the marks at a row or column edge to swap it · <a href="#">How moves work</a></p>
+    </main>
+    <script>window.puzzleBoardConfig = { rows: 3, columns: 5, frame: { row: 1, column: 1, span: 3 } };</script>
+    <script src="scripts/puzzle-board.js?v=4"></script>
+    <script>window.initializePuzzleBoard(window.puzzleBoardConfig);</script>
+  </body>
+</html>

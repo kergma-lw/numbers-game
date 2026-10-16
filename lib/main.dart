@@ -5,14 +5,14 @@ import 'package:numbers_game/game_core/board.dart';
 import 'package:numbers_game/game_core/historical_date_game.dart';
 import 'package:numbers_game/game_core/one_non_zero_game.dart';
 import 'package:numbers_game/game_core/playable_game.dart';
+import 'package:numbers_game/game_ui/game_board.dart';
+import 'package:numbers_game/game_ui/game_panels.dart';
 import 'package:numbers_game/game_state_store.dart';
 import 'package:numbers_game/settings_screen.dart';
 import 'package:numbers_game/tutorial.dart';
 import 'package:numbers_game/tutorial_progress_store.dart';
 
 const _swapAnimationDuration = Duration(milliseconds: 380);
-const _handleSize = 36.0;
-const _cellGap = 4.0;
 
 void main() {
   runApp(const NumbersGameApp());
@@ -170,10 +170,10 @@ class BoardScreen extends StatefulWidget {
 class _BoardScreenState extends State<BoardScreen> {
   late PlayableGame _game;
   CellPosition? _arithmeticSource;
-  _LineTarget? _swapSource;
-  _LineTarget? _swapTarget;
-  _LineTarget? _animatedSwapSource;
-  _LineTarget? _animatedSwapTarget;
+  BoardLineTarget? _swapSource;
+  BoardLineTarget? _swapTarget;
+  BoardLineTarget? _animatedSwapSource;
+  BoardLineTarget? _animatedSwapTarget;
   List<int> _visualRows = [0, 1];
   List<int> _visualColumns = [0, 1];
   bool _isAnimatingSwap = false;
@@ -204,9 +204,9 @@ class _BoardScreenState extends State<BoardScreen> {
         : step!.target == position;
   }
 
-  bool _isTutorialLineHighlighted(_LineKind kind, int index) {
+  bool _isTutorialLineHighlighted(BoardLineKind kind, int index) {
     final step = _tutorialStep;
-    if (step?.action != TutorialAction.swapColumns || kind != _LineKind.column) {
+    if (step?.action != TutorialAction.swapColumns || kind != BoardLineKind.column) {
       return false;
     }
     return _swapSource == null ? step!.firstLine == index : step!.secondLine == index;
@@ -267,13 +267,13 @@ class _BoardScreenState extends State<BoardScreen> {
     _advanceTutorial();
   }
 
-  void _startSwap(_LineTarget source) {
+  void _startSwap(BoardLineTarget source) {
     if (_isAnimatingSwap || _isUndoing) {
       return;
     }
     final step = _tutorialStep;
     if (step != null &&
-        (step.action != TutorialAction.swapColumns || source.kind != _LineKind.column ||
+        (step.action != TutorialAction.swapColumns || source.kind != BoardLineKind.column ||
             source.index != step.firstLine)) {
       _showTutorialFeedback();
       return;
@@ -286,13 +286,13 @@ class _BoardScreenState extends State<BoardScreen> {
     });
   }
 
-  void _hoverSwapTarget(_LineTarget target) {
+  void _hoverSwapTarget(BoardLineTarget target) {
     if (_swapSource?.accepts(target) ?? false) {
       setState(() => _swapTarget = target);
     }
   }
 
-  void _leaveSwapTarget(_LineTarget target) {
+  void _leaveSwapTarget(BoardLineTarget target) {
     if (_swapTarget == target) {
       setState(() => _swapTarget = null);
     }
@@ -308,13 +308,13 @@ class _BoardScreenState extends State<BoardScreen> {
     }
   }
 
-  void _completeSwap(_LineTarget source, _LineTarget target) {
+  void _completeSwap(BoardLineTarget source, BoardLineTarget target) {
     if (!source.accepts(target) || _isAnimatingSwap) {
       return;
     }
     final step = _tutorialStep;
     if (step != null &&
-        (source.kind != _LineKind.column || !step.matchesColumnSwap(source.index, target.index))) {
+        (source.kind != BoardLineKind.column || !step.matchesColumnSwap(source.index, target.index))) {
       _cancelSwap();
       _showTutorialFeedback();
       return;
@@ -322,14 +322,14 @@ class _BoardScreenState extends State<BoardScreen> {
 
     final rows = _normalOrder(_board.rowCount);
     final columns = _normalOrder(_board.columnCount);
-    if (source.kind == _LineKind.row) {
+    if (source.kind == BoardLineKind.row) {
       _swapIndices(rows, source.index, target.index);
     } else {
       _swapIndices(columns, source.index, target.index);
     }
 
     setState(() {
-      _game = source.kind == _LineKind.row
+      _game = source.kind == BoardLineKind.row
           ? _game.swapRows(source.index, target.index)
           : _game.swapColumns(source.index, target.index);
       _moveHistory.add(_LineSwap(source, target));
@@ -372,10 +372,6 @@ class _BoardScreenState extends State<BoardScreen> {
     values[first] = values[second];
     values[second] = value;
   }
-
-  bool _isSwapLineActive(_LineKind kind, int index) =>
-      (_swapSource?.kind == kind && _swapSource?.index == index) ||
-      (_swapTarget?.kind == kind && _swapTarget?.index == index);
 
   void _undo() {
     if (!_game.canUndo || _isAnimatingSwap || _isUndoing) {
@@ -420,7 +416,7 @@ class _BoardScreenState extends State<BoardScreen> {
   void _animateUndoneSwap(PlayableGame restoredGame, _LineSwap swap) {
     final rows = _normalOrder(_board.rowCount);
     final columns = _normalOrder(_board.columnCount);
-    if (swap.source.kind == _LineKind.row) {
+    if (swap.source.kind == BoardLineKind.row) {
       _swapIndices(rows, swap.source.index, swap.target.index);
     } else {
       _swapIndices(columns, swap.source.index, swap.target.index);
@@ -541,7 +537,6 @@ class _BoardScreenState extends State<BoardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final swapIndicator = _swapTarget?.kind == _LineKind.row ? '⇅' : '⇄';
     return Scaffold(
       appBar: AppBar(
         title: const Text('Numbers Game'),
@@ -574,13 +569,11 @@ class _BoardScreenState extends State<BoardScreen> {
                       style: Theme.of(context).textTheme.titleMedium,
                       textAlign: TextAlign.center,
                      ),
-                     if (_historicalGame case final HistoricalDateGame game)
-                       _HistoricalEventCard(game: game),
+                      if (_historicalGame case final HistoricalDateGame game)
+                        HistoricalEventPanel(game: game),
                      const SizedBox(height: 12),
-                     Wrap(
-                      alignment: WrapAlignment.center,
-                      spacing: 12,
-                      children: [
+                      GameActionControls(
+                       children: [
                          OutlinedButton.icon(
                           key: const Key('undo-button'),
                           onPressed: _game.canUndo && !_isAnimatingSwap && !_isUndoing
@@ -626,235 +619,34 @@ class _BoardScreenState extends State<BoardScreen> {
                          ),
                        ),
                     const SizedBox(height: 12),
-                    Text(
-                      'Moves: ${_game.moveCount}',
-                      key: const Key('move-count'),
-                      textAlign: TextAlign.center,
-                    ),
-                    if (_game.isWon)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 8),
-                        child: Text(
-                          'You won!',
-                          key: Key('victory-message'),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    if (_game.isLost)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 8),
-                        child: Text(
-                          'You lost!',
-                          key: Key('loss-message'),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    const SizedBox(height: 24),
-                    LayoutBuilder(
-                       builder: (context, constraints) {
-                           final boardWidth = constraints.maxWidth - 2 * _handleSize;
-                          final cellWidth =
-                              (boardWidth - _cellGap * (_board.columnCount - 1)) /
-                                  _board.columnCount;
-                          final cellHeight = cellWidth;
-                          final boardHeight = cellHeight * _board.rowCount +
-                              _cellGap * (_board.rowCount - 1);
-                         final colorScheme = Theme.of(context).colorScheme;
-                         final sourceHighlight =
-                             _swapSource ?? _animatedSwapSource;
-                         final targetHighlight =
-                             _swapTarget ?? _animatedSwapTarget;
-
-                          Widget lineHighlight(
-                           _LineTarget target, {
-                           required bool isDropTarget,
-                         }) {
-                           final isRow = target.kind == _LineKind.row;
-                           return Positioned(
-                             left: isRow
-                                 ? _handleSize
-                                 : _handleSize +
-                                     target.index * (cellWidth + _cellGap),
-                             top: isRow
-                                 ? _handleSize +
-                                     target.index * (cellHeight + _cellGap)
-                                 : _handleSize,
-                              width: isRow ? boardWidth : cellWidth,
-                              height: isRow ? cellHeight : boardHeight,
-                             child: IgnorePointer(
-                                child: AnimatedContainer(
-                                  key: Key(
-                                    isDropTarget
-                                        ? 'swap-target-highlight'
-                                        : 'swap-source-highlight',
-                                  ),
-                                  duration: const Duration(milliseconds: 120),
-                                 decoration: BoxDecoration(
-                                   color: isDropTarget
-                                       ? colorScheme.secondaryContainer.withValues(
-                                           alpha: 0.55,
-                                         )
-                                       : colorScheme.primaryContainer.withValues(
-                                           alpha: 0.35,
-                                         ),
-                                 ),
-                               ),
-                             ),
-                           );
-                          }
-
-                          Widget tutorialArrow({
-                            required Key key,
-                            required double left,
-                            required double top,
-                          }) => Positioned(
-                            left: left,
-                            top: top,
-                            width: 36,
-                            height: 36,
-                            child: IgnorePointer(
-                              child: Icon(
-                                Icons.arrow_downward,
-                                key: key,
-                                size: 36,
-                                color: colorScheme.tertiary,
-                              ),
-                            ),
-                          );
-
-                         return SizedBox(
-                           width: boardWidth + 2 * _handleSize,
-                           height: boardHeight + 2 * _handleSize,
-                          child: Stack(
-                            children: [
-                              for (var column = 0;
-                                  column < _board.columnCount;
-                                  column++) ...[
-                                _positionedHandle(
-                                 target: _LineTarget(_LineKind.column, column),
-                                 side: _HandleSide.top,
-                                 left: _handleSize + column * (cellWidth + _cellGap),
-                                  top: 0,
-                                  width: cellWidth,
-                                  height: _handleSize,
-                                ),
-                                _positionedHandle(
-                                 target: _LineTarget(_LineKind.column, column),
-                                 side: _HandleSide.bottom,
-                                 left: _handleSize + column * (cellWidth + _cellGap),
-                                   top: _handleSize + boardHeight,
-                                  width: cellWidth,
-                                  height: _handleSize,
-                                ),
-                              ],
-                               for (var row = 0; row < _board.rowCount; row++) ...[
-                                _positionedHandle(
-                                 target: _LineTarget(_LineKind.row, row),
-                                 side: _HandleSide.left,
-                                 left: 0,
-                                 top: _handleSize + row * (cellHeight + _cellGap),
-                                  width: _handleSize,
-                                  height: cellHeight,
-                                ),
-                                _positionedHandle(
-                                  target: _LineTarget(_LineKind.row, row),
-                                 side: _HandleSide.right,
-                                  left: _handleSize + boardWidth,
-                                 top: _handleSize + row * (cellHeight + _cellGap),
-                                  width: _handleSize,
-                                  height: cellHeight,
-                                 ),
-                               ],
-                               if (sourceHighlight case final _LineTarget source)
-                                 lineHighlight(source, isDropTarget: false),
-                                if (targetHighlight case final _LineTarget target)
-                                  lineHighlight(target, isDropTarget: true),
-                               if (_historicalGame case final HistoricalDateGame game)
-                                 _dateFrameDecoration(game, cellWidth, cellHeight),
-                                for (var row = 0; row < _board.rowCount; row++)
-                                for (var column = 0;
-                                    column < _board.columnCount;
-                                    column++)
-                                  AnimatedPositioned(
-                                     duration: _swapAnimationDuration,
-                                     curve: Curves.easeInOutCubicEmphasized,
-                                     left: _handleSize +
-                                         _visualColumns[column] *
-                                             (cellWidth + _cellGap),
-                                     top: _handleSize +
-                                         _visualRows[row] *
-                                             (cellHeight + _cellGap),
-                                    width: cellWidth,
-                                    height: cellHeight,
-                                     child: _BoardCell(
-                                      position: CellPosition(row, column),
-                                      value: _board.valueAt(
-                                        CellPosition(row, column),
-                                      ),
-                                         selected: _arithmeticSource ==
-                                             CellPosition(row, column),
-                                        undoing: _undoingCells.contains(
-                                          CellPosition(row, column),
-                                        ),
-                                        onPressed: _selectCell,
-                                    ),
-                                     ),
-                              for (var row = 0; row < _board.rowCount; row++)
-                                for (var column = 0;
-                                    column < _board.columnCount;
-                                    column++)
-                                  if (_isTutorialCellHighlighted(
-                                    CellPosition(row, column),
-                                  ))
-                                    tutorialArrow(
-                                      key: Key('tutorial-arrow-cell-$row-$column'),
-                                      left: _handleSize +
-                                          column * (cellWidth + _cellGap) +
-                                          (cellWidth - 36) / 2,
-                                      top: _handleSize +
-                                          row * (cellHeight + _cellGap) -
-                                          12,
-                                    ),
-                              for (var column = 0;
-                                  column < _board.columnCount;
-                                  column++)
-                                if (_isTutorialLineHighlighted(
-                                  _LineKind.column,
-                                  column,
-                                ))
-                                  tutorialArrow(
-                                    key: Key('tutorial-arrow-column-$column'),
-                                    left: _handleSize +
-                                        column * (cellWidth + _cellGap) +
-                                        (cellWidth - 36) / 2,
-                                    top: 0,
-                                  ),
-                              if (_swapTarget != null)
-                                Positioned.fill(
-                                  child: IgnorePointer(
-                                    child: Center(
-                                      child: Text(
-                                        swapIndicator,
-                                        key: Key('swap-indicator'),
-                                        style: TextStyle(fontSize: 36),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 24),
-                    Semantics(
-                      liveRegion: true,
-                      child: Text(
-                        _feedback,
-                        key: const Key('feedback'),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
+                     const SizedBox(height: 24),
+                     GameBoard(
+                       board: _board,
+                       visualRows: _visualRows,
+                       visualColumns: _visualColumns,
+                       selectedCell: _arithmeticSource,
+                       undoingCells: _undoingCells,
+                       isAnimatingSwap: _isAnimatingSwap,
+                       isUndoing: _isUndoing,
+                       sourceLineHighlight: _swapSource ?? _animatedSwapSource,
+                       targetLineHighlight: _swapTarget ?? _animatedSwapTarget,
+                       historicalGame: _historicalGame,
+                       isTutorialCellHighlighted: _isTutorialCellHighlighted,
+                       isTutorialLineHighlighted: _isTutorialLineHighlighted,
+                       onCellPressed: _selectCell,
+                       onDragStarted: _startSwap,
+                       onHover: _hoverSwapTarget,
+                       onLeave: _leaveSwapTarget,
+                       onAccept: _completeSwap,
+                       onDragCancelled: _cancelSwap,
+                     ),
+                     const SizedBox(height: 24),
+                     GameStatusPanel(
+                       moveCount: _game.moveCount,
+                       feedback: _feedback,
+                       isWon: _game.isWon,
+                       isLost: _game.isLost,
+                     ),
                   ],
                 ),
               ),
@@ -865,308 +657,13 @@ class _BoardScreenState extends State<BoardScreen> {
     );
   }
 
-  Widget _positionedHandle({
-    required _LineTarget target,
-    required _HandleSide side,
-    required double left,
-    required double top,
-    required double width,
-    required double height,
-  }) {
-    return Positioned(
-      left: left,
-      top: top,
-      width: width,
-      height: height,
-      child: _LineHandle(
-        target: target,
-        side: side,
-        isActive: _isSwapLineActive(target.kind, target.index),
-        enabled: !_isAnimatingSwap && !_isUndoing,
-        onDragStarted: _startSwap,
-        onHover: _hoverSwapTarget,
-        onLeave: _leaveSwapTarget,
-        onAccept: _completeSwap,
-        onDragCancelled: _cancelSwap,
-      ),
-    );
-  }
-
-  Widget _dateFrameDecoration(
-    HistoricalDateGame game,
-    double cellWidth,
-    double cellHeight,
-  ) {
-    final width = cellWidth * 3 + _cellGap * 2;
-    return Positioned(
-      key: const Key('historical-date-frame'),
-      left: _handleSize + game.frame.column * (cellWidth + _cellGap),
-      top: _handleSize + game.frame.row * (cellHeight + _cellGap),
-      width: width,
-      height: cellHeight,
-      child: IgnorePointer(
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: Theme.of(context).colorScheme.tertiary,
-              width: 2,
-            ),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Stack(
-            children: [
-              for (var index = 1; index < 3; index++)
-                Positioned(
-                  left: index * cellWidth + (index - 0.5) * _cellGap - 4,
-                  top: 0,
-                  bottom: 0,
-                  child: Center(
-                    child: Text(
-                      game.format.separator,
-                      key: Key('historical-date-separator-$index'),
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HistoricalEventCard extends StatelessWidget {
-  const _HistoricalEventCard({required this.game});
-
-  final HistoricalDateGame game;
-
-  @override
-  Widget build(BuildContext context) => Card(
-        key: const Key('historical-event-card'),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(game.event.title, style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 4),
-              Text(
-                game.formattedDate,
-                key: const Key('historical-event-date'),
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: 4),
-              Text(game.event.description),
-            ],
-          ),
-        ),
-      );
-}
-
-class _BoardCell extends StatelessWidget {
-  const _BoardCell({
-    required this.position,
-    required this.value,
-    required this.selected,
-    required this.undoing,
-    required this.onPressed,
-  });
-
-  final CellPosition position;
-  final int value;
-  final bool selected;
-  final bool undoing;
-  final ValueChanged<CellPosition> onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: 'Cell ${position.row + 1}, ${position.column + 1}: $value',
-      child: AnimatedScale(
-        scale: undoing ? 1.08 : 1,
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOutBack,
-        child: OutlinedButton(
-          key: Key('cell-${position.row}-${position.column}'),
-          style: OutlinedButton.styleFrom(
-            backgroundColor: selected
-                ? colorScheme.primaryContainer
-                : undoing
-                    ? colorScheme.tertiaryContainer
-                    : null,
-            padding: const EdgeInsets.all(8),
-          ),
-          onPressed: () => onPressed(position),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final fontSize = (constraints.biggest.shortestSide * 0.55)
-                  .clamp(12.0, 32.0)
-                  .toDouble();
-              return FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  '$value',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontSize: fontSize,
-                      ),
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _LineHandle extends StatefulWidget {
-  const _LineHandle({
-    required this.target,
-    required this.side,
-    required this.isActive,
-    required this.enabled,
-    required this.onDragStarted,
-    required this.onHover,
-    required this.onLeave,
-    required this.onAccept,
-    required this.onDragCancelled,
-  });
-
-  final _LineTarget target;
-  final _HandleSide side;
-  final bool isActive;
-  final bool enabled;
-  final ValueChanged<_LineTarget> onDragStarted;
-  final ValueChanged<_LineTarget> onHover;
-  final ValueChanged<_LineTarget> onLeave;
-  final void Function(_LineTarget, _LineTarget) onAccept;
-  final VoidCallback onDragCancelled;
-
-  @override
-  State<_LineHandle> createState() => _LineHandleState();
-}
-
-class _LineHandleState extends State<_LineHandle> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return DragTarget<_LineTarget>(
-      onWillAcceptWithDetails: (details) {
-        if (!details.data.accepts(widget.target)) {
-          return false;
-        }
-        widget.onHover(widget.target);
-        return true;
-      },
-      onLeave: (_) => widget.onLeave(widget.target),
-      onAcceptWithDetails: (details) => widget.onAccept(details.data, widget.target),
-      builder: (context, candidateData, rejectedData) {
-        return MouseRegion(
-          cursor: widget.enabled ? SystemMouseCursors.grab : MouseCursor.defer,
-          onEnter: (_) => setState(() => _isHovered = true),
-          onExit: (_) => setState(() => _isHovered = false),
-          child: Draggable<_LineTarget>(
-            data: widget.target,
-            maxSimultaneousDrags: widget.enabled ? 1 : 0,
-            onDragStarted: () => widget.onDragStarted(widget.target),
-            onDragEnd: (_) => widget.onDragCancelled(),
-            feedback: Material(
-              color: Colors.transparent,
-              child: _handleIcon(context, active: true),
-            ),
-            childWhenDragging: Opacity(
-              opacity: 0.35,
-              child: _handleIcon(context, active: widget.isActive),
-            ),
-            child: _handleIcon(
-              context,
-              active: widget.isActive || candidateData.isNotEmpty,
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _handleIcon(BuildContext context, {required bool active}) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final highlighted = active || _isHovered;
-    final backgroundColor = active
-        ? colorScheme.secondaryContainer
-        : _isHovered
-            ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.55)
-            : Colors.transparent;
-    return Semantics(
-      label:
-          '${widget.side.label} handle for ${widget.target.kind.label} ${widget.target.index + 1}',
-      child: AnimatedContainer(
-        key: Key(
-          '${widget.target.kind.name}-handle-${widget.side.name}-${widget.target.index}',
-        ),
-        duration: const Duration(milliseconds: 120),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(
-          widget.target.kind == _LineKind.row
-              ? Icons.drag_indicator
-              : Icons.drag_handle,
-          size: 16,
-          color: highlighted ? colorScheme.onSurfaceVariant : colorScheme.outline,
-        ),
-      ),
-    );
-  }
-}
-
-enum _LineKind {
-  row('row'),
-  column('column');
-
-  const _LineKind(this.label);
-
-  final String label;
-}
-
-enum _HandleSide {
-  top('top'),
-  bottom('bottom'),
-  left('left'),
-  right('right');
-
-  const _HandleSide(this.label);
-
-  final String label;
-}
-
-class _LineTarget {
-  const _LineTarget(this.kind, this.index);
-
-  final _LineKind kind;
-  final int index;
-
-  bool accepts(_LineTarget other) => kind == other.kind && index != other.index;
-
-  @override
-  bool operator ==(Object other) =>
-      other is _LineTarget && kind == other.kind && index == other.index;
-
-  @override
-  int get hashCode => Object.hash(kind, index);
 }
 
 class _LineSwap {
   const _LineSwap(this.source, this.target);
 
-  final _LineTarget source;
-  final _LineTarget target;
+  final BoardLineTarget source;
+  final BoardLineTarget target;
 }
 
 class _AppState {

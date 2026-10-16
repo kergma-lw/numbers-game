@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>One non-zero — Numbers Game</title>
+    <link rel="stylesheet" href="styles/puzzle-board.css" />
+  </head>
+  <body class="puzzle-screen">
+    <div aria-hidden="true" class="ghost top">1 − 1</div>
+    <div aria-hidden="true" class="ghost bottom">0 + 4</div>
+    <main>
+      <header class="topbar">
+        <a class="back" href="index.html">← Back to menu</a>
+        <h1>ONE NON-ZERO</h1>
+        <span class="moves">00 moves</span>
+      </header>
+
+      <section class="objective">
+        <p class="eyebrow">Objective</p>
+        <strong>Leave one positive number.</strong>
+        <span>Turn every other cell into 0.</span>
+      </section>
+
+      <div class="controls" aria-label="Game actions">
+        <button class="control" disabled id="undo-button" type="button">↶ Undo</button>
+        <button class="control" id="restart-button" type="button">↺ Restart</button>
+        <button class="control" type="button">? Rules</button>
+      </div>
+
+      <section aria-label="Puzzle board" class="board-wrap">
+        <div class="handles handle-top" aria-label="Column swap handles">
+          <button data-index="0" data-kind="column" title="Drag column 1" type="button">⋮</button><button data-index="1" data-kind="column" title="Drag column 2" type="button">⋮</button><button data-index="2" data-kind="column" title="Drag column 3" type="button">⋮</button><button data-index="3" data-kind="column" title="Drag column 4" type="button">⋮</button>
+        </div>
+        <div class="handles handle-bottom" aria-label="Column swap handles">
+          <button data-index="0" data-kind="column" title="Drag column 1" type="button">⋮</button><button data-index="1" data-kind="column" title="Drag column 2" type="button">⋮</button><button data-index="2" data-kind="column" title="Drag column 3" type="button">⋮</button><button data-index="3" data-kind="column" title="Drag column 4" type="button">⋮</button>
+        </div>
+        <div class="handles handle-left" aria-label="Row swap handles">
+          <button data-index="0" data-kind="row" title="Drag row 1" type="button">⋯</button><button data-index="1" data-kind="row" title="Drag row 2" type="button">⋯</button><button data-index="2" data-kind="row" title="Drag row 3" type="button">⋯</button><button data-index="3" data-kind="row" title="Drag row 4" type="button">⋯</button>
+        </div>
+        <div class="handles handle-right" aria-label="Row swap handles">
+          <button data-index="0" data-kind="row" title="Drag row 1" type="button">⋯</button><button data-index="1" data-kind="row" title="Drag row 2" type="button">⋯</button><button data-index="2" data-kind="row" title="Drag row 3" type="button">⋯</button><button data-index="3" data-kind="row" title="Drag row 4" type="button">⋯</button>
+        </div>
+        <div class="board">
+          <button class="cell" type="button">3</button><button class="cell" type="button">8</button><button class="cell" type="button">2</button><button class="cell" type="button">5</button>
+          <button class="cell" type="button">6</button><button class="cell" type="button">1</button><button class="cell" type="button">9</button><button class="cell" type="button">4</button>
+          <button class="cell" type="button">7</button><button class="cell" type="button">2</button><button class="cell" type="button">5</button><button class="cell" type="button">8</button>
+          <button class="cell" type="button">1</button><button class="cell" type="button">6</button><button class="cell" type="button">3</button><button class="cell" type="button">7</button>
+        </div>
+      </section>
+
+      <p class="instruction" id="game-feedback"><strong>Choose a source cell.</strong> Then choose a target to transform it.</p>
+      <p class="help">Drag the marks at a row or column edge to swap it · <a href="#">How moves work</a></p>
+    </main>
+    <script>
+      window.puzzleBoardConfig = { rows: 4, columns: 4 };
+    </script>
+    <script src="scripts/puzzle-board.js?v=4"></script>
+    <script>
+      window.initializePuzzleBoard(window.puzzleBoardConfig);
+    </script>
+  </body>
+</html>
