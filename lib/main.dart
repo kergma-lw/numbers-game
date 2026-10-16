@@ -193,6 +193,7 @@ class _BoardScreenState extends State<BoardScreen> {
       : widget.tutorial!.steps[_tutorialStepIndex];
 
   bool get _isTutorial => widget.tutorial != null;
+  bool get _disableAnimations => MediaQuery.disableAnimationsOf(context);
 
   bool _isTutorialCellHighlighted(CellPosition position) {
     final step = _tutorialStep;
@@ -327,23 +328,27 @@ class _BoardScreenState extends State<BoardScreen> {
     } else {
       _swapIndices(columns, source.index, target.index);
     }
+    final disableAnimations = _disableAnimations;
 
     setState(() {
       _game = source.kind == BoardLineKind.row
           ? _game.swapRows(source.index, target.index)
           : _game.swapColumns(source.index, target.index);
       _moveHistory.add(_LineSwap(source, target));
-      _visualRows = rows;
-      _visualColumns = columns;
-      _animatedSwapSource = source;
-      _animatedSwapTarget = target;
+      _visualRows = disableAnimations ? _normalOrder(_board.rowCount) : rows;
+      _visualColumns = disableAnimations ? _normalOrder(_board.columnCount) : columns;
+      _animatedSwapSource = disableAnimations ? null : source;
+      _animatedSwapTarget = disableAnimations ? null : target;
       _swapSource = null;
       _swapTarget = null;
-      _isAnimatingSwap = true;
+      _isAnimatingSwap = !disableAnimations;
       _feedback = '${source.kind.label.capitalize()} swapped.';
     });
     _persistGame();
     _advanceTutorial();
+    if (disableAnimations) {
+      return;
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
@@ -394,14 +399,18 @@ class _BoardScreenState extends State<BoardScreen> {
               restoredGame.currentBoard.valueAt(CellPosition(row, column)))
             CellPosition(row, column),
     };
+    final disableAnimations = _disableAnimations;
     setState(() {
       _game = restoredGame;
       _resetInteraction();
-      _isUndoing = true;
-      _undoingCells = changedCells;
+      _isUndoing = !disableAnimations;
+      _undoingCells = disableAnimations ? {} : changedCells;
       _feedback = 'Move undone.';
     });
     _persistGame();
+    if (disableAnimations) {
+      return;
+    }
     _undoAnimationTimer = Timer(_swapAnimationDuration, () {
       if (!mounted) {
         return;
@@ -421,18 +430,22 @@ class _BoardScreenState extends State<BoardScreen> {
     } else {
       _swapIndices(columns, swap.source.index, swap.target.index);
     }
+    final disableAnimations = _disableAnimations;
 
     setState(() {
       _game = restoredGame;
       _resetInteraction();
-      _visualRows = rows;
-      _visualColumns = columns;
-      _animatedSwapSource = swap.source;
-      _animatedSwapTarget = swap.target;
-      _isAnimatingSwap = true;
+      _visualRows = disableAnimations ? _normalOrder(_board.rowCount) : rows;
+      _visualColumns = disableAnimations ? _normalOrder(_board.columnCount) : columns;
+      _animatedSwapSource = disableAnimations ? null : swap.source;
+      _animatedSwapTarget = disableAnimations ? null : swap.target;
+      _isAnimatingSwap = !disableAnimations;
       _feedback = 'Move undone.';
     });
     _persistGame();
+    if (disableAnimations) {
+      return;
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
@@ -628,6 +641,7 @@ class _BoardScreenState extends State<BoardScreen> {
                        undoingCells: _undoingCells,
                        isAnimatingSwap: _isAnimatingSwap,
                        isUndoing: _isUndoing,
+                       disableAnimations: _disableAnimations,
                        sourceLineHighlight: _swapSource ?? _animatedSwapSource,
                        targetLineHighlight: _swapTarget ?? _animatedSwapTarget,
                        historicalGame: _historicalGame,

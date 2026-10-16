@@ -23,6 +23,51 @@ void main() {
     expect(undoButton(tester).onPressed, isNull);
   });
 
+  testWidgets('disables non-essential board animations for reduced motion',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: MediaQuery(
+          data: MediaQueryData(disableAnimations: true),
+          child: BoardScreen(),
+        ),
+      ),
+    );
+
+    expect(
+      tester.widget<AnimatedPositioned>(find.byType(AnimatedPositioned).first).duration,
+      Duration.zero,
+    );
+    expect(
+      tester.widget<AnimatedScale>(find.byType(AnimatedScale).first).duration,
+      Duration.zero,
+    );
+  });
+
+  testWidgets('reduced motion completes a swap without transient animation state',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: MediaQuery(
+          data: MediaQueryData(disableAnimations: true),
+          child: BoardScreen(),
+        ),
+      ),
+    );
+
+    final source = find.byKey(const Key('row-handle-left-0'));
+    final target = find.byKey(const Key('row-handle-left-1'));
+    final gesture = await tester.startGesture(tester.getCenter(source));
+    await gesture.moveTo(tester.getCenter(target));
+    await gesture.up();
+    await tester.pump();
+
+    expect(find.byKey(const Key('swap-source-highlight')), findsNothing);
+    expect(find.byKey(const Key('swap-target-highlight')), findsNothing);
+    expect(find.bySemanticsLabel('Cell 1, 1: 3'), findsOneWidget);
+    expect(undoButton(tester).onPressed, isNotNull);
+  });
+
   testWidgets('scales a large cell value to fit the board cell',
       (WidgetTester tester) async {
     await tester.pumpWidget(

@@ -51,6 +51,7 @@ class GameBoard extends StatelessWidget {
     required this.undoingCells,
     required this.isAnimatingSwap,
     required this.isUndoing,
+    required this.disableAnimations,
     required this.onCellPressed,
     required this.onDragStarted,
     required this.onHover,
@@ -71,6 +72,7 @@ class GameBoard extends StatelessWidget {
   final Set<CellPosition> undoingCells;
   final bool isAnimatingSwap;
   final bool isUndoing;
+  final bool disableAnimations;
   final ValueChanged<CellPosition> onCellPressed;
   final ValueChanged<BoardLineTarget> onDragStarted;
   final ValueChanged<BoardLineTarget> onHover;
@@ -198,7 +200,9 @@ class GameBoard extends StatelessWidget {
               for (var row = 0; row < board.rowCount; row++)
                 for (var column = 0; column < board.columnCount; column++)
                   AnimatedPositioned(
-                    duration: const Duration(milliseconds: 380),
+                    duration: disableAnimations
+                        ? Duration.zero
+                        : const Duration(milliseconds: 380),
                     curve: Curves.easeInOutCubicEmphasized,
                     left: _handleSize +
                         visualColumns[column] * (cellWidth + _cellGap),
@@ -211,6 +215,7 @@ class GameBoard extends StatelessWidget {
                       value: board.valueAt(CellPosition(row, column)),
                       selected: selectedCell == CellPosition(row, column),
                       undoing: undoingCells.contains(CellPosition(row, column)),
+                      disableAnimations: disableAnimations,
                       onPressed: onCellPressed,
                     ),
                   ),
@@ -269,6 +274,7 @@ class GameBoard extends StatelessWidget {
           side: side,
           isActive: sourceLineHighlight == target || targetLineHighlight == target,
           enabled: !isAnimatingSwap && !isUndoing,
+          disableAnimations: disableAnimations,
           onDragStarted: onDragStarted,
           onHover: onHover,
           onLeave: onLeave,
@@ -285,6 +291,7 @@ class GameCell extends StatelessWidget {
     required this.value,
     required this.selected,
     required this.undoing,
+    required this.disableAnimations,
     required this.onPressed,
   });
 
@@ -292,6 +299,7 @@ class GameCell extends StatelessWidget {
   final int value;
   final bool selected;
   final bool undoing;
+  final bool disableAnimations;
   final ValueChanged<CellPosition> onPressed;
 
   @override
@@ -303,7 +311,9 @@ class GameCell extends StatelessWidget {
       label: 'Cell ${position.row + 1}, ${position.column + 1}: $value',
       child: AnimatedScale(
         scale: undoing ? 1.08 : 1,
-        duration: const Duration(milliseconds: 180),
+        duration: disableAnimations
+            ? Duration.zero
+            : const Duration(milliseconds: 180),
         curve: Curves.easeOutBack,
         child: OutlinedButton(
           key: Key('cell-${position.row}-${position.column}'),
@@ -345,6 +355,7 @@ class EdgeSwapHandle extends StatefulWidget {
     required this.side,
     required this.isActive,
     required this.enabled,
+    required this.disableAnimations,
     required this.onDragStarted,
     required this.onHover,
     required this.onLeave,
@@ -356,6 +367,7 @@ class EdgeSwapHandle extends StatefulWidget {
   final BoardHandleSide side;
   final bool isActive;
   final bool enabled;
+  final bool disableAnimations;
   final ValueChanged<BoardLineTarget> onDragStarted;
   final ValueChanged<BoardLineTarget> onHover;
   final ValueChanged<BoardLineTarget> onLeave;
@@ -411,7 +423,9 @@ class _EdgeSwapHandleState extends State<EdgeSwapHandle> {
       label: '${widget.side.label} handle for ${widget.target.kind.label} ${widget.target.index + 1}',
       child: AnimatedContainer(
         key: Key('${widget.target.kind.name}-handle-${widget.side.name}-${widget.target.index}'),
-        duration: const Duration(milliseconds: 120),
+        duration: widget.disableAnimations
+            ? Duration.zero
+            : const Duration(milliseconds: 120),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: backgroundColor,
