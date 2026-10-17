@@ -776,11 +776,13 @@ class _MovingModeGradients extends StatefulWidget {
     super.key,
     required this.duration,
     required this.color,
+    required this.isTeal,
     required this.builder,
   });
 
   final Duration duration;
   final Color color;
+  final bool isTeal;
   final Widget Function(LinearGradient gradient, RadialGradient glow) builder;
 
   @override
@@ -823,18 +825,30 @@ class _MovingModeGradientsState extends State<_MovingModeGradients>
         animation: _controller,
         builder: (context, _) {
           final progress = Curves.easeInOut.transform(_controller.value) * 4;
-          const radialPositions = [
+          final radialPositions = widget.isTeal ? const [
             Offset(0, 0),
             Offset(1, 0),
             Offset(1, 1),
             Offset(0, 1),
             Offset(0, 0),
+          ] : const [
+            Offset(1, 0),
+            Offset(0, 0),
+            Offset(0, 1),
+            Offset(1, 1),
+            Offset(1, 0),
           ];
-          const linearPositions = [
+          final linearPositions = widget.isTeal ? const [
             Offset(.5, .5),
             Offset(.65, .35),
             Offset(.5, .5),
             Offset(.35, .65),
+            Offset(.5, .5),
+          ] : const [
+            Offset(.5, .5),
+            Offset(.35, .65),
+            Offset(.5, .5),
+            Offset(.65, .35),
             Offset(.5, .5),
           ];
           final index = progress.floor().clamp(0, radialPositions.length - 2);
@@ -844,13 +858,15 @@ class _MovingModeGradientsState extends State<_MovingModeGradients>
           final gradient = LinearGradient(
             begin: Alignment(-1 - linearPosition.dx, -1 - linearPosition.dy),
             end: Alignment(2 - linearPosition.dx, 2 - linearPosition.dy),
-            colors: const [Color(0xff304565), Color(0xff2b3855), Color(0xff26324d)],
-            stops: const [0, .58, 1],
+            colors: widget.isTeal
+                ? const [Color(0xff304565), Color(0xff2b3855), Color(0xff26324d)]
+                : const [Color(0xff3d3a5d), Color(0xff363a59), Color(0xff29354d)],
+            stops: widget.isTeal ? const [0, .58, 1] : const [0, .55, 1],
           );
           final glow = RadialGradient(
             center: Alignment(-.8 + 1.6 * radialPosition.dx, -.56 + 1.12 * radialPosition.dy),
             radius: 1.08,
-            colors: [widget.color.withValues(alpha: .26), Colors.transparent],
+            colors: [widget.color.withValues(alpha: widget.isTeal ? .26 : .24), Colors.transparent],
           );
           return widget.builder(gradient, glow);
         },
@@ -867,24 +883,6 @@ class _ModeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isTeal = color == const Color(0xff74d7c4);
-    final baseGradient = isTeal
-        ? const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xff304565), Color(0xff2b3855), Color(0xff26324d)],
-            stops: [0, .58, 1],
-          )
-        : const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xff3d3a5d), Color(0xff363a59), Color(0xff29354d)],
-            stops: [0, .55, 1],
-          );
-    final baseGlow = RadialGradient(
-      center: isTeal ? const Alignment(-.60, -.56) : const Alignment(.56, -.48),
-      radius: 1.08,
-      colors: [color.withValues(alpha: isTeal ? .26 : .24), Colors.transparent],
-    );
     Widget buildCard(LinearGradient gradient, RadialGradient glow) => _LivingCorners(
           key: Key(isTeal ? 'start-mode-living-teal' : 'start-mode-living-coral'),
           duration: Duration(seconds: isTeal ? 12 : 13),
@@ -915,11 +913,11 @@ class _ModeCard extends StatelessWidget {
             ),
           ),
         );
-    if (!isTeal) return buildCard(baseGradient, baseGlow);
     return _MovingModeGradients(
-      key: const Key('start-mode-moving-teal-gradient'),
+      key: Key(isTeal ? 'start-mode-moving-teal-gradient' : 'start-mode-moving-coral-gradient'),
       duration: const Duration(seconds: 100),
       color: color,
+      isTeal: isTeal,
       builder: buildCard,
     );
   }
