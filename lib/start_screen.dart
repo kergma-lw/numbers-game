@@ -197,40 +197,49 @@ class _StartScreenState extends State<StartScreen> {
                                 padding: const EdgeInsets.all(18),
                                 child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                if (widget.showTutorialCallToAction) ...[
-                                  FilledButton(
-                                    key: const Key('start-tutorial-call-to-action'),
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: const Color(0xffb9c4de),
-                                      foregroundColor: const Color(0xff30384d),
-                                      padding: const EdgeInsets.all(16),
-                                      shape: const RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.all(Radius.circular(18)),
-                                      ),
-                                    ),
-                                    onPressed: widget.onTutorial,
-                                    child: const Row(
-                                      children: [
-                                        Icon(Icons.auto_stories_outlined),
-                                        SizedBox(width: 16),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text('Take the tutorial', style: TextStyle(fontWeight: FontWeight.w800)),
-                                              Text('Learn moves and transformations', style: TextStyle(fontSize: 12)),
-                                            ],
+                                children: [
+                                  if (widget.showTutorialCallToAction) ...[
+                                   Padding(
+                                     padding: const EdgeInsets.all(10),
+                                     child: _RandomDrift(
+                                      key: const Key('tutorial-random-drift'),
+                                      initialDelay: const Duration(milliseconds: 700),
+                                      child: FilledButton(
+                                        key: const Key('start-tutorial-call-to-action'),
+                                        style: FilledButton.styleFrom(
+                                          backgroundColor: const Color(0xffb9c4de),
+                                          foregroundColor: const Color(0xff30384d),
+                                          padding: const EdgeInsets.all(16),
+                                          shape: const RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.all(Radius.circular(18)),
                                           ),
                                         ),
-                                        Icon(Icons.arrow_forward),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
+                                        onPressed: widget.onTutorial,
+                                        child: const Row(
+                                          children: [
+                                            Icon(Icons.auto_stories_outlined),
+                                            SizedBox(width: 16),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text('Take the tutorial', style: TextStyle(fontWeight: FontWeight.w800)),
+                                                  Text('Learn moves and transformations', style: TextStyle(fontSize: 12)),
+                                                ],
+                                              ),
+                                            ),
+                                            Icon(Icons.arrow_forward),
+                                          ],
+                                        ),
+                                      ),
+                                     ),
+                                   ),
+                                   const SizedBox(height: 12),
                                 ],
                                 if (widget.savedGame != null) ...[
-                                  _RandomDrift(
+                                  Padding(
+                                    padding: const EdgeInsets.all(10),
+                                    child: _RandomDrift(
                                     key: const Key('continue-random-drift'),
                                     initialDelay: const Duration(milliseconds: 700),
                                     child: _MovingGradient(
@@ -284,16 +293,17 @@ class _StartScreenState extends State<StartScreen> {
                                         ),
                                       ),
                                     ),
-                                  ),
                                     ),
+                                   ),
+                                  ),
                                   const SizedBox(height: 22),
                                 ],
                                 const Text('CHOOSE A NEW PUZZLE', style: TextStyle(color: muted, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                                 const SizedBox(height: 10),
                                 Row(children: [
-                                   Expanded(child: _ModeCard(key: const Key('start-one-non-zero-button'), icon: '1 → 0', title: 'One non-zero', detail: 'Leave one number on the board', color: const Color(0xff74d7c4), onPressed: () => widget.onStartMode(GameMode.oneNonZero))),
-                                  const SizedBox(width: 10),
-                                   Expanded(child: _ModeCard(key: const Key('start-historical-date-button'), icon: '12·04·61', title: 'Historical Date', detail: 'Rebuild a date from an event', color: const Color(0xffec765d), onPressed: () => widget.onStartMode(GameMode.historicalDate))),
+                                    Expanded(child: Padding(padding: const EdgeInsets.symmetric(vertical: 10), child: _ModeCard(key: const Key('start-one-non-zero-button'), icon: '1 → 0', title: 'One non-zero', detail: 'Leave one number on the board', color: const Color(0xff74d7c4), onPressed: () => widget.onStartMode(GameMode.oneNonZero)))),
+                                   const SizedBox(width: 8),
+                                     Expanded(child: Padding(padding: const EdgeInsets.symmetric(vertical: 10), child: _ModeCard(key: const Key('start-historical-date-button'), icon: '12·04·61', title: 'Historical Date', detail: 'Rebuild a date from an event', color: const Color(0xffec765d), onPressed: () => widget.onStartMode(GameMode.historicalDate)))),
                                 ]),
                               ],
                                 ),
@@ -505,8 +515,8 @@ class _RandomDriftState extends State<_RandomDrift>
       (_random.nextDouble() - .5) * 10,
       (_random.nextDouble() - .5) * 12,
     );
-    _toRotation = (_random.nextDouble() - .5) * .7;
-    _controller.duration = Duration(milliseconds: 7000 + _random.nextInt(6001));
+    _toRotation = (_random.nextDouble() - .5) * 6;
+    _controller.duration = Duration(milliseconds: 14000 + _random.nextInt(12001));
     _controller.forward(from: 0);
   }
 
