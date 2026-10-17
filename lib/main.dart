@@ -222,7 +222,7 @@ class _BoardScreenState extends State<BoardScreen> {
   CellPosition? _resolvingCell;
   String? _resolvingEquation;
   Timer? _resolutionTimer;
-  String _feedback = 'Select a source cell.';
+  late GameFeedback _feedback;
   int _tutorialStepIndex = 0;
   bool _tutorialCompleted = false;
 
@@ -235,6 +235,12 @@ class _BoardScreenState extends State<BoardScreen> {
 
   bool get _isTutorial => widget.tutorial != null;
   bool get _disableAnimations => MediaQuery.disableAnimationsOf(context);
+  GameFeedback get _sourcePrompt => GameFeedback(
+        'Choose a source cell.',
+        _historicalGame == null
+            ? 'Then choose a target to transform it.'
+            : 'Rebuild the date inside the gold frame.',
+      );
 
   bool _isTutorialCellHighlighted(CellPosition position) {
     final step = _tutorialStep;
@@ -262,7 +268,9 @@ class _BoardScreenState extends State<BoardScreen> {
           [1, 2],
           [3, 4],
         ]));
-    _feedback = _tutorialStep?.instruction ?? _feedback;
+    _feedback = _tutorialStep == null
+        ? _sourcePrompt
+        : GameFeedback(_tutorialStep!.instruction);
   }
 
   void _selectCell(CellPosition position) {
@@ -279,14 +287,17 @@ class _BoardScreenState extends State<BoardScreen> {
       }
       setState(() {
         _arithmeticSource = position;
-        _feedback = 'Source selected. Choose a target cell.';
+        _feedback = GameFeedback(
+          '${_board.valueAt(position)} is the source.',
+          'Choose a different target cell.',
+        );
       });
       return;
     }
 
     if (source == position) {
       setState(() {
-        _feedback = 'Choose a different target cell.';
+        _feedback = const GameFeedback('Choose a different target cell.');
       });
       return;
     }
@@ -309,7 +320,10 @@ class _BoardScreenState extends State<BoardScreen> {
       _isResolving = !disableAnimations;
       _resolvingCell = disableAnimations ? null : position;
       _resolvingEquation = disableAnimations ? null : '${_formatOperand(sourceValue)} ${adds ? '+' : '−'} ${_formatOperand(targetValue)}';
-      _feedback = '$sourceValue ${adds ? '+' : '−'} $targetValue = $result. Choose a source cell.';
+      _feedback = GameFeedback(
+        '$sourceValue ${adds ? '+' : '−'} $targetValue = $result.',
+        'Choose a source cell.',
+      );
     });
     _persistGame();
     _advanceTutorial();
@@ -343,7 +357,10 @@ class _BoardScreenState extends State<BoardScreen> {
       _arithmeticSource = null;
       _swapSource = source;
       _swapTarget = null;
-      _feedback = 'Drag to another ${source.kind.label} to swap.';
+      _feedback = GameFeedback(
+        'Dragging ${source.kind.label} ${source.index + 1}.',
+        'Drop it on another ${source.kind.label}.',
+      );
     });
   }
 
@@ -364,7 +381,10 @@ class _BoardScreenState extends State<BoardScreen> {
       setState(() {
         _swapSource = null;
         _swapTarget = null;
-        _feedback = 'Swap cancelled.';
+        _feedback = const GameFeedback(
+          'Swap cancelled.',
+          'Drag a row or column handle onto another one.',
+        );
       });
     }
   }
@@ -397,7 +417,7 @@ class _BoardScreenState extends State<BoardScreen> {
       _isAnimatingSwap = !disableAnimations;
       _swapAnimationId++;
       _swapAfterimages.addAll(afterimages);
-      _feedback = '${source.kind.label.capitalize()} swapped.';
+      _feedback = GameFeedback('${source.kind.label.capitalize()}s swapped.', 'Choose a source cell.');
     });
     _persistGame();
     _advanceTutorial();
@@ -467,7 +487,7 @@ class _BoardScreenState extends State<BoardScreen> {
     setState(() {
       _game = restoredGame;
       _resetInteraction();
-      _feedback = 'Move undone.';
+      _feedback = const GameFeedback('Move undone.', 'Choose a source cell.');
     });
     _persistGame();
   }
@@ -478,7 +498,7 @@ class _BoardScreenState extends State<BoardScreen> {
       _tutorialStepIndex = 0;
       _tutorialCompleted = false;
       _resetInteraction();
-      _feedback = 'Game restarted.';
+      _feedback = const GameFeedback('Game restarted.', 'Choose a source cell.');
     });
     _persistGame();
   }
@@ -504,7 +524,7 @@ class _BoardScreenState extends State<BoardScreen> {
       _tutorialStepIndex = 0;
       _tutorialCompleted = false;
       _resetInteraction();
-      _feedback = 'New game started.';
+      _feedback = const GameFeedback('New game started.', 'Choose a source cell.');
     });
   }
 
@@ -515,10 +535,10 @@ class _BoardScreenState extends State<BoardScreen> {
     setState(() {
       if (_tutorialStepIndex == widget.tutorial!.steps.length - 1) {
         _tutorialCompleted = true;
-        _feedback = 'Tutorial complete.';
+        _feedback = const GameFeedback('Tutorial complete.');
       } else {
         _tutorialStepIndex++;
-        _feedback = widget.tutorial!.steps[_tutorialStepIndex].instruction;
+        _feedback = GameFeedback(widget.tutorial!.steps[_tutorialStepIndex].instruction);
       }
     });
   }
@@ -526,7 +546,7 @@ class _BoardScreenState extends State<BoardScreen> {
   void _showTutorialFeedback() {
     setState(() {
       _arithmeticSource = null;
-      _feedback = _tutorialStep?.instruction ?? 'Follow the tutorial instruction.';
+      _feedback = GameFeedback(_tutorialStep?.instruction ?? 'Follow the tutorial instruction.');
     });
   }
 

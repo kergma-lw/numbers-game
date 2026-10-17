@@ -10,6 +10,9 @@ import 'package:numbers_game/settings_screen.dart';
 import 'package:numbers_game/tutorial.dart';
 import 'package:numbers_game/tutorial_progress_store.dart';
 
+String feedbackText(WidgetTester tester) =>
+    tester.widget<Text>(find.byKey(const Key('feedback'))).textSpan!.toPlainText();
+
 void main() {
   testWidgets('renders the initial board', (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: BoardScreen()));
@@ -18,7 +21,7 @@ void main() {
     expect(find.text('2'), findsOneWidget);
     expect(find.text('3'), findsOneWidget);
     expect(find.text('4'), findsOneWidget);
-    expect(find.text('Select a source cell.'), findsOneWidget);
+    expect(feedbackText(tester), 'Choose a source cell. Then choose a target to transform it.');
     expect(find.text('Moves: 0'), findsOneWidget);
     expect(undoButton(tester).onPressed, isNull);
   });
@@ -92,7 +95,7 @@ void main() {
     await tester.tap(find.byKey(const Key('cell-0-0')));
     await tester.pump();
 
-    expect(find.text('Source selected. Choose a target cell.'), findsOneWidget);
+    expect(find.text('1 is the source. Choose a different target cell.'), findsOneWidget);
   });
 
   testWidgets('applies an arithmetic move after selecting two cells',
@@ -103,7 +106,10 @@ void main() {
     await tester.tap(find.byKey(const Key('cell-0-1')));
     await tester.pump();
 
-    expect(find.text('1 + 2 = 3. Choose a source cell.'), findsOneWidget);
+    expect(feedbackText(tester), '1 + 2 = 3. Choose a source cell.');
+    final feedback = tester.widget<Text>(find.byKey(const Key('feedback')));
+    final headline = (feedback.textSpan! as TextSpan).children!.first as TextSpan;
+    expect(headline.style!.fontWeight, FontWeight.w600);
     expect(find.text('Moves: 1'), findsOneWidget);
     expect(find.text('2'), findsNothing);
     expect(find.text('3'), findsNWidgets(2));
@@ -132,7 +138,7 @@ void main() {
     await tester.tap(find.byKey(const Key('undo-button')));
     await tester.pump();
 
-    expect(find.text('Move undone.'), findsOneWidget);
+    expect(feedbackText(tester), 'Move undone. Choose a source cell.');
     expect(find.text('Moves: 0'), findsOneWidget);
     expect(find.bySemanticsLabel('Cell 1, 2: 2'), findsOneWidget);
     expect(undoButton(tester).onPressed, isNull);
@@ -152,7 +158,7 @@ void main() {
     await tester.tap(find.byKey(const Key('restart-button')));
     await tester.pump();
 
-    expect(find.text('Game restarted.'), findsOneWidget);
+    expect(feedbackText(tester), 'Game restarted. Choose a source cell.');
     expect(find.text('Moves: 0'), findsOneWidget);
     expect(find.bySemanticsLabel('Cell 1, 1: 1'), findsOneWidget);
     expect(undoButton(tester).onPressed, isNull);
@@ -296,7 +302,7 @@ void main() {
     await gesture.up();
     await tester.pump();
 
-    expect(find.text('Swap cancelled.'), findsOneWidget);
+    expect(feedbackText(tester), 'Swap cancelled. Drag a row or column handle onto another one.');
     expect(find.bySemanticsLabel('Cell 1, 1: 1'), findsOneWidget);
   });
 
@@ -380,6 +386,7 @@ void main() {
     expect(find.text('20.7.1969'), findsOneWidget);
     expect(find.byKey(const Key('historical-date-frame')), findsOneWidget);
     expect(find.byKey(const Key('historical-date-separator-1')), findsOneWidget);
+    expect(feedbackText(tester), 'Choose a source cell. Rebuild the date inside the gold frame.');
     await tester.tap(find.byKey(const Key('cell-0-1')));
     await tester.tap(find.byKey(const Key('cell-0-2')));
     await tester.pump();

@@ -18,6 +18,13 @@ class GameActionControls extends StatelessWidget {
       );
 }
 
+class GameFeedback {
+  const GameFeedback(this.primary, [this.context]);
+
+  final String primary;
+  final String? context;
+}
+
 class GameStatusPanel extends StatelessWidget {
   const GameStatusPanel({
     super.key,
@@ -29,7 +36,7 @@ class GameStatusPanel extends StatelessWidget {
   });
 
   final int moveCount;
-  final String feedback;
+  final GameFeedback feedback;
   final bool isWon;
   final bool isLost;
   final bool showMoveCount;
@@ -57,12 +64,25 @@ class GameStatusPanel extends StatelessWidget {
               ),
             ),
           const SizedBox(height: 24),
-          Semantics(
-            liveRegion: true,
-            child: Text(
-              feedback,
+           Semantics(
+             liveRegion: true,
+            label: [feedback.primary, feedback.context].whereType<String>().join(' '),
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: feedback.primary,
+                    style: const TextStyle(
+                      color: Color(0xfff4eddf),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (feedback.context != null) TextSpan(text: ' ${feedback.context}'),
+                ],
+              ),
               key: const Key('feedback'),
               textAlign: TextAlign.center,
+              style: const TextStyle(color: Color(0xffbcb6aa), fontSize: 14),
             ),
           ),
         ],
