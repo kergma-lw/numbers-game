@@ -771,6 +771,92 @@ class _LivingCornersState extends State<_LivingCorners>
       );
 }
 
+class _MovingModeGradients extends StatefulWidget {
+  const _MovingModeGradients({
+    super.key,
+    required this.duration,
+    required this.color,
+    required this.builder,
+  });
+
+  final Duration duration;
+  final Color color;
+  final Widget Function(LinearGradient gradient, RadialGradient glow) builder;
+
+  @override
+  State<_MovingModeGradients> createState() => _MovingModeGradientsState();
+}
+
+class _MovingModeGradientsState extends State<_MovingModeGradients>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  bool? _reducedMotion;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: widget.duration);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reducedMotion = MediaQuery.disableAnimationsOf(context);
+    if (_reducedMotion == reducedMotion) return;
+    _reducedMotion = reducedMotion;
+    if (reducedMotion) {
+      _controller.stop();
+      _controller.value = 0;
+    } else {
+      _controller.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          final progress = Curves.easeInOut.transform(_controller.value) * 4;
+          const radialPositions = [
+            Offset(0, 0),
+            Offset(1, 0),
+            Offset(1, 1),
+            Offset(0, 1),
+            Offset(0, 0),
+          ];
+          const linearPositions = [
+            Offset(.5, .5),
+            Offset(.65, .35),
+            Offset(.5, .5),
+            Offset(.35, .65),
+            Offset(.5, .5),
+          ];
+          final index = progress.floor().clamp(0, radialPositions.length - 2);
+          final t = progress - index;
+          final radialPosition = Offset.lerp(radialPositions[index], radialPositions[index + 1], t)!;
+          final linearPosition = Offset.lerp(linearPositions[index], linearPositions[index + 1], t)!;
+          final gradient = LinearGradient(
+            begin: Alignment(-1 - linearPosition.dx, -1 - linearPosition.dy),
+            end: Alignment(2 - linearPosition.dx, 2 - linearPosition.dy),
+            colors: const [Color(0xff304565), Color(0xff2b3855), Color(0xff26324d)],
+            stops: const [0, .58, 1],
+          );
+          final glow = RadialGradient(
+            center: Alignment(-.8 + 1.6 * radialPosition.dx, -.56 + 1.12 * radialPosition.dy),
+            radius: 1.08,
+            colors: [widget.color.withValues(alpha: .26), Colors.transparent],
+          );
+          return widget.builder(gradient, glow);
+        },
+      );
+}
+
 class _ModeCard extends StatelessWidget {
   const _ModeCard({super.key, required this.icon, required this.title, required this.detail, required this.color, required this.onPressed});
   final String icon;
@@ -794,23 +880,21 @@ class _ModeCard extends StatelessWidget {
             colors: [Color(0xff3d3a5d), Color(0xff363a59), Color(0xff29354d)],
             stops: [0, .55, 1],
           );
-    return _LivingCorners(
-      key: Key(isTeal ? 'start-mode-living-teal' : 'start-mode-living-coral'),
-      duration: Duration(seconds: isTeal ? 12 : 13),
-      initialDelay: Duration(seconds: isTeal ? 0 : 4),
-      builder: (context, radius) => DecoratedBox(
-        key: Key(isTeal ? 'start-mode-gradient-teal' : 'start-mode-gradient-coral'),
-        decoration: BoxDecoration(gradient: baseGradient, borderRadius: radius),
-        child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: RadialGradient(
-            center: isTeal ? const Alignment(-.60, -.56) : const Alignment(.56, -.48),
-            radius: 1.08,
-            colors: [color.withValues(alpha: isTeal ? .26 : .24), Colors.transparent],
-          ),
-          borderRadius: radius,
-        ),
-        child: OutlinedButton(
+    final baseGlow = RadialGradient(
+      center: isTeal ? const Alignment(-.60, -.56) : const Alignment(.56, -.48),
+      radius: 1.08,
+      colors: [color.withValues(alpha: isTeal ? .26 : .24), Colors.transparent],
+    );
+    Widget buildCard(LinearGradient gradient, RadialGradient glow) => _LivingCorners(
+          key: Key(isTeal ? 'start-mode-living-teal' : 'start-mode-living-coral'),
+          duration: Duration(seconds: isTeal ? 12 : 13),
+          initialDelay: Duration(seconds: isTeal ? 0 : 4),
+          builder: (context, radius) => DecoratedBox(
+            key: Key(isTeal ? 'start-mode-gradient-teal' : 'start-mode-gradient-coral'),
+            decoration: BoxDecoration(gradient: gradient, borderRadius: radius),
+            child: DecoratedBox(
+              decoration: BoxDecoration(gradient: glow, borderRadius: radius),
+              child: OutlinedButton(
           onPressed: onPressed,
           style: OutlinedButton.styleFrom(
             padding: const EdgeInsets.all(14),
@@ -827,9 +911,16 @@ class _ModeCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(detail, style: const TextStyle(color: Color(0xffbcb6aa), fontSize: 11)),
           ]),
-        ),
-        ),
-      ),
+              ),
+            ),
+          ),
+        );
+    if (!isTeal) return buildCard(baseGradient, baseGlow);
+    return _MovingModeGradients(
+      key: const Key('start-mode-moving-teal-gradient'),
+      duration: const Duration(seconds: 100),
+      color: color,
+      builder: buildCard,
     );
   }
 }
