@@ -78,22 +78,53 @@ class HistoricalEventPanel extends StatelessWidget {
   final HistoricalDateGame game;
 
   @override
-  Widget build(BuildContext context) => Card(
+  Widget build(BuildContext context) => Container(
         key: const Key('historical-event-card'),
+        margin: const EdgeInsets.only(top: 20, bottom: 12),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color.fromRGBO(86, 56, 83, .90), Color.fromRGBO(52, 43, 74, .92)],
+          ),
+          border: Border.all(color: const Color.fromRGBO(236, 118, 93, .38)),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(16),
+            bottomLeft: Radius.circular(21),
+            bottomRight: Radius.circular(14),
+          ),
+          boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 20)],
+        ),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.zero,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(game.event.title, style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 4),
+              const Text(
+                'RESTORE THE DATE',
+                style: TextStyle(
+                  color: Color(0xfff3a486),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.6,
+                ),
+              ),
+              const SizedBox(height: 3),
               Text(
                 game.formattedDate,
                 key: const Key('historical-event-date'),
-                style: Theme.of(context).textTheme.titleSmall,
+                style: const TextStyle(
+                  color: Color(0xffffe6ae),
+                  fontFamily: 'serif',
+                  fontSize: 20,
+                ),
               ),
+              const SizedBox(height: 8),
+              Text(game.event.title, style: const TextStyle(fontFamily: 'serif', fontSize: 20)),
               const SizedBox(height: 4),
-              Text(game.event.description),
+              Text(game.event.description, style: const TextStyle(color: Color(0xffbcb6aa), fontSize: 12)),
             ],
           ),
         ),

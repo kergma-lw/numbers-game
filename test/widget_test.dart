@@ -383,7 +383,7 @@ void main() {
     await tester.tap(find.byKey(const Key('cell-0-1')));
     await tester.tap(find.byKey(const Key('cell-0-2')));
     await tester.pump();
-    expect(find.text('Moves: 1'), findsOneWidget);
+    expect(find.text('01 moves'), findsOneWidget);
   });
 
   testWidgets('tutorial advances only after its expected actions',

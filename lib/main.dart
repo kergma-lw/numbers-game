@@ -553,8 +553,35 @@ class _BoardScreenState extends State<BoardScreen> {
   @override
   Widget build(BuildContext context) {
     final isOneNonZero = !_isTutorial && _game is OneNonZeroGame;
+    final isHistoricalDate = !_isTutorial && _game is HistoricalDateGame;
+    final usesPuzzlePresentation =
+        isHistoricalDate || (isOneNonZero && _board.rowCount > 2);
+    final boardVisualConfig = isHistoricalDate
+        ? BoardVisualConfig.historicalDate
+        : isOneNonZero && _board.rowCount > 2
+            ? BoardVisualConfig.oneNonZero
+            : BoardVisualConfig.standard;
     final baseTheme = Theme.of(context);
-    final theme = isOneNonZero
+    final theme = isHistoricalDate
+        ? baseTheme.copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: Color(0xfff3a486),
+              onPrimary: Color(0xff44283c),
+              primaryContainer: Color(0xffda7a6d),
+              onPrimaryContainer: Color(0xffffe3b6),
+              secondary: Color(0xfff4b94c),
+              secondaryContainer: Color(0xffa37d48),
+              tertiary: Color(0xffffd782),
+              tertiaryContainer: Color(0xff57384f),
+              surface: Color(0xff171525),
+              onSurface: Color(0xfff4eddf),
+              surfaceContainer: Color(0xff44314f),
+              surfaceContainerHighest: Color(0xff674665),
+              outline: Color(0xfff3a486),
+            ),
+            scaffoldBackgroundColor: const Color(0xff171525),
+          )
+        : isOneNonZero
         ? baseTheme.copyWith(
             colorScheme: const ColorScheme.dark(
               primary: Color(0xff74d7c4),
@@ -578,7 +605,7 @@ class _BoardScreenState extends State<BoardScreen> {
       data: theme,
       child: Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: isOneNonZero && _board.rowCount > 2 ? null : AppBar(
+       appBar: usesPuzzlePresentation ? null : AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
          title: Text(isOneNonZero ? 'ONE NON-ZERO' : 'Numbers Game'),
@@ -608,7 +635,15 @@ class _BoardScreenState extends State<BoardScreen> {
         ],
       ),
       body: Container(
-        decoration: isOneNonZero
+        decoration: isHistoricalDate
+            ? const BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment(-.66, -.66),
+                  radius: 1.5,
+                  colors: [Color(0xff513b5d), Color(0xff171525)],
+                ),
+              )
+            : isOneNonZero
             ? const BoxDecoration(
                 gradient: RadialGradient(
                   center: Alignment(-.55, -.7),
@@ -635,26 +670,42 @@ class _BoardScreenState extends State<BoardScreen> {
                 ),
               ),
             ],
+            if (isHistoricalDate) ...[
+              const Positioned(
+                top: 54,
+                left: -18,
+                child: IgnorePointer(
+                  child: Text('19 · 69', style: TextStyle(color: Color(0x0df4eddf), fontSize: 110, fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const Positioned(
+                right: -16,
+                bottom: 24,
+                child: IgnorePointer(
+                  child: Text('20 . 07', style: TextStyle(color: Color(0x0df4eddf), fontSize: 110, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
         SafeArea(
         child: SingleChildScrollView(
           child: Center(
             child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: isOneNonZero && _board.rowCount > 2 ? 620 : 420),
+               constraints: BoxConstraints(maxWidth: usesPuzzlePresentation ? 620 : 420),
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                    children: [
-                      if (isOneNonZero && _board.rowCount > 2)
-                        Padding(
+                       if (usesPuzzlePresentation)
+                         Padding(
                           padding: const EdgeInsets.only(bottom: 16),
                           child: Row(
                             children: [
-                              const Text('← Back to menu', style: TextStyle(color: Color(0xffbcb6aa), fontSize: 12)),
-                              const Expanded(child: Center(child: Text('ONE NON-ZERO', style: TextStyle(color: Color(0xfff4eddf), fontFamily: 'serif', fontSize: 23, letterSpacing: 1.2)))),
-                              Row(mainAxisSize: MainAxisSize.min, children: [
-                                Text('${_game.moveCount.toString().padLeft(2, '0')} moves', style: const TextStyle(color: Color(0xff74d7c4), fontFamily: 'monospace', fontSize: 12)),
+                               const Text('← Back to menu', style: TextStyle(color: Color(0xffbcb6aa), fontSize: 12)),
+                               Expanded(child: Center(child: Text(isHistoricalDate ? 'HISTORICAL DATE' : 'ONE NON-ZERO', style: const TextStyle(color: Color(0xfff4eddf), fontFamily: 'serif', fontSize: 23, letterSpacing: 1.2)))),
+                               Row(mainAxisSize: MainAxisSize.min, children: [
+                                 Text('${_game.moveCount.toString().padLeft(2, '0')} moves', style: TextStyle(color: isHistoricalDate ? const Color(0xfff3a486) : const Color(0xff74d7c4), fontFamily: 'monospace', fontSize: 12)),
                                 if (widget.onOpenSettings != null)
                                   IconButton(
                                     key: const Key('settings-button'),
@@ -666,7 +717,7 @@ class _BoardScreenState extends State<BoardScreen> {
                             ],
                           ),
                         ),
-                      if (!isOneNonZero)
+                       if (!usesPuzzlePresentation)
                       Text(
                        _tutorialCompleted
                            ? 'Tutorial complete!'
@@ -677,8 +728,8 @@ class _BoardScreenState extends State<BoardScreen> {
                      ),
                       if (_historicalGame case final HistoricalDateGame game)
                         HistoricalEventPanel(game: game),
-                      if (isOneNonZero && _board.rowCount > 2)
-                        const _OneNonZeroObjective(),
+                       if (isOneNonZero && _board.rowCount > 2)
+                         const _OneNonZeroObjective(),
                      const SizedBox(height: 12),
                       GameActionControls(
                        children: [
@@ -696,7 +747,7 @@ class _BoardScreenState extends State<BoardScreen> {
                           icon: const Icon(Icons.restart_alt),
                             label: const Text('Restart'),
                           ),
-                          if (widget.onNewGame != null)
+                           if (widget.onNewGame != null && !isHistoricalDate)
                             OutlinedButton.icon(
                               key: const Key('new-game-button'),
                               onPressed: _startNewGame,
@@ -709,11 +760,11 @@ class _BoardScreenState extends State<BoardScreen> {
                              onPressed: widget.onTutorialFinished,
                              child: const Text('Skip tutorial'),
                            ),
-                          if (!_isTutorial && !isOneNonZero && widget.onStartTutorial != null)
+                          if (!_isTutorial && (!isOneNonZero || isHistoricalDate) && widget.onStartTutorial != null)
                             OutlinedButton(
                               key: const Key('start-tutorial-button'),
                               onPressed: widget.onStartTutorial,
-                              child: Text(isOneNonZero ? '? Rules' : 'Tutorial'),
+                               child: Text(usesPuzzlePresentation ? '? Rules' : 'Tutorial'),
                            ),
                        ],
                      ),
@@ -739,7 +790,7 @@ class _BoardScreenState extends State<BoardScreen> {
                         disableAnimations: _disableAnimations,
                        resolvingCell: _resolvingCell,
                        resolvingEquation: _resolvingEquation,
-                       useOneNonZeroStyle: isOneNonZero && _board.rowCount > 2,
+                        visualConfig: boardVisualConfig,
                         sourceLineHighlight: _swapSource,
                         targetLineHighlight: _swapTarget,
                        historicalGame: _historicalGame,
@@ -758,8 +809,17 @@ class _BoardScreenState extends State<BoardScreen> {
                        feedback: _feedback,
                        isWon: _game.isWon,
                         isLost: _game.isLost,
-                        showMoveCount: !isOneNonZero || _board.rowCount <= 2,
-                     ),
+                         showMoveCount: !usesPuzzlePresentation,
+                      ),
+                      if (isHistoricalDate)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 18),
+                          child: Text(
+                            'Drag the marks at a row or column edge to swap it · How moves work',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Color(0xffbcb6aa), fontSize: 12),
+                          ),
+                        ),
                   ],
                 ),
               ),

@@ -5,6 +5,105 @@ import 'package:numbers_game/game_core/historical_date_game.dart';
 const _handleSize = 28.0;
 const _cellGap = 8.0;
 
+class BoardVisualConfig {
+  const BoardVisualConfig({
+    required this.boardInset,
+    required this.handleGap,
+    required this.decorated,
+    this.boardGradient,
+    this.boardBorder,
+    this.boardRadius,
+    this.idleCellGradient,
+    this.sourceCellGradient,
+    this.targetCellGradient,
+    this.idleCellBorder,
+    this.sourceCellBorder,
+    this.targetCellBorder,
+    this.handleBackground,
+    this.handleBorder,
+    this.handleColor,
+    this.sourceHandleColor,
+    this.targetHandleColor,
+  });
+
+  static const standard = BoardVisualConfig(
+    boardInset: 0,
+    handleGap: 0,
+    decorated: false,
+  );
+
+  static const oneNonZero = BoardVisualConfig(
+    boardInset: 20,
+    handleGap: 7,
+    decorated: true,
+    boardGradient: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color.fromRGBO(24, 62, 78, .86), Color.fromRGBO(17, 42, 61, .90)],
+    ),
+    boardBorder: Color.fromRGBO(116, 215, 196, .34),
+    boardRadius: BorderRadius.only(
+      topLeft: Radius.circular(25),
+      topRight: Radius.circular(17),
+      bottomLeft: Radius.circular(22),
+      bottomRight: Radius.circular(18),
+    ),
+    idleCellGradient: LinearGradient(colors: [Color.fromRGBO(54, 100, 113, .92), Color.fromRGBO(28, 65, 82, .96)]),
+    sourceCellGradient: LinearGradient(colors: [Color.fromRGBO(90, 168, 158, .95), Color.fromRGBO(35, 103, 110, .98)]),
+    targetCellGradient: LinearGradient(colors: [Color.fromRGBO(163, 125, 72, .92), Color.fromRGBO(93, 69, 67, .98)]),
+    idleCellBorder: Color.fromRGBO(116, 215, 196, .17),
+    sourceCellBorder: Color(0xffb9fff1),
+    targetCellBorder: Color(0xffffe0a1),
+    handleBackground: Color.fromRGBO(35, 86, 99, .40),
+    handleBorder: Color.fromRGBO(116, 215, 196, .23),
+    handleColor: Color.fromRGBO(166, 238, 224, .72),
+    sourceHandleColor: Color(0xff102f38),
+    targetHandleColor: Color(0xfffff2d6),
+  );
+
+  static const historicalDate = BoardVisualConfig(
+    boardInset: 20,
+    handleGap: 7,
+    decorated: true,
+    boardGradient: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color.fromRGBO(69, 46, 76, .90), Color.fromRGBO(44, 37, 65, .94)],
+    ),
+    boardBorder: Color.fromRGBO(236, 118, 93, .44),
+    boardRadius: BorderRadius.all(Radius.circular(24)),
+    idleCellGradient: LinearGradient(colors: [Color.fromRGBO(103, 70, 101, .93), Color.fromRGBO(63, 48, 82, .97)]),
+    sourceCellGradient: LinearGradient(colors: [Color.fromRGBO(218, 122, 109, .97), Color.fromRGBO(123, 69, 98, .99)]),
+    targetCellGradient: LinearGradient(colors: [Color.fromRGBO(163, 125, 72, .92), Color.fromRGBO(93, 69, 67, .98)]),
+    idleCellBorder: Color.fromRGBO(239, 168, 145, .20),
+    sourceCellBorder: Color(0xffffe3b6),
+    targetCellBorder: Color(0xffffe0a1),
+    handleBackground: Color.fromRGBO(95, 59, 91, .46),
+    handleBorder: Color.fromRGBO(236, 118, 93, .28),
+    handleColor: Color.fromRGBO(255, 191, 162, .80),
+    sourceHandleColor: Color(0xff44283c),
+    targetHandleColor: Color(0xfffff2d6),
+  );
+
+  final double boardInset;
+  final double handleGap;
+  final bool decorated;
+  final Gradient? boardGradient;
+  final Color? boardBorder;
+  final BorderRadius? boardRadius;
+  final Gradient? idleCellGradient;
+  final Gradient? sourceCellGradient;
+  final Gradient? targetCellGradient;
+  final Color? idleCellBorder;
+  final Color? sourceCellBorder;
+  final Color? targetCellBorder;
+  final Color? handleBackground;
+  final Color? handleBorder;
+  final Color? handleColor;
+  final Color? sourceHandleColor;
+  final Color? targetHandleColor;
+}
+
 enum BoardLineKind {
   row('row'),
   column('column');
@@ -88,7 +187,7 @@ class GameBoard extends StatelessWidget {
     this.historicalGame,
     this.isTutorialCellHighlighted,
     this.isTutorialLineHighlighted,
-    this.useOneNonZeroStyle = false,
+    this.visualConfig = BoardVisualConfig.standard,
   });
 
   final Board board;
@@ -112,14 +211,14 @@ class GameBoard extends StatelessWidget {
   final HistoricalDateGame? historicalGame;
   final bool Function(CellPosition)? isTutorialCellHighlighted;
   final bool Function(BoardLineKind, int)? isTutorialLineHighlighted;
-  final bool useOneNonZeroStyle;
+  final BoardVisualConfig visualConfig;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final boardInset = useOneNonZeroStyle ? 20.0 : 0.0;
-        final handleGap = useOneNonZeroStyle ? 7.0 : 0.0;
+        final boardInset = visualConfig.boardInset;
+        final handleGap = visualConfig.handleGap;
         final boardWidth = constraints.maxWidth - 2 * _handleSize - 2 * handleGap - 2 * boardInset;
         final cellWidth = (boardWidth - _cellGap * (board.columnCount - 1)) /
             board.columnCount;
@@ -225,26 +324,13 @@ class GameBoard extends StatelessWidget {
                 child: IgnorePointer(
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                    gradient: useOneNonZeroStyle
-                        ? const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [Color.fromRGBO(24, 62, 78, .86), Color.fromRGBO(17, 42, 61, .90)],
-                          )
-                        : null,
-                    color: useOneNonZeroStyle ? null : colorScheme.surfaceContainer,
-                    border: Border.all(color: colorScheme.primary.withValues(alpha: useOneNonZeroStyle ? .34 : .32)),
-                  borderRadius: useOneNonZeroStyle
-                      ? const BorderRadius.only(
-                          topLeft: Radius.circular(25),
-                          topRight: Radius.circular(17),
-                          bottomLeft: Radius.circular(22),
-                          bottomRight: Radius.circular(18),
-                        )
-                      : BorderRadius.circular(24),
+                     gradient: visualConfig.boardGradient,
+                     color: visualConfig.decorated ? null : colorScheme.surfaceContainer,
+                     border: Border.all(color: visualConfig.boardBorder ?? colorScheme.primary.withValues(alpha: .32)),
+                   borderRadius: visualConfig.boardRadius ?? BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(color: Colors.black.withValues(alpha: .22), blurRadius: 28),
-                      if (useOneNonZeroStyle)
+                       if (visualConfig.decorated)
                         BoxShadow(color: colorScheme.primary.withValues(alpha: .10), blurRadius: 28, spreadRadius: -4),
                     ],
                     ),
@@ -287,18 +373,12 @@ class GameBoard extends StatelessWidget {
                   height: handleCellHeight,
                 ),
               ],
-              if (!useOneNonZeroStyle)
+               if (!visualConfig.decorated)
                 if (sourceLineHighlight case final source?)
                 lineHighlight(source, isDropTarget: false),
-              if (!useOneNonZeroStyle)
+               if (!visualConfig.decorated)
                 if (targetLineHighlight case final target?)
                 lineHighlight(target, isDropTarget: true),
-              if (historicalGame case final game?)
-                DateFrameDecoration(
-                  game: game,
-                  cellWidth: cellWidth,
-                  cellHeight: cellHeight,
-                ),
               for (var row = 0; row < board.rowCount; row++)
                 for (var column = 0; column < board.columnCount; column++)
                   Positioned(
@@ -336,16 +416,23 @@ class GameBoard extends StatelessWidget {
                        dimmed: resolvingCell != null && resolvingCell != CellPosition(row, column) ||
                            dimmingSource != null &&
                                !(dimmingSource.kind == BoardLineKind.row && dimmingSource.index == row || dimmingSource.kind == BoardLineKind.column && dimmingSource.index == column || dimmingTarget?.kind == BoardLineKind.row && dimmingTarget?.index == row || dimmingTarget?.kind == BoardLineKind.column && dimmingTarget?.index == column),
-                      useOneNonZeroStyle: useOneNonZeroStyle,
+                       visualConfig: visualConfig,
                       disableAnimations: disableAnimations,
                       onPressed: onCellPressed,
                       ),
                     ),
                   ),
+              if (historicalGame case final game?)
+                DateFrameDecoration(
+                  game: game,
+                  cellWidth: cellWidth,
+                  cellHeight: cellHeight,
+                  visualConfig: visualConfig,
+                ),
               for (final afterimage in swapAfterimages)
                 Positioned(
                   left: _handleSize + handleGap + boardInset + afterimage.position.column * (cellWidth + _cellGap), top: _handleSize + handleGap + boardInset + afterimage.position.row * (cellHeight + _cellGap), width: cellWidth, height: cellHeight,
-                  child: _SwapAfterimage(key: Key('swap-afterimage-${afterimage.id}-${afterimage.position.row}-${afterimage.position.column}'), disableAnimations: disableAnimations, child: ExcludeSemantics(child: IgnorePointer(child: GameCell(position: afterimage.position, value: afterimage.value, selected: false, undoing: false, dragSource: afterimage.dragSource, dragTarget: afterimage.dragTarget, disableAnimations: disableAnimations, useOneNonZeroStyle: useOneNonZeroStyle, onPressed: (_) {})))),
+                  child: _SwapAfterimage(key: Key('swap-afterimage-${afterimage.id}-${afterimage.position.row}-${afterimage.position.column}'), disableAnimations: disableAnimations, child: ExcludeSemantics(child: IgnorePointer(child: GameCell(position: afterimage.position, value: afterimage.value, selected: false, undoing: false, dragSource: afterimage.dragSource, dragTarget: afterimage.dragTarget, disableAnimations: disableAnimations, visualConfig: visualConfig, onPressed: (_) {})))),
                 ),
               if (resolvingCell case final cell?)
                 if (resolvingEquation case final formula?)
@@ -447,7 +534,7 @@ class GameBoard extends StatelessWidget {
                (targetLineHighlight ?? (isAnimatingSwap ? swapTarget : null)) != target,
            enabled: true,
           disableAnimations: disableAnimations,
-          useOneNonZeroStyle: useOneNonZeroStyle,
+           visualConfig: visualConfig,
           onDragStarted: onDragStarted,
           onHover: onHover,
           onLeave: onLeave,
@@ -470,7 +557,7 @@ class GameCell extends StatelessWidget {
     this.dragSource = false,
     this.dragTarget = false,
     this.equation,
-    this.useOneNonZeroStyle = false,
+    this.visualConfig = BoardVisualConfig.standard,
     required this.onPressed,
   });
 
@@ -484,7 +571,7 @@ class GameCell extends StatelessWidget {
   final bool dragSource;
   final bool dragTarget;
   final String? equation;
-  final bool useOneNonZeroStyle;
+  final BoardVisualConfig visualConfig;
   final ValueChanged<CellPosition> onPressed;
 
   @override
@@ -495,7 +582,7 @@ class GameCell extends StatelessWidget {
       selected: selected,
       label: 'Cell ${position.row + 1}, ${position.column + 1}: $value',
       child: _DimmingFilter(
-        enabled: dimmed && useOneNonZeroStyle,
+        enabled: dimmed && visualConfig.decorated,
         disableAnimations: disableAnimations,
         child: AnimatedScale(
         scale: undoing ? 1.08 : 1,
@@ -506,21 +593,17 @@ class GameCell extends StatelessWidget {
           child: AnimatedContainer(
           duration: disableAnimations ? Duration.zero : const Duration(milliseconds: 200),
           curve: Curves.ease,
-          decoration: useOneNonZeroStyle && !undoing
-              ? BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                   colors: dragTarget
-                        ? const [Color.fromRGBO(163, 125, 72, .92), Color.fromRGBO(93, 69, 67, .98)]
-                        : dragSource || selected
-                        ? const [Color.fromRGBO(90, 168, 158, .95), Color.fromRGBO(35, 103, 110, .98)]
-                        : const [Color.fromRGBO(54, 100, 113, .92), Color.fromRGBO(28, 65, 82, .96)],
-                  ),
-                   boxShadow: selected || dragSource
-                       ? const [BoxShadow(color: Color.fromRGBO(116, 215, 196, .28), blurRadius: 20)]
-                       : null,
-                   border: Border.all(color: dragSource || selected ? const Color(0xffb9fff1) : dragTarget ? const Color(0xffffe0a1) : const Color.fromRGBO(116, 215, 196, .17)),
+            decoration: visualConfig.decorated && !undoing
+                ? BoxDecoration(
+                   gradient: dragTarget
+                       ? visualConfig.targetCellGradient
+                       : dragSource || selected
+                           ? visualConfig.sourceCellGradient
+                           : visualConfig.idleCellGradient,
+                    boxShadow: selected || dragSource
+                        ? [BoxShadow(color: visualConfig.sourceCellBorder!.withValues(alpha: .28), blurRadius: 20)]
+                        : null,
+                    border: Border.all(color: dragSource || selected ? visualConfig.sourceCellBorder! : dragTarget ? visualConfig.targetCellBorder! : visualConfig.idleCellBorder!),
                   borderRadius: _cellBorderRadius(position),
                 )
               : const BoxDecoration(),
@@ -528,7 +611,7 @@ class GameCell extends StatelessWidget {
             clipBehavior: Clip.none,
             fit: StackFit.expand,
             children: [
-              if (useOneNonZeroStyle && !undoing)
+               if (visualConfig.decorated && !undoing)
                 const IgnorePointer(
                   child: DecoratedBox(
                     decoration: BoxDecoration(
@@ -544,10 +627,10 @@ class GameCell extends StatelessWidget {
           key: Key('cell-${position.row}-${position.column}'),
           style: OutlinedButton.styleFrom(
             backgroundColor: selected || undoing
-                ? (useOneNonZeroStyle ? Colors.transparent : (selected ? colorScheme.primaryContainer : colorScheme.tertiaryContainer))
-                : useOneNonZeroStyle ? Colors.transparent : colorScheme.surfaceContainerHighest,
+                ? (visualConfig.decorated ? Colors.transparent : (selected ? colorScheme.primaryContainer : colorScheme.tertiaryContainer))
+                : visualConfig.decorated ? Colors.transparent : colorScheme.surfaceContainerHighest,
             foregroundColor: colorScheme.onSurface,
-              side: useOneNonZeroStyle ? BorderSide.none : null,
+              side: visualConfig.decorated ? BorderSide.none : null,
             padding: const EdgeInsets.all(8),
             shape: RoundedRectangleBorder(
               borderRadius: _cellBorderRadius(position),
@@ -556,13 +639,13 @@ class GameCell extends StatelessWidget {
           onPressed: () => onPressed(position),
           child: LayoutBuilder(builder: (context, constraints) {
               final fontSize = (constraints.biggest.shortestSide * 0.55)
-                  .clamp(12.0, useOneNonZeroStyle ? 36.0 : 32.0)
+                  .clamp(12.0, visualConfig.decorated ? 36.0 : 32.0)
                   .toDouble();
               return FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
                   '$value',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: fontSize, color: colorScheme.onSurface, fontFamily: useOneNonZeroStyle ? 'monospace' : null),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: fontSize, color: colorScheme.onSurface, fontFamily: visualConfig.decorated ? 'monospace' : null),
                 ),
               );
             }),
@@ -765,7 +848,7 @@ class EdgeSwapHandle extends StatefulWidget {
     this.dimmed = false,
     required this.enabled,
     required this.disableAnimations,
-    this.useOneNonZeroStyle = false,
+    this.visualConfig = BoardVisualConfig.standard,
     required this.onDragStarted,
     required this.onHover,
     required this.onLeave,
@@ -781,7 +864,7 @@ class EdgeSwapHandle extends StatefulWidget {
   final bool dimmed;
   final bool enabled;
   final bool disableAnimations;
-  final bool useOneNonZeroStyle;
+  final BoardVisualConfig visualConfig;
   final ValueChanged<BoardLineTarget> onDragStarted;
   final ValueChanged<BoardLineTarget> onHover;
   final ValueChanged<BoardLineTarget> onLeave;
@@ -860,8 +943,8 @@ class _EdgeSwapHandleState extends State<EdgeSwapHandle> with SingleTickerProvid
         ? colorScheme.secondaryContainer
         : _isHovered
             ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.55)
-            : widget.useOneNonZeroStyle
-                ? const Color.fromRGBO(35, 86, 99, .40)
+            : widget.visualConfig.decorated
+                ? widget.visualConfig.handleBackground!
                 : Colors.transparent;
     return AnimatedBuilder(
       animation: _dimmingController,
@@ -879,13 +962,13 @@ class _EdgeSwapHandleState extends State<EdgeSwapHandle> with SingleTickerProvid
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: backgroundColor,
-          border: widget.useOneNonZeroStyle
-              ? Border.fromBorderSide(BorderSide(color: widget.isSource ? const Color(0xffb9fff1) : widget.isTarget ? const Color(0xffffe0a1) : const Color.fromRGBO(116, 215, 196, .23)))
+           border: widget.visualConfig.decorated
+               ? Border.fromBorderSide(BorderSide(color: widget.isSource ? widget.visualConfig.sourceCellBorder! : widget.isTarget ? widget.visualConfig.targetCellBorder! : widget.visualConfig.handleBorder!))
               : null,
           borderRadius: BorderRadius.circular(8),
         ),
         child: TweenAnimationBuilder<Color?>(
-          tween: ColorTween(end: widget.isSource ? const Color(0xff102f38) : widget.isTarget ? const Color(0xfffff2d6) : highlighted ? colorScheme.onSurfaceVariant : colorScheme.outline),
+          tween: ColorTween(end: widget.isSource ? widget.visualConfig.sourceHandleColor ?? const Color(0xff102f38) : widget.isTarget ? widget.visualConfig.targetHandleColor ?? const Color(0xfffff2d6) : highlighted ? colorScheme.onSurfaceVariant : widget.visualConfig.handleColor ?? colorScheme.outline),
           duration: widget.disableAnimations ? Duration.zero : const Duration(milliseconds: 180),
           curve: Curves.ease,
           builder: (context, color, _) => Icon(
@@ -907,39 +990,45 @@ class DateFrameDecoration extends StatelessWidget {
     required this.game,
     required this.cellWidth,
     required this.cellHeight,
+    required this.visualConfig,
   });
 
   final HistoricalDateGame game;
   final double cellWidth;
   final double cellHeight;
+  final BoardVisualConfig visualConfig;
 
   @override
   Widget build(BuildContext context) {
-    final width = cellWidth * 3 + _cellGap * 2;
+    final width = cellWidth * 3 + _cellGap * 3;
     return Positioned(
       key: const Key('historical-date-frame'),
-      left: _handleSize + game.frame.column * (cellWidth + _cellGap),
-      top: _handleSize + game.frame.row * (cellHeight + _cellGap),
+      left: _handleSize + visualConfig.handleGap + visualConfig.boardInset +
+          game.frame.column * (cellWidth + _cellGap) - _cellGap / 2,
+      top: _handleSize + visualConfig.handleGap + visualConfig.boardInset +
+          game.frame.row * (cellHeight + _cellGap) - _cellGap / 2,
       width: width,
-      height: cellHeight,
+      height: cellHeight + _cellGap,
       child: IgnorePointer(
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            border: Border.all(color: Theme.of(context).colorScheme.tertiary, width: 2),
-            borderRadius: BorderRadius.circular(8),
-          ),
+        child: CustomPaint(
+          painter: const _DateFramePainter(),
           child: Stack(
             children: [
               for (var index = 1; index < 3; index++)
                 Positioned(
-                  left: index * cellWidth + (index - 0.5) * _cellGap - 4,
+                  left: index * (cellWidth + _cellGap) - 12,
+                  width: 24,
                   top: 0,
                   bottom: 0,
                   child: Center(
                     child: Text(
                       game.format.separator,
                       key: Key('historical-date-separator-$index'),
-                      style: Theme.of(context).textTheme.titleLarge,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: const Color(0xffffd782),
+                        fontFamily: 'serif',
+                        shadows: const [Shadow(color: Color.fromRGBO(244, 185, 76, .28), blurRadius: 5)],
+                      ),
                     ),
                   ),
                 ),
@@ -949,4 +1038,32 @@ class DateFrameDecoration extends StatelessWidget {
       ),
     );
   }
+}
+
+class _DateFramePainter extends CustomPainter {
+  const _DateFramePainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final path = Path()..addRRect(RRect.fromRectAndRadius(rect.deflate(1), const Radius.circular(8)));
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = const Color.fromRGBO(244, 185, 76, .18)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+    );
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = const Color.fromRGBO(244, 185, 76, .85)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _DateFramePainter oldDelegate) => false;
 }
