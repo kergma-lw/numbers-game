@@ -241,20 +241,19 @@ class _StartScreenState extends State<StartScreen> {
                                   const SizedBox(height: 12),
                                 ],
                                 if (widget.savedGame != null) ...[
-                                  DecoratedBox(
-                                    key: const Key('continue-gradient'),
-                                    decoration: const BoxDecoration(
-                                      gradient: LinearGradient(
+                                  _LivingCorners(
+                                    key: const Key('continue-living-corners'),
+                                    duration: const Duration(seconds: 14),
+                                    initialDelay: const Duration(seconds: 3),
+                                    builder: (context, radius) => DecoratedBox(
+                                      key: const Key('continue-gradient'),
+                                      decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
                                         begin: Alignment.topLeft,
                                         end: Alignment.bottomRight,
                                         colors: [Color(0xfff4be55), Color(0xffe98550)],
                                       ),
-                                      borderRadius: BorderRadius.only(
-                                        topLeft: Radius.circular(20),
-                                        topRight: Radius.circular(11),
-                                        bottomLeft: Radius.circular(22),
-                                        bottomRight: Radius.circular(12),
-                                      ),
+                                      borderRadius: radius,
                                     ),
                                     child: FilledButton(
                                       key: const Key('continue-game-button'),
@@ -263,14 +262,7 @@ class _StartScreenState extends State<StartScreen> {
                                         foregroundColor: const Color(0xff252039),
                                         shadowColor: Colors.transparent,
                                         padding: const EdgeInsets.all(16),
-                                        shape: const RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.only(
-                                            topLeft: Radius.circular(20),
-                                            topRight: Radius.circular(11),
-                                            bottomLeft: Radius.circular(22),
-                                            bottomRight: Radius.circular(12),
-                                          ),
-                                        ),
+                                        shape: RoundedRectangleBorder(borderRadius: radius),
                                       ),
                                       onPressed: widget.onContinue,
                                       child: Row(children: [
@@ -282,6 +274,7 @@ class _StartScreenState extends State<StartScreen> {
                                         ])),
                                         const Icon(Icons.arrow_forward),
                                       ]),
+                                    ),
                                     ),
                                   ),
                                   const SizedBox(height: 22),
@@ -419,6 +412,85 @@ class _AtmosphericOrb extends StatelessWidget {
 
 }
 
+class _LivingCorners extends StatefulWidget {
+  const _LivingCorners({
+    super.key,
+    required this.duration,
+    required this.initialDelay,
+    required this.builder,
+  });
+
+  final Duration duration;
+  final Duration initialDelay;
+  final Widget Function(BuildContext context, BorderRadius radius) builder;
+
+  @override
+  State<_LivingCorners> createState() => _LivingCornersState();
+}
+
+class _LivingCornersState extends State<_LivingCorners>
+    with SingleTickerProviderStateMixin {
+  static const _initial = BorderRadius.only(
+    topLeft: Radius.circular(20),
+    topRight: Radius.circular(11),
+    bottomLeft: Radius.circular(22),
+    bottomRight: Radius.circular(12),
+  );
+  static const _softened = BorderRadius.only(
+    topLeft: Radius.circular(11),
+    topRight: Radius.circular(22),
+    bottomLeft: Radius.circular(12),
+    bottomRight: Radius.circular(23),
+  );
+
+  late final AnimationController _controller;
+  bool? _reducedMotion;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: widget.duration);
+    _controller.value =
+        widget.initialDelay.inMilliseconds % widget.duration.inMilliseconds /
+            widget.duration.inMilliseconds;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reducedMotion = MediaQuery.disableAnimationsOf(context);
+    if (_reducedMotion == reducedMotion) {
+      return;
+    }
+    _reducedMotion = reducedMotion;
+    if (reducedMotion) {
+      _controller.stop();
+      _controller.value = 0;
+    } else {
+      _controller.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) => widget.builder(
+          context,
+          BorderRadius.lerp(
+            _initial,
+            _softened,
+            Curves.easeInOut.transform(_controller.value),
+          )!,
+        ),
+      );
+}
+
 class _ModeCard extends StatelessWidget {
   const _ModeCard({super.key, required this.icon, required this.title, required this.detail, required this.color, required this.onPressed});
   final String icon;
@@ -428,12 +500,6 @@ class _ModeCard extends StatelessWidget {
   final VoidCallback onPressed;
   @override
   Widget build(BuildContext context) {
-    const radius = BorderRadius.only(
-      topLeft: Radius.circular(20),
-      topRight: Radius.circular(11),
-      bottomLeft: Radius.circular(22),
-      bottomRight: Radius.circular(12),
-    );
     final isTeal = color == const Color(0xff74d7c4);
     final baseGradient = isTeal
         ? const LinearGradient(
@@ -448,10 +514,14 @@ class _ModeCard extends StatelessWidget {
             colors: [Color(0xff3d3a5d), Color(0xff363a59), Color(0xff29354d)],
             stops: [0, .55, 1],
           );
-    return DecoratedBox(
-      key: Key(isTeal ? 'start-mode-gradient-teal' : 'start-mode-gradient-coral'),
-      decoration: BoxDecoration(gradient: baseGradient, borderRadius: radius),
-      child: DecoratedBox(
+    return _LivingCorners(
+      key: Key(isTeal ? 'start-mode-living-teal' : 'start-mode-living-coral'),
+      duration: Duration(seconds: isTeal ? 12 : 13),
+      initialDelay: Duration(seconds: isTeal ? 0 : 4),
+      builder: (context, radius) => DecoratedBox(
+        key: Key(isTeal ? 'start-mode-gradient-teal' : 'start-mode-gradient-coral'),
+        decoration: BoxDecoration(gradient: baseGradient, borderRadius: radius),
+        child: DecoratedBox(
         decoration: BoxDecoration(
           gradient: RadialGradient(
             center: isTeal ? const Alignment(-.60, -.56) : const Alignment(.56, -.48),
@@ -468,7 +538,7 @@ class _ModeCard extends StatelessWidget {
             alignment: Alignment.centerLeft,
             backgroundColor: Colors.transparent,
             side: const BorderSide(color: Color(0x2eede0bf)),
-            shape: const RoundedRectangleBorder(borderRadius: radius),
+            shape: RoundedRectangleBorder(borderRadius: radius),
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(icon, style: TextStyle(color: color, fontFamily: 'monospace', fontSize: 18)),
@@ -477,6 +547,7 @@ class _ModeCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(detail, style: const TextStyle(color: Color(0xffbcb6aa), fontSize: 11)),
           ]),
+        ),
         ),
       ),
     );

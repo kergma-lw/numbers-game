@@ -455,7 +455,7 @@ void main() {
         gameStateStore: _FakeGameStateStore(),
       ),
     );
-    await tester.pumpAndSettle();
+    await pumpApp(tester);
 
     expect(find.byKey(const Key('how-to-play-button')), findsOneWidget);
     expect(find.byKey(const Key('start-tutorial-call-to-action')), findsNothing);
@@ -465,7 +465,7 @@ void main() {
 
     await tester.ensureVisible(find.byKey(const Key('skip-tutorial-button')));
     await tester.tap(find.byKey(const Key('skip-tutorial-button')));
-    await tester.pumpAndSettle();
+    await pumpApp(tester);
     expect(progress.handled, isTrue);
     expect(find.byKey(const Key('how-to-play-button')), findsOneWidget);
   });
@@ -477,7 +477,7 @@ void main() {
         gameStateStore: _FakeGameStateStore(),
       ),
     );
-    await tester.pumpAndSettle();
+    await pumpApp(tester);
 
     expect(find.byKey(const Key('how-to-play-button')), findsOneWidget);
     expect(find.byKey(const Key('start-tutorial-call-to-action')), findsOneWidget);
@@ -493,6 +493,8 @@ void main() {
     expect(find.byKey(const Key('start-title')), findsOneWidget);
     expect(find.byKey(const Key('start-mode-gradient-teal')), findsOneWidget);
     expect(find.byKey(const Key('start-mode-gradient-coral')), findsOneWidget);
+    expect(find.byKey(const Key('start-mode-living-teal')), findsOneWidget);
+    expect(find.byKey(const Key('start-mode-living-coral')), findsOneWidget);
   });
 
   testWidgets('start screen keeps atmospheric numbers behind a narrow layout',
@@ -505,7 +507,7 @@ void main() {
         gameStateStore: _FakeGameStateStore(),
       ),
     );
-    await tester.pumpAndSettle();
+    await pumpApp(tester);
 
     expect(find.byKey(const Key('start-tutorial-call-to-action')), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -527,10 +529,11 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await pumpApp(tester);
 
     expect(find.byKey(const Key('continue-game-button')), findsOneWidget);
     expect(find.byKey(const Key('continue-gradient')), findsOneWidget);
+    expect(find.byKey(const Key('continue-living-corners')), findsOneWidget);
     await tester.tap(find.byKey(const Key('continue-game-button')));
     await tester.pumpAndSettle();
     expect(find.text('Moves: 1'), findsOneWidget);
@@ -558,9 +561,9 @@ void main() {
         gameStateStore: store,
       ),
     );
-    await tester.pumpAndSettle();
+    await pumpApp(tester);
     await tester.tap(find.byKey(const Key('continue-game-button')));
-    await tester.pumpAndSettle();
+    await pumpApp(tester);
     await tester.tap(find.byKey(const Key('new-game-button')));
     await tester.pumpAndSettle();
 
@@ -592,7 +595,7 @@ void main() {
         gameStateStore: store,
       ),
     );
-    await tester.pumpAndSettle();
+    await pumpApp(tester);
     await tester.tap(find.byKey(const Key('continue-game-button')));
     await tester.pumpAndSettle();
 
@@ -725,6 +728,11 @@ Future<void> dragTo(
   await gesture.moveTo(tester.getCenter(target));
   await gesture.up();
   await tester.pumpAndSettle();
+}
+
+Future<void> pumpApp(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 100));
 }
 
 Future<void> dragTutorialTo(
