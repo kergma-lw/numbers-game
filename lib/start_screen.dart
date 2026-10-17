@@ -266,7 +266,21 @@ class _StartScreenState extends State<StartScreen> {
                                       ),
                                       onPressed: widget.onContinue,
                                       child: Row(children: [
-                                        const Text('−1', style: TextStyle(fontFamily: 'monospace', fontSize: 22)),
+                                        Container(
+                                          key: const Key('continue-token'),
+                                          width: 45,
+                                          height: 45,
+                                          alignment: Alignment.center,
+                                          decoration: BoxDecoration(
+                                            color: const Color(0x29252039),
+                                            border: Border.all(color: const Color(0x24252039)),
+                                            borderRadius: BorderRadius.circular(11),
+                                          ),
+                                          child: const Text(
+                                            '−1',
+                                            style: TextStyle(fontFamily: 'monospace', fontSize: 22),
+                                          ),
+                                        ),
                                         const SizedBox(width: 16),
                                         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                           const Text('Continue', style: TextStyle(fontWeight: FontWeight.w800)),

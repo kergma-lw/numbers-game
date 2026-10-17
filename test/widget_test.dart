@@ -534,6 +534,7 @@ void main() {
     expect(find.byKey(const Key('continue-game-button')), findsOneWidget);
     expect(find.byKey(const Key('continue-gradient')), findsOneWidget);
     expect(find.byKey(const Key('continue-living-corners')), findsOneWidget);
+    expect(find.byKey(const Key('continue-token')), findsOneWidget);
     await tester.tap(find.byKey(const Key('continue-game-button')));
     await tester.pumpAndSettle();
     expect(find.text('Moves: 1'), findsOneWidget);
