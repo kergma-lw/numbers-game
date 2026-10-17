@@ -154,8 +154,19 @@ class _StartScreenState extends State<StartScreen> {
                             style: TextStyle(color: Color(0xff74d7c4), fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 2)),
                         const SizedBox(height: 10),
                         const Text('NUMBERS\nGAME',
+                            key: Key('start-title'),
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: ink, fontFamily: 'serif', fontSize: 54, height: .82, letterSpacing: 3)),
+                            style: TextStyle(
+                              color: ink,
+                              fontFamily: 'serif',
+                              fontSize: 54,
+                              height: .82,
+                              letterSpacing: 3,
+                              shadows: [
+                                Shadow(color: Color(0x47000000), offset: Offset(0, 2.4)),
+                                Shadow(color: Color(0x14f4eddf), blurRadius: 32),
+                              ],
+                            )),
                         const SizedBox(height: 26),
                         ClipRRect(
                           borderRadius: BorderRadius.circular(22),
