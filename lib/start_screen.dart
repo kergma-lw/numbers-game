@@ -846,7 +846,7 @@ class _RandomDriftState extends State<_RandomDrift>
       (_random.nextDouble() - .5) * 2 * widget.verticalRange,
     );
     _toRotation = (_random.nextDouble() - .5) * 6;
-    _controller.duration = Duration(milliseconds: 14000 + _random.nextInt(12001));
+    _controller.duration = Duration(milliseconds: 28000 + _random.nextInt(24001));
     _controller.forward(from: 0);
   }
 
