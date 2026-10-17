@@ -218,6 +218,7 @@ class _StartScreenState extends State<StartScreen> {
                                      child: _RandomDrift(
                                       key: const Key('tutorial-random-drift'),
                                       initialDelay: const Duration(milliseconds: 700),
+                                      verticalRange: 26,
                                       child: FilledButton(
                                         key: const Key('start-tutorial-call-to-action'),
                                         style: FilledButton.styleFrom(
@@ -256,6 +257,7 @@ class _StartScreenState extends State<StartScreen> {
                                     child: _RandomDrift(
                                     key: const Key('continue-random-drift'),
                                     initialDelay: const Duration(milliseconds: 700),
+                                    verticalRange: 26,
                                     child: _MovingGradient(
                                       key: const Key('continue-moving-gradient'),
                                       duration: const Duration(seconds: 25),
@@ -312,7 +314,7 @@ class _StartScreenState extends State<StartScreen> {
                                   ),
                                   const SizedBox(height: 22),
                                 ],
-                                const Text('CHOOSE A NEW PUZZLE', style: TextStyle(color: muted, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                                const SizedBox(height: 13),
                                 const SizedBox(height: 10),
                                 Row(children: [
                                     Expanded(child: Padding(padding: const EdgeInsets.symmetric(vertical: 10), child: _ModeCard(key: const Key('start-one-non-zero-button'), icon: '1 → 0', title: 'One non-zero', detail: 'Leave one number on the board', color: const Color(0xff74d7c4), onPressed: () => widget.onStartMode(GameMode.oneNonZero)))),
@@ -779,10 +781,16 @@ class _TiltingEquationState extends State<_TiltingEquation>
 }
 
 class _RandomDrift extends StatefulWidget {
-  const _RandomDrift({super.key, required this.initialDelay, required this.child});
+  const _RandomDrift({
+    super.key,
+    required this.initialDelay,
+    required this.child,
+    this.verticalRange = 6,
+  });
 
   final Duration initialDelay;
   final Widget child;
+  final double verticalRange;
 
   @override
   State<_RandomDrift> createState() => _RandomDriftState();
@@ -835,7 +843,7 @@ class _RandomDriftState extends State<_RandomDrift>
     _fromRotation = lerpDouble(_fromRotation, _toRotation, _controller.value)!;
     _toOffset = Offset(
       (_random.nextDouble() - .5) * 10,
-      (_random.nextDouble() - .5) * 12,
+      (_random.nextDouble() - .5) * 2 * widget.verticalRange,
     );
     _toRotation = (_random.nextDouble() - .5) * 6;
     _controller.duration = Duration(milliseconds: 14000 + _random.nextInt(12001));
@@ -1343,6 +1351,7 @@ class _ModeCard extends StatelessWidget {
     return _RandomDrift(
       key: Key(isTeal ? 'start-mode-random-drift-teal' : 'start-mode-random-drift-coral'),
       initialDelay: Duration(milliseconds: isTeal ? 2300 : 3900),
+      verticalRange: 32,
       child: _MovingModeGradients(
         key: Key(isTeal ? 'start-mode-moving-teal-gradient' : 'start-mode-moving-coral-gradient'),
         duration: const Duration(seconds: 100),
