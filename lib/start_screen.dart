@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:numbers_game/game_state_store.dart';
@@ -156,13 +157,25 @@ class _StartScreenState extends State<StartScreen> {
                             textAlign: TextAlign.center,
                             style: TextStyle(color: ink, fontFamily: 'serif', fontSize: 54, height: .82, letterSpacing: 3)),
                         const SizedBox(height: 26),
-                        DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: const Color(0xdd1c263a),
-                            border: Border.all(color: const Color(0x30ede0bf)),
-                            borderRadius: BorderRadius.circular(22),
-                          ),
-                          child: Stack(
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(22),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                            child: DecoratedBox(
+                              key: const Key('start-glass-panel'),
+                              decoration: BoxDecoration(
+                                color: const Color(0xd61c263a),
+                                border: Border.all(color: const Color(0x2eede0bf)),
+                                borderRadius: BorderRadius.circular(22),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Color(0x3d000000),
+                                    offset: Offset(0, 24),
+                                    blurRadius: 48,
+                                  ),
+                                ],
+                              ),
+                              child: Stack(
                             children: [
                               const Positioned(
                                 top: 10,
@@ -249,6 +262,8 @@ class _StartScreenState extends State<StartScreen> {
                                 ),
                               ),
                             ],
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 10),

@@ -489,6 +489,7 @@ void main() {
     expect(find.byKey(const Key('start-background-equation-left')), findsOneWidget);
     expect(find.byKey(const Key('start-background-equation-right')), findsOneWidget);
     expect(find.byKey(const Key('start-atmospheric-orb')), findsOneWidget);
+    expect(find.byKey(const Key('start-glass-panel')), findsOneWidget);
   });
 
   testWidgets('start screen keeps atmospheric numbers behind a narrow layout',
