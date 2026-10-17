@@ -186,6 +186,11 @@ class _StartScreenState extends State<StartScreen> {
                               ),
                               child: Stack(
                             children: [
+                              const Positioned.fill(
+                                child: IgnorePointer(
+                                  child: _Meteor(key: Key('start-meteor')),
+                                ),
+                              ),
                               const Positioned(
                                 top: 10,
                                 right: 12,
@@ -369,6 +374,132 @@ class _BackgroundNumber extends StatelessWidget {
       ),
     );
   }
+}
+
+class _Meteor extends StatefulWidget {
+  const _Meteor({super.key});
+
+  @override
+  State<_Meteor> createState() => _MeteorState();
+}
+
+class _MeteorState extends State<_Meteor> with SingleTickerProviderStateMixin {
+  final _random = Random();
+  late final AnimationController _controller;
+  Timer? _timer;
+  Offset _start = Offset.zero;
+  Offset _end = Offset.zero;
+  double _angle = -.49;
+  bool? _reducedMotion;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1100))
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          _timer = Timer(Duration(milliseconds: 35000 + _random.nextInt(25001)), _launch);
+        }
+      });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reducedMotion = MediaQuery.disableAnimationsOf(context);
+    if (_reducedMotion == reducedMotion) return;
+    _reducedMotion = reducedMotion;
+    _timer?.cancel();
+    if (reducedMotion) {
+      _controller.stop();
+      _controller.value = 0;
+    } else {
+      _timer = Timer(Duration(milliseconds: 12000 + _random.nextInt(10001)), _launch);
+    }
+  }
+
+  void _launch() {
+    if (!mounted || _reducedMotion == true) return;
+    final size = context.size;
+    if (size == null) return;
+    switch (_random.nextInt(4)) {
+      case 0:
+        _start = Offset(-128, size.height * (.14 + _random.nextDouble() * .62));
+        _end = Offset(784, 96 + _random.nextDouble() * 208);
+        _angle = (-31 + _random.nextDouble() * 14) * pi / 180;
+      case 1:
+        _start = Offset(size.width + 16, size.height * (.14 + _random.nextDouble() * .62));
+        _end = Offset(-784, -304 + _random.nextDouble() * 208);
+        _angle = (149 + _random.nextDouble() * 14) * pi / 180;
+      case 2:
+        _start = Offset(size.width * (.15 + _random.nextDouble() * .66), -16);
+        _end = Offset(-192 + _random.nextDouble() * 384, 320);
+        _angle = (49 + _random.nextDouble() * 18) * pi / 180;
+      case 3:
+        _start = Offset(size.width * (.15 + _random.nextDouble() * .66), size.height + 16);
+        _end = Offset(-192 + _random.nextDouble() * 384, -320);
+        _angle = (-131 + _random.nextDouble() * 18) * pi / 180;
+    }
+    _controller.forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          final progress = Curves.easeOut.transform(_controller.value);
+          final opacity = progress < .14
+              ? .42 * progress / .14
+              : .42 * (1 - (progress - .14) / .86);
+          final offset = Offset.lerp(_start, _start + _end, progress)!;
+          return Transform.translate(
+            offset: offset,
+            child: Transform.rotate(
+              angle: _angle,
+              child: Opacity(
+                opacity: opacity.clamp(0, 1),
+                child: Container(
+                  width: 64,
+                  height: 1,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.transparent,
+                        Color(0x1ff4eddf),
+                        Color(0xa8f4b94c),
+                        Colors.transparent,
+                      ],
+                      stops: [0, .18, .55, 1],
+                    ),
+                    boxShadow: [BoxShadow(color: Color(0x47f4b94c), blurRadius: 4)],
+                  ),
+                  child: const Align(
+                    alignment: Alignment(.68, 0),
+                    child: SizedBox(
+                      width: 3,
+                      height: 3,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: Color(0xfffff4cf),
+                          shape: BoxShape.circle,
+                          boxShadow: [BoxShadow(color: Color(0xccfff4cf), blurRadius: 4)],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      );
 }
 
 class _BackgroundLens extends StatefulWidget {
