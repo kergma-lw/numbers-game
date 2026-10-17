@@ -133,6 +133,20 @@ class GameBoard extends StatelessWidget {
         final colorScheme = Theme.of(context).colorScheme;
         final dimmingSource = sourceLineHighlight ?? (isAnimatingSwap ? swapSource : null);
         final dimmingTarget = targetLineHighlight ?? (isAnimatingSwap ? swapTarget : null);
+        bool inLine(BoardLineTarget line, int row, int column) =>
+            line.kind == BoardLineKind.row ? row == line.index : column == line.index;
+        bool fromSwapSource(int row, int column) {
+          final source = swapSource;
+          final target = swapTarget;
+          if (!isAnimatingSwap || source == null || target == null || !inLine(source, row, column) && !inLine(target, row, column)) return false;
+          return inLine(target, row, column);
+        }
+        bool fromSwapTarget(int row, int column) {
+          final source = swapSource;
+          final target = swapTarget;
+          if (!isAnimatingSwap || source == null || target == null || !inLine(source, row, column) && !inLine(target, row, column)) return false;
+          return inLine(source, row, column);
+        }
         Offset swapOffsetFor(int row, int column) {
           final source = swapSource;
           final target = swapTarget;
@@ -317,8 +331,8 @@ class GameBoard extends StatelessWidget {
                       selected: selectedCell == CellPosition(row, column),
                        undoing: false,
                        resolving: resolvingCell == CellPosition(row, column),
-                       dragSource: sourceLineHighlight?.kind == BoardLineKind.row && sourceLineHighlight?.index == row || sourceLineHighlight?.kind == BoardLineKind.column && sourceLineHighlight?.index == column,
-                       dragTarget: targetLineHighlight?.kind == BoardLineKind.row && targetLineHighlight?.index == row || targetLineHighlight?.kind == BoardLineKind.column && targetLineHighlight?.index == column,
+                        dragSource: sourceLineHighlight != null ? inLine(sourceLineHighlight!, row, column) : fromSwapSource(row, column),
+                        dragTarget: targetLineHighlight != null ? inLine(targetLineHighlight!, row, column) : fromSwapTarget(row, column),
                        dimmed: resolvingCell != null && resolvingCell != CellPosition(row, column) ||
                            dimmingSource != null &&
                                !(dimmingSource.kind == BoardLineKind.row && dimmingSource.index == row || dimmingSource.kind == BoardLineKind.column && dimmingSource.index == column || dimmingTarget?.kind == BoardLineKind.row && dimmingTarget?.index == row || dimmingTarget?.kind == BoardLineKind.column && dimmingTarget?.index == column),
@@ -425,9 +439,9 @@ class GameBoard extends StatelessWidget {
         child: EdgeSwapHandle(
           target: target,
           side: side,
-           isActive: sourceLineHighlight == target || targetLineHighlight == target,
-           isSource: sourceLineHighlight == target,
-           isTarget: targetLineHighlight == target,
+           isActive: (sourceLineHighlight ?? (isAnimatingSwap ? swapSource : null)) == target || (targetLineHighlight ?? (isAnimatingSwap ? swapTarget : null)) == target,
+           isSource: (sourceLineHighlight ?? (isAnimatingSwap ? swapSource : null)) == target,
+           isTarget: (targetLineHighlight ?? (isAnimatingSwap ? swapTarget : null)) == target,
            dimmed: (sourceLineHighlight ?? (isAnimatingSwap ? swapSource : null)) != null &&
                (sourceLineHighlight ?? (isAnimatingSwap ? swapSource : null)) != target &&
                (targetLineHighlight ?? (isAnimatingSwap ? swapTarget : null)) != target,
