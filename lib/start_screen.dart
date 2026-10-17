@@ -113,11 +113,13 @@ class _StartScreenState extends State<StartScreen> {
               left: screenSize.width * .09,
               top: screenSize.height * .70,
               child: IgnorePointer(
-                child: _BackgroundEquation(
+                child: _TiltingEquation(
                   key: const Key('start-background-equation-left'),
-                  value: '( 0 ) = 1',
-                  color: const Color(0x3074d7c4),
-                  rotation: -.314,
+                  child: const _BackgroundEquation(
+                    value: '( 0 ) = 1',
+                    color: Color(0x3074d7c4),
+                    rotation: 0,
+                  ),
                 ),
               ),
             ),
@@ -387,6 +389,68 @@ class _BackgroundEquation extends StatelessWidget {
       ),
     );
   }
+}
+
+class _TiltingEquation extends StatefulWidget {
+  const _TiltingEquation({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  State<_TiltingEquation> createState() => _TiltingEquationState();
+}
+
+class _TiltingEquationState extends State<_TiltingEquation>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  bool? _reducedMotion;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 50),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reducedMotion = MediaQuery.disableAnimationsOf(context);
+    if (_reducedMotion == reducedMotion) return;
+    _reducedMotion = reducedMotion;
+    if (reducedMotion) {
+      _controller.stop();
+      _controller.value = 0;
+    } else {
+      _controller.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+        animation: _controller,
+        child: widget.child,
+        builder: (context, child) {
+          final progress = Curves.easeInOut.transform(_controller.value);
+          final travel = MediaQuery.sizeOf(context).height * .20;
+          return Transform(
+            alignment: Alignment.center,
+            transform: Matrix4.identity()
+              ..translateByDouble(0, -travel * progress, 0, 1)
+              ..rotateZ(-.314 + .700 * progress),
+            child: child,
+          );
+        },
+      );
+
 }
 
 class _AtmosphericOrb extends StatefulWidget {
