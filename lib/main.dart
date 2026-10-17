@@ -915,7 +915,7 @@ class _BoardScreenState extends State<BoardScreen> {
                                       child: Center(
                                         child: Text(
                                           isTutorial
-                                              ? 'HOW TO PLAY'
+                                              ? 'TUTORIAL'
                                               : isHistoricalDate
                                               ? 'HISTORICAL DATE'
                                               : 'ONE NON-ZERO',
@@ -933,7 +933,7 @@ class _BoardScreenState extends State<BoardScreen> {
                                       children: [
                                         Text(
                                           isTutorial
-                                              ? 'Step ${_tutorialStepIndex + 1} / ${widget.tutorial!.steps.length}'
+                                              ? '${_tutorialStepIndex + 1} / ${widget.tutorial!.steps.length}'
                                               : '${_game.moveCount.toString().padLeft(2, '0')} moves',
                                           style: TextStyle(
                                             color: isTutorial
@@ -1157,20 +1157,14 @@ class _TutorialObjective extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const objectives = [
+      (title: 'Make a zero.', detail: 'Tap the upper-left 1, then −1.'),
       (
-        eyebrow: 'THE SOURCE STAYS UNCHANGED',
-        title: 'Make a zero.',
-        detail: 'Select the upper-left 1, then the −1 to its right. Moving right adds the source to the target.',
+        title: 'Swap the columns.',
+        detail: 'Drag the highlighted top handle to the other one.',
       ),
       (
-        eyebrow: 'REARRANGE THE BOARD',
-        title: 'Swap two columns.',
-        detail: 'Drag the highlighted top handle onto the other column handle.',
-      ),
-      (
-        eyebrow: 'MOVING UP SUBTRACTS',
-        title: 'Make the final zero.',
-        detail: 'Select the lower-right 1, then the upper-right 1.',
+        title: 'Make the last zero.',
+        detail: 'Tap the lower-right 1, then the upper-right 1.',
       ),
     ];
     final objective = objectives[stepIndex.clamp(0, objectives.length - 1)];
@@ -1200,27 +1194,17 @@ class _TutorialObjective extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            objective.eyebrow,
-            style: const TextStyle(
-              color: Color(0xffc7d2ed),
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.6,
-            ),
-          ),
-          const SizedBox(height: 3),
-          Text(
             objective.title,
             style: const TextStyle(
               color: Color(0xfff4eddf),
               fontFamily: 'serif',
-              fontSize: 21,
+              fontSize: 25,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             objective.detail,
-            style: const TextStyle(color: Color(0xffbcb6aa), fontSize: 12),
+            style: const TextStyle(color: Color(0xffd2d0c8), fontSize: 20),
           ),
         ],
       ),

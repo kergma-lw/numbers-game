@@ -467,7 +467,7 @@ void main() {
       ),
     );
 
-    expect(find.text('HOW TO PLAY'), findsOneWidget);
+    expect(find.text('TUTORIAL'), findsOneWidget);
     expect(find.byKey(const Key('tutorial-objective')), findsOneWidget);
     expect(find.byKey(const Key('tutorial-progress')), findsOneWidget);
     expect(find.byKey(const Key('tutorial-guided-cell-0-0')), findsOneWidget);
