@@ -389,12 +389,61 @@ class _BackgroundEquation extends StatelessWidget {
   }
 }
 
-class _AtmosphericOrb extends StatelessWidget {
+class _AtmosphericOrb extends StatefulWidget {
   const _AtmosphericOrb({super.key});
 
   @override
-  Widget build(BuildContext context) => Transform.rotate(
-        angle: -.279,
+  State<_AtmosphericOrb> createState() => _AtmosphericOrbState();
+}
+
+class _AtmosphericOrbState extends State<_AtmosphericOrb>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  bool? _reducedMotion;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 9),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reducedMotion = MediaQuery.disableAnimationsOf(context);
+    if (_reducedMotion == reducedMotion) return;
+    _reducedMotion = reducedMotion;
+    if (reducedMotion) {
+      _controller.stop();
+      _controller.value = 0;
+    } else {
+      _controller.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          final progress = Curves.easeInOut.transform(_controller.value);
+          return Transform(
+            alignment: Alignment.center,
+            transform: Matrix4.identity()
+              ..translateByDouble(-19.2 * progress, 16 * progress, 0, 1)
+              ..rotateZ(-.279 + (.227 + .279) * progress)
+              ..scaleByDouble(1 + .08 * progress, 1 + .08 * progress, 1, 1),
+            child: child,
+          );
+        },
         child: Container(
           width: 128,
           height: 128,
