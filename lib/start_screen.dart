@@ -25,15 +25,51 @@ class StartScreen extends StatelessWidget {
     const muted = Color(0xffbcb6aa);
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment(-.45, -.65),
-            radius: 1.25,
-            colors: [Color(0xff334865), Color(0xff131a2a)],
-          ),
-        ),
+        color: const Color(0xff131a2a),
         child: Stack(
           children: [
+            const Positioned.fill(
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  key: Key('start-background-center'),
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      center: Alignment(-.04, .04),
+                      radius: 1.32,
+                      colors: [Color(0xff273356), Colors.transparent],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const Positioned.fill(
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  key: Key('start-background-coral'),
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      center: Alignment(.64, .52),
+                      radius: .88,
+                      colors: [Color(0x2eec765d), Colors.transparent],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const Positioned.fill(
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  key: Key('start-background-teal'),
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      center: Alignment(-.66, -.64),
+                      radius: .94,
+                      colors: [Color(0x3374d7c4), Colors.transparent],
+                    ),
+                  ),
+                ),
+              ),
+            ),
             const Positioned(
               top: 60,
               left: -12,

@@ -481,6 +481,9 @@ void main() {
 
     expect(find.byKey(const Key('how-to-play-button')), findsOneWidget);
     expect(find.byKey(const Key('start-tutorial-call-to-action')), findsOneWidget);
+    expect(find.byKey(const Key('start-background-center')), findsOneWidget);
+    expect(find.byKey(const Key('start-background-coral')), findsOneWidget);
+    expect(find.byKey(const Key('start-background-teal')), findsOneWidget);
   });
 
   testWidgets('continues the saved game from the start screen', (WidgetTester tester) async {
