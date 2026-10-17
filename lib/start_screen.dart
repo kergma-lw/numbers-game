@@ -39,6 +39,7 @@ class _StartScreenState extends State<StartScreen> {
   Widget build(BuildContext context) {
     const ink = Color(0xfff4eddf);
     const muted = Color(0xffbcb6aa);
+    final screenSize = MediaQuery.sizeOf(context);
     return Scaffold(
       body: Container(
         color: const Color(0xff131a2a),
@@ -107,28 +108,28 @@ class _StartScreenState extends State<StartScreen> {
                 ),
               ),
             ),
-            const Positioned(
-              left: 46,
-              top: 390,
+            Positioned(
+              left: screenSize.width * .09,
+              top: screenSize.height * .70,
               child: IgnorePointer(
-                child: Text('( 0 ) = 1',
-                    style: TextStyle(
-                        color: Color(0x3074d7c4),
-                        fontFamily: 'monospace',
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold)),
+                child: _BackgroundEquation(
+                  key: const Key('start-background-equation-left'),
+                  value: '( 0 ) = 1',
+                  color: const Color(0x3074d7c4),
+                  rotation: -.314,
+                ),
               ),
             ),
-            const Positioned(
-              right: 34,
-              top: 142,
+            Positioned(
+              right: screenSize.width * .08,
+              top: screenSize.height * .15,
               child: IgnorePointer(
-                child: Text('∞ − 1',
-                    style: TextStyle(
-                        color: Color(0x30ec765d),
-                        fontFamily: 'monospace',
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold)),
+                child: _BackgroundEquation(
+                  key: const Key('start-background-equation-right'),
+                  value: '∞ − 1',
+                  color: const Color(0x33ec765d),
+                  rotation: .227,
+                ),
               ),
             ),
             Positioned(
@@ -305,6 +306,38 @@ class _BackgroundNumber extends StatelessWidget {
           fontWeight: FontWeight.w700,
           height: .72,
           letterSpacing: -fontSize * .12,
+        ),
+      ),
+    );
+  }
+}
+
+class _BackgroundEquation extends StatelessWidget {
+  const _BackgroundEquation({
+    super.key,
+    required this.value,
+    required this.color,
+    required this.rotation,
+  });
+
+  final String value;
+  final Color color;
+  final double rotation;
+
+  @override
+  Widget build(BuildContext context) {
+    final fontSize = (MediaQuery.sizeOf(context).width * .026).clamp(17.6, 32.0).toDouble();
+    return Transform.rotate(
+      angle: rotation,
+      child: Text(
+        value,
+        softWrap: false,
+        style: TextStyle(
+          color: color,
+          fontFamily: 'monospace',
+          fontSize: fontSize,
+          fontWeight: FontWeight.w700,
+          letterSpacing: fontSize * .08,
         ),
       ),
     );
