@@ -88,6 +88,15 @@ class _StartScreenState extends State<StartScreen> {
                 ),
               ),
             ),
+            Positioned.fill(
+              child: IgnorePointer(
+                child: _BackgroundLens(
+                  key: const Key('start-background-lens'),
+                  topValue: _ambientFormulas.top.display,
+                  bottomValue: _ambientFormulas.bottom.display,
+                ),
+              ),
+            ),
             Positioned(
               top: 64,
               left: -8,
@@ -360,6 +369,188 @@ class _BackgroundNumber extends StatelessWidget {
       ),
     );
   }
+}
+
+class _BackgroundLens extends StatefulWidget {
+  const _BackgroundLens({super.key, required this.topValue, required this.bottomValue});
+
+  final String topValue;
+  final String bottomValue;
+
+  @override
+  State<_BackgroundLens> createState() => _BackgroundLensState();
+}
+
+class _BackgroundLensState extends State<_BackgroundLens>
+    with SingleTickerProviderStateMixin {
+  final _random = Random();
+  late final AnimationController _controller;
+  Timer? _timer;
+  Offset _from = const Offset(.18, .16);
+  Offset _to = const Offset(.18, .16);
+  bool? _reducedMotion;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 24))
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          _timer = Timer(const Duration(milliseconds: 500), _startSegment);
+        }
+      });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reducedMotion = MediaQuery.disableAnimationsOf(context);
+    if (_reducedMotion == reducedMotion) return;
+    _reducedMotion = reducedMotion;
+    _timer?.cancel();
+    if (reducedMotion) {
+      _controller.stop();
+      _controller.value = 0;
+      _from = const Offset(.18, .16);
+      _to = _from;
+    } else {
+      _timer = Timer(const Duration(milliseconds: 1800), _startSegment);
+    }
+  }
+
+  void _startSegment() {
+    if (!mounted || _reducedMotion == true) return;
+    _from = Offset.lerp(_from, _to, _controller.value)!;
+    _to = Offset(
+      _random.nextDouble(),
+      -.2 + _random.nextDouble() * 1.4,
+    );
+    _controller.duration = Duration(milliseconds: 24000 + _random.nextInt(20001));
+    _controller.forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+        builder: (context, constraints) => AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) {
+            const lensSize = 208.0;
+            final position = Offset.lerp(
+              _from,
+              _to,
+              const Cubic(.42, 0, .25, 1).transform(_controller.value),
+            )!;
+            final horizontalRange = max(0.0, constraints.maxWidth - lensSize);
+            final verticalRange = max(0.0, constraints.maxHeight - lensSize);
+            final left = horizontalRange * position.dx;
+            final top = verticalRange * position.dy;
+            return Stack(
+              children: [
+                Positioned(
+                  left: left,
+                  top: top,
+                  child: Opacity(
+                opacity: .62,
+                child: ShaderMask(
+                  blendMode: BlendMode.dstIn,
+                  shaderCallback: (bounds) => const RadialGradient(
+                    colors: [
+                      Colors.black,
+                      Colors.black,
+                      Color(0x7a000000),
+                      Colors.transparent,
+                    ],
+                    stops: [.43, .43, .67, .82],
+                  ).createShader(bounds),
+                  child: ClipOval(
+                    child: SizedBox(
+                      width: lensSize,
+                      height: lensSize,
+                      child: Stack(
+                        clipBehavior: Clip.hardEdge,
+                        children: [
+                          const Positioned.fill(
+                            child: ColoredBox(color: Color(0xff131a2a)),
+                          ),
+                          const Positioned.fill(
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: RadialGradient(
+                                  center: Alignment(-.04, .04),
+                                  radius: 1.48,
+                                  colors: [Color(0xff273356), Colors.transparent],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const Positioned.fill(
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: RadialGradient(
+                                  center: Alignment(.64, .52),
+                                  radius: 1.16,
+                                  colors: [Color(0x2eec765d), Colors.transparent],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const Positioned.fill(
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: RadialGradient(
+                                  center: Alignment(-.66, -.64),
+                                  radius: 1.22,
+                                  colors: [Color(0x3374d7c4), Colors.transparent],
+                                ),
+                              ),
+                            ),
+                          ),
+                          Positioned.fill(
+                            child: Transform(
+                              alignment: Alignment.center,
+                              transform: Matrix4.identity()..scaleByDouble(1.18, 1.18, 1, 1),
+                              child: Transform.translate(
+                                offset: Offset(-left, -top),
+                                child: SizedBox(
+                                  width: constraints.maxWidth,
+                                  height: constraints.maxHeight,
+                                  child: Stack(
+                                    children: [
+                                      Positioned(
+                                        top: 64,
+                                        left: -8,
+                                        child: _BackgroundNumber(value: widget.topValue),
+                                      ),
+                                      Positioned(
+                                        right: 64,
+                                        bottom: 32,
+                                        child: _BackgroundNumber(value: widget.bottomValue, bottom: true),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+                ),
+              ],
+            );
+          },
+        ),
+      );
 }
 
 class _BackgroundEquation extends StatelessWidget {
