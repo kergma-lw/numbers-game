@@ -35,7 +35,7 @@ void main() {
     );
 
     expect(
-      tester.widget<AnimatedPositioned>(find.byType(AnimatedPositioned).first).duration,
+      tester.widget<AnimatedScale>(find.byType(AnimatedScale).first).duration,
       Duration.zero,
     );
     expect(
@@ -171,6 +171,52 @@ void main() {
     expect(find.bySemanticsLabel('Cell 2, 1: 1'), findsOneWidget);
   });
 
+  testWidgets('leaves fading afterimages for the affected cells',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: BoardScreen()));
+
+    final source = find.byKey(const Key('row-handle-left-0'));
+    final target = find.byKey(const Key('row-handle-left-1'));
+    final gesture = await tester.startGesture(tester.getCenter(source));
+    await gesture.moveTo(tester.getCenter(target));
+    await gesture.up();
+    await tester.pump();
+
+    for (final row in [0, 1]) {
+      for (final column in [0, 1]) {
+        expect(
+          find.byKey(Key('swap-afterimage-1-$row-$column')),
+          findsOneWidget,
+        );
+      }
+    }
+
+    await tester.pump(const Duration(milliseconds: 1000));
+    expect(find.byKey(const Key('swap-afterimage-1-0-0')), findsNothing);
+  });
+
+  testWidgets('allows another swap while a swap is animating',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: BoardScreen()));
+
+    final firstSource = find.byKey(const Key('row-handle-left-0'));
+    final firstTarget = find.byKey(const Key('row-handle-left-1'));
+    final firstGesture = await tester.startGesture(tester.getCenter(firstSource));
+    await firstGesture.moveTo(tester.getCenter(firstTarget));
+    await firstGesture.up();
+    await tester.pump();
+
+    final secondSource = find.byKey(const Key('column-handle-top-0'));
+    final secondTarget = find.byKey(const Key('column-handle-top-1'));
+    final secondGesture = await tester.startGesture(tester.getCenter(secondSource));
+    await secondGesture.moveTo(tester.getCenter(secondTarget));
+    await secondGesture.up();
+    await tester.pump();
+
+    expect(find.bySemanticsLabel('Cell 1, 1: 4'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 1180));
+  });
+
   testWidgets('swaps columns by dragging a top handle',
       (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: BoardScreen()));
@@ -185,7 +231,7 @@ void main() {
     expect(find.bySemanticsLabel('Cell 1, 2: 1'), findsOneWidget);
   });
 
-  testWidgets('undo uses the swap animation for a row swap',
+  testWidgets('undo restores a row swap immediately',
       (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: BoardScreen()));
 
@@ -198,15 +244,13 @@ void main() {
     await tester.tap(find.byKey(const Key('undo-button')));
     await tester.pump();
 
-    expect(find.byKey(const Key('swap-source-highlight')), findsOneWidget);
-    expect(find.byKey(const Key('swap-target-highlight')), findsOneWidget);
-
-    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('swap-source-highlight')), findsNothing);
+    expect(find.byKey(const Key('swap-target-highlight')), findsNothing);
     expect(find.bySemanticsLabel('Cell 1, 1: 1'), findsOneWidget);
     expect(find.bySemanticsLabel('Cell 2, 1: 3'), findsOneWidget);
   });
 
-  testWidgets('undo uses the swap animation for a column swap',
+  testWidgets('undo restores a column swap immediately',
       (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: BoardScreen()));
 
@@ -219,10 +263,8 @@ void main() {
     await tester.tap(find.byKey(const Key('undo-button')));
     await tester.pump();
 
-    expect(find.byKey(const Key('swap-source-highlight')), findsOneWidget);
-    expect(find.byKey(const Key('swap-target-highlight')), findsOneWidget);
-
-    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('swap-source-highlight')), findsNothing);
+    expect(find.byKey(const Key('swap-target-highlight')), findsNothing);
     expect(find.bySemanticsLabel('Cell 1, 1: 1'), findsOneWidget);
     expect(find.bySemanticsLabel('Cell 1, 2: 2'), findsOneWidget);
   });

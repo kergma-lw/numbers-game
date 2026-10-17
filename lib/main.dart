@@ -13,7 +13,8 @@ import 'package:numbers_game/start_screen.dart';
 import 'package:numbers_game/tutorial.dart';
 import 'package:numbers_game/tutorial_progress_store.dart';
 
-const _swapAnimationDuration = Duration(milliseconds: 380);
+const _swapAnimationDuration = Duration(milliseconds: 1180);
+const _swapAfterimageDuration = Duration(milliseconds: 1000);
 
 void main() {
   runApp(const NumbersGameApp());
@@ -203,17 +204,15 @@ class _BoardScreenState extends State<BoardScreen> {
   BoardLineTarget? _swapTarget;
   BoardLineTarget? _animatedSwapSource;
   BoardLineTarget? _animatedSwapTarget;
-  List<int> _visualRows = [0, 1];
-  List<int> _visualColumns = [0, 1];
   bool _isAnimatingSwap = false;
-  bool _isUndoing = false;
-  Set<CellPosition> _undoingCells = {};
-  Timer? _undoAnimationTimer;
+  int _swapAnimationId = 0;
+  Timer? _swapAnimationTimer;
+  final List<BoardSwapAfterimage> _swapAfterimages = [];
+  final List<Timer> _swapAfterimageTimers = [];
   bool _isResolving = false;
   CellPosition? _resolvingCell;
   String? _resolvingEquation;
   Timer? _resolutionTimer;
-  final List<_LineSwap?> _moveHistory = [];
   String _feedback = 'Select a source cell.';
   int _tutorialStepIndex = 0;
   bool _tutorialCompleted = false;
@@ -254,13 +253,11 @@ class _BoardScreenState extends State<BoardScreen> {
           [1, 2],
           [3, 4],
         ]));
-    _visualRows = _normalOrder(_board.rowCount);
-    _visualColumns = _normalOrder(_board.columnCount);
     _feedback = _tutorialStep?.instruction ?? _feedback;
   }
 
   void _selectCell(CellPosition position) {
-    if (_isAnimatingSwap || _isUndoing || _isResolving) {
+    if (_isResolving) {
       return;
     }
 
@@ -299,7 +296,6 @@ class _BoardScreenState extends State<BoardScreen> {
     final disableAnimations = _disableAnimations;
     setState(() {
       _game = _game.applyArithmeticMove(source: source, target: position);
-      _moveHistory.add(null);
       _arithmeticSource = null;
       _isResolving = !disableAnimations;
       _resolvingCell = disableAnimations ? null : position;
@@ -324,7 +320,7 @@ class _BoardScreenState extends State<BoardScreen> {
   String _formatOperand(int value) => value < 0 ? '($value)' : '$value';
 
   void _startSwap(BoardLineTarget source) {
-    if (_isAnimatingSwap || _isUndoing || _isResolving) {
+    if (_isResolving) {
       return;
     }
     final step = _tutorialStep;
@@ -365,7 +361,7 @@ class _BoardScreenState extends State<BoardScreen> {
   }
 
   void _completeSwap(BoardLineTarget source, BoardLineTarget target) {
-    if (!source.accepts(target) || _isAnimatingSwap) {
+    if (!source.accepts(target)) {
       return;
     }
     final step = _tutorialStep;
@@ -376,27 +372,22 @@ class _BoardScreenState extends State<BoardScreen> {
       return;
     }
 
-    final rows = _normalOrder(_board.rowCount);
-    final columns = _normalOrder(_board.columnCount);
-    if (source.kind == BoardLineKind.row) {
-      _swapIndices(rows, source.index, target.index);
-    } else {
-      _swapIndices(columns, source.index, target.index);
-    }
     final disableAnimations = _disableAnimations;
+    final afterimages = disableAnimations
+        ? const <BoardSwapAfterimage>[]
+        : _afterimagesForSwap(source, target);
 
     setState(() {
       _game = source.kind == BoardLineKind.row
           ? _game.swapRows(source.index, target.index)
           : _game.swapColumns(source.index, target.index);
-      _moveHistory.add(_LineSwap(source, target));
-      _visualRows = disableAnimations ? _normalOrder(_board.rowCount) : rows;
-      _visualColumns = disableAnimations ? _normalOrder(_board.columnCount) : columns;
       _animatedSwapSource = disableAnimations ? null : source;
       _animatedSwapTarget = disableAnimations ? null : target;
       _swapSource = null;
       _swapTarget = null;
       _isAnimatingSwap = !disableAnimations;
+      _swapAnimationId++;
+      _swapAfterimages.addAll(afterimages);
       _feedback = '${source.kind.label.capitalize()} swapped.';
     });
     _persistGame();
@@ -405,15 +396,8 @@ class _BoardScreenState extends State<BoardScreen> {
       return;
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _visualRows = _normalOrder(_board.rowCount);
-        _visualColumns = _normalOrder(_board.columnCount);
-      });
-      Future<void>.delayed(_swapAnimationDuration, () {
+    _swapAnimationTimer?.cancel();
+    _swapAnimationTimer = Timer(_swapAnimationDuration, () {
         if (mounted) {
           setState(() {
             _animatedSwapSource = null;
@@ -421,111 +405,67 @@ class _BoardScreenState extends State<BoardScreen> {
             _isAnimatingSwap = false;
           });
         }
-      });
     });
+    if (afterimages.isNotEmpty) {
+      late final Timer afterimageTimer;
+      afterimageTimer = Timer(_swapAfterimageDuration, () {
+        if (mounted) {
+          setState(() => _swapAfterimages.removeWhere((ghost) => afterimages.contains(ghost)));
+        }
+        _swapAfterimageTimers.remove(afterimageTimer);
+      });
+      _swapAfterimageTimers.add(afterimageTimer);
+    }
   }
 
-  List<int> _normalOrder(int length) => List<int>.generate(length, (index) => index);
-
-  void _swapIndices(List<int> values, int first, int second) {
-    final value = values[first];
-    values[first] = values[second];
-    values[second] = value;
+  List<BoardSwapAfterimage> _afterimagesForSwap(
+    BoardLineTarget source,
+    BoardLineTarget target,
+  ) {
+    final positions = <CellPosition>{};
+    if (source.kind == BoardLineKind.row) {
+      for (var column = 0; column < _board.columnCount; column++) {
+        positions.add(CellPosition(source.index, column));
+        positions.add(CellPosition(target.index, column));
+      }
+    } else {
+      for (var row = 0; row < _board.rowCount; row++) {
+        positions.add(CellPosition(row, source.index));
+        positions.add(CellPosition(row, target.index));
+      }
+    }
+    return [
+      for (final position in positions)
+        BoardSwapAfterimage(
+          id: _swapAnimationId + 1,
+          position: position,
+          value: _board.valueAt(position),
+          dragSource: source.kind == BoardLineKind.row ? position.row == source.index : position.column == source.index,
+          dragTarget: target.kind == BoardLineKind.row ? position.row == target.index : position.column == target.index,
+        ),
+    ];
   }
 
   void _undo() {
-    if (!_game.canUndo || _isAnimatingSwap || _isUndoing || _isResolving) {
+    if (!_game.canUndo || _isResolving) {
       return;
     }
     final restoredGame = _game.undo();
-    final undoneMove = _moveHistory.isNotEmpty ? _moveHistory.removeLast() : null;
     if (_isTutorial && _tutorialStepIndex > 0) {
       _tutorialStepIndex--;
       _tutorialCompleted = false;
     }
-    if (undoneMove != null) {
-      _animateUndoneSwap(restoredGame, undoneMove);
-      return;
-    }
-    final changedCells = <CellPosition>{
-      for (var row = 0; row < _board.rowCount; row++)
-        for (var column = 0; column < _board.columnCount; column++)
-          if (_board.valueAt(CellPosition(row, column)) !=
-              restoredGame.currentBoard.valueAt(CellPosition(row, column)))
-            CellPosition(row, column),
-    };
-    final disableAnimations = _disableAnimations;
     setState(() {
       _game = restoredGame;
       _resetInteraction();
-      _isUndoing = !disableAnimations;
-      _undoingCells = disableAnimations ? {} : changedCells;
       _feedback = 'Move undone.';
     });
     _persistGame();
-    if (disableAnimations) {
-      return;
-    }
-    _undoAnimationTimer = Timer(_swapAnimationDuration, () {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _isUndoing = false;
-        _undoingCells = {};
-      });
-    });
-  }
-
-  void _animateUndoneSwap(PlayableGame restoredGame, _LineSwap swap) {
-    final rows = _normalOrder(_board.rowCount);
-    final columns = _normalOrder(_board.columnCount);
-    if (swap.source.kind == BoardLineKind.row) {
-      _swapIndices(rows, swap.source.index, swap.target.index);
-    } else {
-      _swapIndices(columns, swap.source.index, swap.target.index);
-    }
-    final disableAnimations = _disableAnimations;
-
-    setState(() {
-      _game = restoredGame;
-      _resetInteraction();
-      _visualRows = disableAnimations ? _normalOrder(_board.rowCount) : rows;
-      _visualColumns = disableAnimations ? _normalOrder(_board.columnCount) : columns;
-      _animatedSwapSource = disableAnimations ? null : swap.source;
-      _animatedSwapTarget = disableAnimations ? null : swap.target;
-      _isAnimatingSwap = !disableAnimations;
-      _feedback = 'Move undone.';
-    });
-    _persistGame();
-    if (disableAnimations) {
-      return;
-    }
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _visualRows = _normalOrder(_board.rowCount);
-        _visualColumns = _normalOrder(_board.columnCount);
-      });
-      Future<void>.delayed(_swapAnimationDuration, () {
-        if (mounted) {
-          setState(() {
-            _animatedSwapSource = null;
-            _animatedSwapTarget = null;
-            _isAnimatingSwap = false;
-          });
-        }
-      });
-    });
   }
 
   void _restart() {
     setState(() {
       _game = _game.restart();
-      _moveHistory.clear();
       _tutorialStepIndex = 0;
       _tutorialCompleted = false;
       _resetInteraction();
@@ -552,7 +492,6 @@ class _BoardScreenState extends State<BoardScreen> {
     }
     setState(() {
       _game = game;
-      _moveHistory.clear();
       _tutorialStepIndex = 0;
       _tutorialCompleted = false;
       _resetInteraction();
@@ -583,19 +522,19 @@ class _BoardScreenState extends State<BoardScreen> {
   }
 
   void _resetInteraction() {
-    _undoAnimationTimer?.cancel();
+    _swapAnimationTimer?.cancel();
+    for (final timer in _swapAfterimageTimers) {
+      timer.cancel();
+    }
+    _swapAfterimageTimers.clear();
     _resolutionTimer?.cancel();
-    _undoAnimationTimer = null;
     _arithmeticSource = null;
     _swapSource = null;
     _swapTarget = null;
     _animatedSwapSource = null;
     _animatedSwapTarget = null;
-    _visualRows = _normalOrder(_board.rowCount);
-    _visualColumns = _normalOrder(_board.columnCount);
     _isAnimatingSwap = false;
-    _isUndoing = false;
-    _undoingCells = {};
+    _swapAfterimages.clear();
     _isResolving = false;
     _resolvingCell = null;
     _resolvingEquation = null;
@@ -603,7 +542,10 @@ class _BoardScreenState extends State<BoardScreen> {
 
   @override
   void dispose() {
-    _undoAnimationTimer?.cancel();
+    _swapAnimationTimer?.cancel();
+    for (final timer in _swapAfterimageTimers) {
+      timer.cancel();
+    }
     _resolutionTimer?.cancel();
     super.dispose();
   }
@@ -742,7 +684,7 @@ class _BoardScreenState extends State<BoardScreen> {
                        children: [
                          OutlinedButton.icon(
                           key: const Key('undo-button'),
-                          onPressed: _game.canUndo && !_isAnimatingSwap && !_isUndoing
+                           onPressed: _game.canUndo && !_isResolving
                               ? _undo
                               : null,
                           icon: const Icon(Icons.undo),
@@ -788,12 +730,12 @@ class _BoardScreenState extends State<BoardScreen> {
                      const SizedBox(height: 24),
                      GameBoard(
                        board: _board,
-                       visualRows: _visualRows,
-                       visualColumns: _visualColumns,
-                       selectedCell: _arithmeticSource,
-                       undoingCells: _undoingCells,
-                       isAnimatingSwap: _isAnimatingSwap,
-                       isUndoing: _isUndoing,
+                        selectedCell: _arithmeticSource,
+                        swapAfterimages: _swapAfterimages,
+                        isAnimatingSwap: _isAnimatingSwap,
+                        swapSource: _animatedSwapSource,
+                        swapTarget: _animatedSwapTarget,
+                        swapAnimationId: _swapAnimationId,
                         disableAnimations: _disableAnimations,
                        resolvingCell: _resolvingCell,
                        resolvingEquation: _resolvingEquation,
@@ -865,13 +807,6 @@ class _OneNonZeroObjective extends StatelessWidget {
           ],
         ),
       );
-}
-
-class _LineSwap {
-  const _LineSwap(this.source, this.target);
-
-  final BoardLineTarget source;
-  final BoardLineTarget target;
 }
 
 class _AppState {

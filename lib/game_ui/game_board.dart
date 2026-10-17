@@ -41,16 +41,39 @@ class BoardLineTarget {
   int get hashCode => Object.hash(kind, index);
 }
 
+class BoardSwapAfterimage {
+  const BoardSwapAfterimage({
+    required this.id,
+    required this.position,
+    required this.value,
+    required this.dragSource,
+    required this.dragTarget,
+  });
+
+  final int id;
+  final CellPosition position;
+  final int value;
+  final bool dragSource;
+  final bool dragTarget;
+}
+
+BorderRadius _cellBorderRadius(CellPosition position) => BorderRadius.only(
+      topLeft: Radius.circular(position.row.isEven ? 14 : 20),
+      topRight: Radius.circular(position.column.isEven ? 20 : 14),
+      bottomLeft: Radius.circular(position.column.isEven ? 14 : 20),
+      bottomRight: Radius.circular(position.row.isEven ? 20 : 14),
+    );
+
 class GameBoard extends StatelessWidget {
   const GameBoard({
     super.key,
     required this.board,
-    required this.visualRows,
-    required this.visualColumns,
     required this.selectedCell,
-    required this.undoingCells,
+    required this.swapAfterimages,
     required this.isAnimatingSwap,
-    required this.isUndoing,
+    this.swapSource,
+    this.swapTarget,
+    this.swapAnimationId = 0,
     required this.disableAnimations,
     this.resolvingCell,
     this.resolvingEquation,
@@ -69,12 +92,12 @@ class GameBoard extends StatelessWidget {
   });
 
   final Board board;
-  final List<int> visualRows;
-  final List<int> visualColumns;
   final CellPosition? selectedCell;
-  final Set<CellPosition> undoingCells;
+  final List<BoardSwapAfterimage> swapAfterimages;
   final bool isAnimatingSwap;
-  final bool isUndoing;
+  final BoardLineTarget? swapSource;
+  final BoardLineTarget? swapTarget;
+  final int swapAnimationId;
   final bool disableAnimations;
   final CellPosition? resolvingCell;
   final String? resolvingEquation;
@@ -108,6 +131,20 @@ class GameBoard extends StatelessWidget {
         final handleCellWidth = (frameWidth - _cellGap * (board.columnCount - 1)) / board.columnCount;
         final handleCellHeight = (frameHeight - _cellGap * (board.rowCount - 1)) / board.rowCount;
         final colorScheme = Theme.of(context).colorScheme;
+        Offset swapOffsetFor(int row, int column) {
+          final source = swapSource;
+          final target = swapTarget;
+          if (!isAnimatingSwap || source == null || target == null) return Offset.zero;
+          if (source.kind == BoardLineKind.row && (row == source.index || row == target.index)) {
+            final oldRow = row == source.index ? target.index : source.index;
+            return Offset(0, (oldRow - row) * (cellHeight + _cellGap));
+          }
+          if (source.kind == BoardLineKind.column && (column == source.index || column == target.index)) {
+            final oldColumn = column == source.index ? target.index : source.index;
+            return Offset((oldColumn - column) * (cellWidth + _cellGap), 0);
+          }
+          return Offset.zero;
+        }
 
         Widget lineHighlight(
           BoardLineTarget target, {
@@ -248,22 +285,35 @@ class GameBoard extends StatelessWidget {
                 ),
               for (var row = 0; row < board.rowCount; row++)
                 for (var column = 0; column < board.columnCount; column++)
-                  AnimatedPositioned(
-                    duration: disableAnimations
-                        ? Duration.zero
-                        : const Duration(milliseconds: 380),
-                    curve: Curves.easeInOutCubicEmphasized,
+                  Positioned(
                     left: _handleSize + handleGap + boardInset +
-                        visualColumns[column] * (cellWidth + _cellGap),
+                        column * (cellWidth + _cellGap),
                     top: _handleSize + handleGap + boardInset +
-                        visualRows[row] * (cellHeight + _cellGap),
+                        row * (cellHeight + _cellGap),
                     width: cellWidth,
                     height: cellHeight,
-                    child: GameCell(
+                    child: _SwapMotion(
+                      offset: swapOffsetFor(row, column),
+                      animationId: swapAnimationId,
+                      disableAnimations: disableAnimations,
+                      borderRadius: _cellBorderRadius(CellPosition(row, column)),
+                      firstKeyframeBorderRadius: _swapBorderRadius(
+                        cellWidth,
+                        cellHeight,
+                        const <double>[38, 62, 55, 45],
+                        const <double>[48, 43, 57, 52],
+                   ),
+                      secondKeyframeBorderRadius: _swapBorderRadius(
+                        cellWidth,
+                        cellHeight,
+                        const <double>[58, 42, 48, 52],
+                        const <double>[43, 58, 42, 57],
+                      ),
+                      child: GameCell(
                       position: CellPosition(row, column),
                       value: board.valueAt(CellPosition(row, column)),
                       selected: selectedCell == CellPosition(row, column),
-                      undoing: undoingCells.contains(CellPosition(row, column)),
+                       undoing: false,
                        resolving: resolvingCell == CellPosition(row, column),
                        dragSource: sourceLineHighlight?.kind == BoardLineKind.row && sourceLineHighlight?.index == row || sourceLineHighlight?.kind == BoardLineKind.column && sourceLineHighlight?.index == column,
                        dragTarget: targetLineHighlight?.kind == BoardLineKind.row && targetLineHighlight?.index == row || targetLineHighlight?.kind == BoardLineKind.column && targetLineHighlight?.index == column,
@@ -273,8 +323,14 @@ class GameBoard extends StatelessWidget {
                       useOneNonZeroStyle: useOneNonZeroStyle,
                       disableAnimations: disableAnimations,
                       onPressed: onCellPressed,
+                      ),
                     ),
                   ),
+              for (final afterimage in swapAfterimages)
+                Positioned(
+                  left: _handleSize + handleGap + boardInset + afterimage.position.column * (cellWidth + _cellGap), top: _handleSize + handleGap + boardInset + afterimage.position.row * (cellHeight + _cellGap), width: cellWidth, height: cellHeight,
+                  child: _SwapAfterimage(key: Key('swap-afterimage-${afterimage.id}-${afterimage.position.row}-${afterimage.position.column}'), disableAnimations: disableAnimations, child: ExcludeSemantics(child: IgnorePointer(child: GameCell(position: afterimage.position, value: afterimage.value, selected: false, undoing: false, dragSource: afterimage.dragSource, dragTarget: afterimage.dragTarget, disableAnimations: disableAnimations, useOneNonZeroStyle: useOneNonZeroStyle, onPressed: (_) {})))),
+                ),
               if (resolvingCell case final cell?)
                 if (resolvingEquation case final formula?)
                   Positioned(
@@ -371,7 +427,7 @@ class GameBoard extends StatelessWidget {
            isSource: sourceLineHighlight == target,
            isTarget: targetLineHighlight == target,
            dimmed: sourceLineHighlight != null && sourceLineHighlight != target && targetLineHighlight != target,
-          enabled: !isAnimatingSwap && !isUndoing,
+           enabled: true,
           disableAnimations: disableAnimations,
           useOneNonZeroStyle: useOneNonZeroStyle,
           onDragStarted: onDragStarted,
@@ -451,12 +507,7 @@ class GameCell extends StatelessWidget {
                        ? const [BoxShadow(color: Color.fromRGBO(116, 215, 196, .28), blurRadius: 20)]
                        : null,
                    border: Border.all(color: dragSource || selected ? const Color(0xffb9fff1) : dragTarget ? const Color(0xffffe0a1) : const Color.fromRGBO(116, 215, 196, .17)),
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(position.row.isEven ? 14 : 20),
-                    topRight: Radius.circular(position.column.isEven ? 20 : 14),
-                    bottomLeft: Radius.circular(position.column.isEven ? 14 : 20),
-                    bottomRight: Radius.circular(position.row.isEven ? 20 : 14),
-                  ),
+                  borderRadius: _cellBorderRadius(position),
                 )
               : const BoxDecoration(),
           child: Stack(
@@ -485,12 +536,7 @@ class GameCell extends StatelessWidget {
               side: useOneNonZeroStyle ? BorderSide.none : null,
             padding: const EdgeInsets.all(8),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(position.row.isEven ? 14 : 20),
-                topRight: Radius.circular(position.column.isEven ? 20 : 14),
-                bottomLeft: Radius.circular(position.column.isEven ? 14 : 20),
-                bottomRight: Radius.circular(position.row.isEven ? 20 : 14),
-              ),
+              borderRadius: _cellBorderRadius(position),
             ),
           ),
           onPressed: () => onPressed(position),
@@ -539,6 +585,105 @@ class GameCell extends StatelessWidget {
       ),
     );
   }
+}
+
+class _SwapMotion extends StatelessWidget {
+  const _SwapMotion({
+    required this.offset,
+    required this.animationId,
+    required this.disableAnimations,
+    required this.borderRadius,
+    required this.firstKeyframeBorderRadius,
+    required this.secondKeyframeBorderRadius,
+    required this.child,
+  });
+  final Offset offset;
+  final int animationId;
+  final bool disableAnimations;
+  final BorderRadius borderRadius;
+  final BorderRadius firstKeyframeBorderRadius;
+  final BorderRadius secondKeyframeBorderRadius;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (offset == Offset.zero) return child;
+    return TweenAnimationBuilder<double>(
+      key: ValueKey('swap-$animationId-$offset'),
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: disableAnimations ? Duration.zero : const Duration(milliseconds: 1180),
+      curve: const Cubic(.25, .02, .25, 1),
+      child: child,
+      builder: (context, progress, child) {
+        double value(List<(double, double)> frames) {
+          for (var i = 1; i < frames.length; i++) {
+            if (progress <= frames[i].$1) {
+              final t = (progress - frames[i - 1].$1) / (frames[i].$1 - frames[i - 1].$1);
+              return frames[i - 1].$2 + (frames[i].$2 - frames[i - 1].$2) * t;
+            }
+          }
+          return frames.last.$2;
+        }
+        final radius = BorderRadius.lerp(
+          borderRadius,
+          firstKeyframeBorderRadius,
+          (progress / .34).clamp(0.0, 1.0),
+        )!;
+        final lateRadius = BorderRadius.lerp(
+          firstKeyframeBorderRadius,
+          secondKeyframeBorderRadius,
+          ((progress - .34) / .40).clamp(0.0, 1.0),
+        )!;
+        final currentRadius = progress <= .34
+            ? radius
+            : progress <= .74
+                ? lateRadius
+                : BorderRadius.lerp(lateRadius, borderRadius, (progress - .74) / .26)!;
+        return Opacity(
+          opacity: value(const [(0, 1), (.34, .88), (.74, .94), (1, 1)]),
+          child: Transform.translate(
+            offset: offset * value(const [(0, 1), (.34, .7), (.74, .16), (1, 0)]),
+            child: Transform.scale(
+              scale: value(const [(0, 1), (.34, 1.07), (.74, .98), (1, 1)]),
+              child: ClipRRect(borderRadius: currentRadius, child: child),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+BorderRadius _swapBorderRadius(
+  double width,
+  double height,
+  List<double> horizontal,
+  List<double> vertical,
+) =>
+    BorderRadius.only(
+      topLeft: Radius.elliptical(width * horizontal[0] / 100, height * vertical[0] / 100),
+      topRight: Radius.elliptical(width * horizontal[1] / 100, height * vertical[1] / 100),
+      bottomRight: Radius.elliptical(width * horizontal[2] / 100, height * vertical[2] / 100),
+      bottomLeft: Radius.elliptical(width * horizontal[3] / 100, height * vertical[3] / 100),
+    );
+
+class _SwapAfterimage extends StatelessWidget {
+  const _SwapAfterimage({super.key, required this.disableAnimations, required this.child});
+
+  final bool disableAnimations;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0.0, end: 1.0),
+        duration: disableAnimations ? Duration.zero : const Duration(milliseconds: 1000),
+        curve: Curves.easeOut,
+        child: child,
+        builder: (context, progress, child) => Opacity(
+          opacity: .3 * (1 - progress),
+          child: Transform.scale(scale: 1 + .16 * progress, child: child),
+        ),
+      );
 }
 
 class _DimmingFilter extends StatefulWidget {
