@@ -133,22 +133,10 @@ class _StartScreenState extends State<StartScreen> {
               ),
             ),
             Positioned(
-              right: -34,
-              top: 330,
+              right: -40,
+              top: screenSize.height * .42,
               child: IgnorePointer(
-                child: Container(
-                  width: 132,
-                  height: 132,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0x3374d7c4)),
-                    gradient: const RadialGradient(
-                      center: Alignment(-.35, -.45),
-                      colors: [Color(0x4574d7c4), Color(0x18131a2a), Colors.transparent],
-                    ),
-                    boxShadow: const [BoxShadow(color: Color(0x2274d7c4), blurRadius: 32)],
-                  ),
-                ),
+                child: const _AtmosphericOrb(key: Key('start-atmospheric-orb')),
               ),
             ),
             SafeArea(
@@ -342,6 +330,43 @@ class _BackgroundEquation extends StatelessWidget {
       ),
     );
   }
+}
+
+class _AtmosphericOrb extends StatelessWidget {
+  const _AtmosphericOrb({super.key});
+
+  @override
+  Widget build(BuildContext context) => Transform.rotate(
+        angle: -.279,
+        child: Container(
+          width: 128,
+          height: 128,
+          decoration: BoxDecoration(
+            border: Border.all(color: const Color(0x3374d7c4)),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.elliptical(60, 61),
+              topRight: Radius.elliptical(68, 55),
+              bottomRight: Radius.elliptical(65, 73),
+              bottomLeft: Radius.elliptical(63, 67),
+            ),
+            gradient: const RadialGradient(
+              center: Alignment(-.34, -.50),
+              colors: [
+                Color.fromRGBO(255, 255, 255, .34),
+                Color.fromRGBO(116, 215, 196, .16),
+                Color.fromRGBO(19, 26, 42, .08),
+                Colors.transparent,
+              ],
+              stops: [0, .30, .68, 1],
+            ),
+            boxShadow: const [
+              BoxShadow(color: Color(0x14030a19), offset: Offset(-8, -11), blurRadius: 22),
+              BoxShadow(color: Color(0x1474d7c4), blurRadius: 48),
+            ],
+          ),
+        ),
+      );
+
 }
 
 class _ModeCard extends StatelessWidget {
