@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 
@@ -229,12 +230,15 @@ class _StartScreenState extends State<StartScreen> {
                                   const SizedBox(height: 12),
                                 ],
                                 if (widget.savedGame != null) ...[
-                                  _MovingGradient(
-                                    key: const Key('continue-moving-gradient'),
-                                    duration: const Duration(seconds: 25),
-                                    initialProgress: .32,
-                                    colors: const [Color(0xfff4be55), Color(0xffe98550)],
-                                    builder: (context, gradient) => _LivingCorners(
+                                  _RandomDrift(
+                                    key: const Key('continue-random-drift'),
+                                    initialDelay: const Duration(milliseconds: 700),
+                                    child: _MovingGradient(
+                                      key: const Key('continue-moving-gradient'),
+                                      duration: const Duration(seconds: 25),
+                                      initialProgress: .32,
+                                      colors: const [Color(0xfff4be55), Color(0xffe98550)],
+                                      builder: (context, gradient) => _LivingCorners(
                                       key: const Key('continue-living-corners'),
                                       duration: const Duration(seconds: 14),
                                       initialDelay: const Duration(seconds: 3),
@@ -281,6 +285,7 @@ class _StartScreenState extends State<StartScreen> {
                                       ),
                                     ),
                                   ),
+                                    ),
                                   const SizedBox(height: 22),
                                 ],
                                 const Text('CHOOSE A NEW PUZZLE', style: TextStyle(color: muted, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
@@ -439,6 +444,96 @@ class _TiltingEquationState extends State<_TiltingEquation>
         },
       );
 
+}
+
+class _RandomDrift extends StatefulWidget {
+  const _RandomDrift({super.key, required this.initialDelay, required this.child});
+
+  final Duration initialDelay;
+  final Widget child;
+
+  @override
+  State<_RandomDrift> createState() => _RandomDriftState();
+}
+
+class _RandomDriftState extends State<_RandomDrift>
+    with SingleTickerProviderStateMixin {
+  final _random = Random();
+  late final AnimationController _controller;
+  Timer? _timer;
+  Offset _fromOffset = Offset.zero;
+  Offset _toOffset = Offset.zero;
+  double _fromRotation = 0;
+  double _toRotation = 0;
+  bool? _reducedMotion;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 7))
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          _timer = Timer(const Duration(milliseconds: 400), _startSegment);
+        }
+      });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reducedMotion = MediaQuery.disableAnimationsOf(context);
+    if (_reducedMotion == reducedMotion) return;
+    _reducedMotion = reducedMotion;
+    _timer?.cancel();
+    if (reducedMotion) {
+      _controller.stop();
+      _controller.value = 0;
+      _fromOffset = Offset.zero;
+      _toOffset = Offset.zero;
+      _fromRotation = 0;
+      _toRotation = 0;
+    } else {
+      _timer = Timer(widget.initialDelay, _startSegment);
+    }
+  }
+
+  void _startSegment() {
+    if (!mounted || _reducedMotion == true) return;
+    _fromOffset = Offset.lerp(_fromOffset, _toOffset, _controller.value)!;
+    _fromRotation = lerpDouble(_fromRotation, _toRotation, _controller.value)!;
+    _toOffset = Offset(
+      (_random.nextDouble() - .5) * 10,
+      (_random.nextDouble() - .5) * 12,
+    );
+    _toRotation = (_random.nextDouble() - .5) * .7;
+    _controller.duration = Duration(milliseconds: 7000 + _random.nextInt(6001));
+    _controller.forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+        animation: _controller,
+        child: widget.child,
+        builder: (context, child) {
+          final progress = const Cubic(.42, 0, .25, 1).transform(_controller.value);
+          final offset = Offset.lerp(_fromOffset, _toOffset, progress)!;
+          final rotation = lerpDouble(_fromRotation, _toRotation, progress)!;
+          return Transform(
+            alignment: Alignment.center,
+            transform: Matrix4.identity()
+              ..translateByDouble(offset.dx, offset.dy, 0, 1)
+              ..rotateZ(rotation * pi / 180),
+            child: child,
+          );
+        },
+      );
 }
 
 class _MovingGradient extends StatefulWidget {
@@ -913,12 +1008,16 @@ class _ModeCard extends StatelessWidget {
             ),
           ),
         );
-    return _MovingModeGradients(
-      key: Key(isTeal ? 'start-mode-moving-teal-gradient' : 'start-mode-moving-coral-gradient'),
-      duration: const Duration(seconds: 100),
-      color: color,
-      isTeal: isTeal,
-      builder: buildCard,
+    return _RandomDrift(
+      key: Key(isTeal ? 'start-mode-random-drift-teal' : 'start-mode-random-drift-coral'),
+      initialDelay: Duration(milliseconds: isTeal ? 2300 : 3900),
+      child: _MovingModeGradients(
+        key: Key(isTeal ? 'start-mode-moving-teal-gradient' : 'start-mode-moving-coral-gradient'),
+        duration: const Duration(seconds: 100),
+        color: color,
+        isTeal: isTeal,
+        builder: buildCard,
+      ),
     );
   }
 }
