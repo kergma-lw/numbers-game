@@ -131,6 +131,8 @@ class GameBoard extends StatelessWidget {
         final handleCellWidth = (frameWidth - _cellGap * (board.columnCount - 1)) / board.columnCount;
         final handleCellHeight = (frameHeight - _cellGap * (board.rowCount - 1)) / board.rowCount;
         final colorScheme = Theme.of(context).colorScheme;
+        final dimmingSource = sourceLineHighlight ?? (isAnimatingSwap ? swapSource : null);
+        final dimmingTarget = targetLineHighlight ?? (isAnimatingSwap ? swapTarget : null);
         Offset swapOffsetFor(int row, int column) {
           final source = swapSource;
           final target = swapTarget;
@@ -318,8 +320,8 @@ class GameBoard extends StatelessWidget {
                        dragSource: sourceLineHighlight?.kind == BoardLineKind.row && sourceLineHighlight?.index == row || sourceLineHighlight?.kind == BoardLineKind.column && sourceLineHighlight?.index == column,
                        dragTarget: targetLineHighlight?.kind == BoardLineKind.row && targetLineHighlight?.index == row || targetLineHighlight?.kind == BoardLineKind.column && targetLineHighlight?.index == column,
                        dimmed: resolvingCell != null && resolvingCell != CellPosition(row, column) ||
-                           sourceLineHighlight != null &&
-                               !(sourceLineHighlight?.kind == BoardLineKind.row && sourceLineHighlight?.index == row || sourceLineHighlight?.kind == BoardLineKind.column && sourceLineHighlight?.index == column || targetLineHighlight?.kind == BoardLineKind.row && targetLineHighlight?.index == row || targetLineHighlight?.kind == BoardLineKind.column && targetLineHighlight?.index == column),
+                           dimmingSource != null &&
+                               !(dimmingSource.kind == BoardLineKind.row && dimmingSource.index == row || dimmingSource.kind == BoardLineKind.column && dimmingSource.index == column || dimmingTarget?.kind == BoardLineKind.row && dimmingTarget?.index == row || dimmingTarget?.kind == BoardLineKind.column && dimmingTarget?.index == column),
                       useOneNonZeroStyle: useOneNonZeroStyle,
                       disableAnimations: disableAnimations,
                       onPressed: onCellPressed,
@@ -426,7 +428,9 @@ class GameBoard extends StatelessWidget {
            isActive: sourceLineHighlight == target || targetLineHighlight == target,
            isSource: sourceLineHighlight == target,
            isTarget: targetLineHighlight == target,
-           dimmed: sourceLineHighlight != null && sourceLineHighlight != target && targetLineHighlight != target,
+           dimmed: (sourceLineHighlight ?? (isAnimatingSwap ? swapSource : null)) != null &&
+               (sourceLineHighlight ?? (isAnimatingSwap ? swapSource : null)) != target &&
+               (targetLineHighlight ?? (isAnimatingSwap ? swapTarget : null)) != target,
            enabled: true,
           disableAnimations: disableAnimations,
           useOneNonZeroStyle: useOneNonZeroStyle,
@@ -479,10 +483,6 @@ class GameCell extends StatelessWidget {
       child: _DimmingFilter(
         enabled: dimmed && useOneNonZeroStyle,
         disableAnimations: disableAnimations,
-        child: AnimatedOpacity(
-        opacity: dimmed ? .34 : 1,
-        duration: disableAnimations ? Duration.zero : const Duration(milliseconds: 700),
-        curve: Curves.ease,
         child: AnimatedScale(
         scale: undoing ? 1.08 : 1,
         duration: disableAnimations
@@ -581,7 +581,6 @@ class GameCell extends StatelessWidget {
           ),
         ),
         ),
-      ),
       ),
     );
   }
@@ -711,7 +710,11 @@ class _DimmingFilterState extends State<_DimmingFilter> with SingleTickerProvide
     if (widget.disableAnimations) {
       _controller.value = widget.enabled ? 1 : 0;
     } else if (oldWidget.enabled != widget.enabled) {
-      _controller.animateTo(widget.enabled ? 1 : 0, curve: Curves.ease);
+      _controller.animateTo(
+        widget.enabled ? 1 : 0,
+        duration: const Duration(milliseconds: 700),
+        curve: Curves.ease,
+      );
     }
   }
 
@@ -729,7 +732,10 @@ class _DimmingFilterState extends State<_DimmingFilter> with SingleTickerProvide
           final progress = _controller.value;
           const dim = [.348, .283, .029, 0, 0, .084, .547, .029, 0, 0, .084, .283, .293, 0, 0, 0, 0, 0, 1, 0];
           final matrix = <double>[for (var index = 0; index < 20; index++) index == 18 ? 1 : (index == 3 || index == 4 || index == 8 || index == 9 || index == 13 || index == 14 || index == 15 || index == 16 || index == 17 || index == 19) ? 0 : (index == 0 || index == 6 || index == 12) ? 1 + (dim[index] - 1) * progress : dim[index] * progress];
-          return ColorFiltered(colorFilter: ColorFilter.matrix(matrix), child: child);
+          return Opacity(
+            opacity: 1 - .66 * progress,
+            child: ColorFiltered(colorFilter: ColorFilter.matrix(matrix), child: child),
+          );
         },
       );
 }
@@ -772,8 +778,35 @@ class EdgeSwapHandle extends StatefulWidget {
   State<EdgeSwapHandle> createState() => _EdgeSwapHandleState();
 }
 
-class _EdgeSwapHandleState extends State<EdgeSwapHandle> {
+class _EdgeSwapHandleState extends State<EdgeSwapHandle> with SingleTickerProviderStateMixin {
   bool _isHovered = false;
+  late final AnimationController _dimmingController;
+
+  @override
+  void initState() {
+    super.initState();
+    _dimmingController = AnimationController(vsync: this, value: widget.dimmed ? 1 : 0);
+  }
+
+  @override
+  void didUpdateWidget(covariant EdgeSwapHandle oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.disableAnimations) {
+      _dimmingController.value = widget.dimmed ? 1 : 0;
+    } else if (oldWidget.dimmed != widget.dimmed) {
+      _dimmingController.animateTo(
+        widget.dimmed ? 1 : 0,
+        duration: const Duration(milliseconds: 700),
+        curve: Curves.ease,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _dimmingController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) => DragTarget<BoardLineTarget>(
@@ -816,10 +849,9 @@ class _EdgeSwapHandleState extends State<EdgeSwapHandle> {
             : widget.useOneNonZeroStyle
                 ? const Color.fromRGBO(35, 86, 99, .40)
                 : Colors.transparent;
-    return AnimatedOpacity(
-      opacity: widget.dimmed ? .28 : 1,
-      duration: widget.disableAnimations ? Duration.zero : const Duration(milliseconds: 700),
-      curve: Curves.ease,
+    return AnimatedBuilder(
+      animation: _dimmingController,
+      builder: (context, child) => Opacity(opacity: 1 - .72 * _dimmingController.value, child: child),
       child: AnimatedScale(
         scale: widget.isSource ? 1.06 : 1,
         duration: widget.disableAnimations ? Duration.zero : const Duration(milliseconds: 180),
@@ -828,9 +860,7 @@ class _EdgeSwapHandleState extends State<EdgeSwapHandle> {
       label: '${widget.side.label} handle for ${widget.target.kind.label} ${widget.target.index + 1}',
       child: AnimatedContainer(
         key: Key('${widget.target.kind.name}-handle-${widget.side.name}-${widget.target.index}'),
-        duration: widget.disableAnimations
-            ? Duration.zero
-            : const Duration(milliseconds: 180),
+        duration: widget.disableAnimations ? Duration.zero : const Duration(milliseconds: 180),
         curve: Curves.ease,
         alignment: Alignment.center,
         decoration: BoxDecoration(
