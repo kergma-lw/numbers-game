@@ -143,7 +143,7 @@ void main() {
     }
   });
 
-  test('generates a rectangular Historical Date board with a locale-specific target', () {
+  test('generates bounded rectangular Historical Date boards', () {
     final game = newHistoricalDateGame(random: Random(1), locale: 'en_US');
 
     expect(game.currentBoard.rowCount, 3);
@@ -178,6 +178,13 @@ void main() {
       isFalse,
     );
     expect(counts.values.every((count) => count <= 2), isTrue);
+
+    for (var seed = 0; seed < 100; seed++) {
+      final generated = newHistoricalDateGame(random: Random(seed));
+      for (final value in values(generated.currentBoard)) {
+        expect(value.abs(), lessThanOrEqualTo(999));
+      }
+    }
   });
 }
 

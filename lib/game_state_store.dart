@@ -191,6 +191,8 @@ final _historicalEvents = [
   ),
 ];
 
+const _historicalInitialValueLimit = 999;
+
 abstract interface class GameStateStore {
   Future<AppSettings> loadSettings();
   Future<void> saveSettings(AppSettings settings);
@@ -307,70 +309,139 @@ HistoricalDateGame newHistoricalDateGame({
   );
 }
 
-Board _scrambleHistoricalTarget(Board target, Set<int> targetValues, Random generator) {
-  for (var attempt = 0; attempt < 100; attempt++) {
-    var candidate = target;
-    for (var index = 0; index < 100; index++) {
-      if (index > 0 && index % 7 == 0) {
-        if (generator.nextBool()) {
-          final first = generator.nextInt(candidate.rowCount);
-          candidate = candidate.swapRows(
-            first,
-            _randomOtherIndex(generator, candidate.rowCount, first),
-          );
-        } else {
-          final first = generator.nextInt(candidate.columnCount);
-          candidate = candidate.swapColumns(
-            first,
-            _randomOtherIndex(generator, candidate.columnCount, first),
-          );
-        }
-        continue;
-      }
-      final counts = _valueCounts(candidate);
-      final zeroTargets = _subtractionMoves(candidate, requireZeroTarget: true)
-          .where((move) => (counts[candidate.valueAt(move.source)] ?? 0) < 2)
-          .toList();
-      final mixingMoves = _subtractionMoves(candidate, requireZeroTarget: false);
-      final hideTargetValueMoves = mixingMoves.where((move) {
-        final targetValue = candidate.valueAt(move.target);
-        final nextValue = candidate.valueAt(move.source) - targetValue;
-        return targetValues.contains(targetValue.abs()) &&
-            nextValue != 0 &&
-            !targetValues.contains(nextValue.abs()) &&
-            _doesNotCreateThirdCopy(counts, targetValue, nextValue);
-      }).toList();
-      final safeMixingMoves = mixingMoves.where((move) {
-        final targetValue = candidate.valueAt(move.target);
-        final nextValue = candidate.valueAt(move.source) - targetValue;
-        return nextValue != 0 &&
-            !targetValues.contains(nextValue.abs()) &&
-            _doesNotCreateThirdCopy(counts, targetValue, nextValue);
-      }).toList();
+Board _scrambleHistoricalTarget(Board target, Set<int> targetValues, Random _) {
+  final nonZeroPositions = <CellPosition>[];
+  final zeroPositions = <CellPosition>[];
+  for (var row = 0; row < target.rowCount; row++) {
+    for (var column = 0; column < target.columnCount; column++) {
+      final position = CellPosition(row, column);
+      (target.valueAt(position) == 0 ? zeroPositions : nonZeroPositions)
+          .add(position);
+    }
+  }
+  nonZeroPositions.sort(
+    (first, second) => target.valueAt(first).abs().compareTo(target.valueAt(second).abs()),
+  );
 
-      if (zeroTargets.isNotEmpty) {
-        final move = zeroTargets[generator.nextInt(zeroTargets.length)];
-        candidate = candidate.applyArithmeticMove(source: move.source, target: move.target);
-      } else if (hideTargetValueMoves.isNotEmpty) {
-        final move = hideTargetValueMoves[generator.nextInt(hideTargetValueMoves.length)];
-        candidate = candidate.applyArithmeticMove(source: move.source, target: move.target);
-      } else if (safeMixingMoves.isNotEmpty) {
-        final move = safeMixingMoves[generator.nextInt(safeMixingMoves.length)];
-        candidate = candidate.applyArithmeticMove(source: move.source, target: move.target);
-      } else {
-        candidate = _moveNonZeroValueToUsefulPosition(candidate);
-      }
+  final builder = _HistoricalScrambleBuilder(target, {
+    'seed': nonZeroPositions.first,
+    'large': nonZeroPositions.last,
+    'other': nonZeroPositions[1],
+    for (var index = 0; index < zeroPositions.length; index++)
+      'zero$index': zeroPositions[index],
+  });
+  var seedValue = target.valueAt(nonZeroPositions.first).abs();
+  var power = 'seed';
+  var usedZeroes = 0;
+  while (seedValue * 2 <= _historicalInitialValueLimit) {
+    final nextPower = 'zero${usedZeroes++}';
+    builder.subtract(source: power, target: nextPower);
+    builder.add(source: power, target: nextPower);
+    power = nextPower;
+    seedValue *= 2;
+  }
+
+  var large = 'large';
+  var seed = power;
+  final zero = 'zero$usedZeroes';
+  while (builder.valueAt(large).abs() > _historicalInitialValueLimit) {
+    builder.subtract(source: large, target: seed);
+    builder.subtract(source: seed, target: large);
+    final previousLarge = large;
+    large = seed;
+    seed = previousLarge;
+    if (builder.valueAt(large).abs() > _historicalInitialValueLimit) {
+      builder.subtract(source: zero, target: seed);
     }
-    if (_isInterestingHistoricalStart(candidate, targetValues)) {
-      return candidate;
-    }
+  }
+
+  final sourceNames = [
+    'seed',
+    'large',
+    'other',
+    for (var index = 0; index < usedZeroes; index++) 'zero$index',
+  ];
+  for (var index = usedZeroes; index < zeroPositions.length; index++) {
+    final target = 'zero$index';
+    final counts = _valueCounts(builder.board);
+    final source = sourceNames.firstWhere((name) {
+      final value = builder.valueAt(name);
+      return builder.positionOf(name) != builder.positionOf(target) &&
+          value != 0 &&
+          (counts[value] ?? 0) < 2;
+    });
+    builder.subtract(source: source, target: target);
+  }
+
+  final candidate = builder.board;
+  if (_isInterestingHistoricalStart(candidate, targetValues) &&
+      _historicalValuesFitInitialRange(candidate)) {
+    return candidate;
   }
   throw StateError('Could not generate an interesting Historical Date start board');
 }
 
-int _randomOtherIndex(Random generator, int count, int excluded) {
-  final index = generator.nextInt(count - 1);
-  return index >= excluded ? index + 1 : index;
+class _HistoricalScrambleBuilder {
+  _HistoricalScrambleBuilder(this.board, this._positions);
+
+  Board board;
+  final Map<String, CellPosition> _positions;
+
+  int valueAt(String name) => board.valueAt(_positions[name]!);
+
+  CellPosition positionOf(String name) => _positions[name]!;
+
+  void add({required String source, required String target}) =>
+      _apply(source: source, target: target, sourceBeforeTarget: true);
+
+  void subtract({required String source, required String target}) =>
+      _apply(source: source, target: target, sourceBeforeTarget: false);
+
+  void _apply({
+    required String source,
+    required String target,
+    required bool sourceBeforeTarget,
+  }) {
+    var sourcePosition = _positions[source]!;
+    var targetPosition = _positions[target]!;
+    final sourceIsBeforeTarget = sourcePosition.row < targetPosition.row ||
+        (sourcePosition.row == targetPosition.row &&
+            sourcePosition.column < targetPosition.column);
+    if (sourceIsBeforeTarget != sourceBeforeTarget) {
+      if (sourcePosition.row != targetPosition.row) {
+        _swapRows(sourcePosition.row, targetPosition.row);
+      } else {
+        _swapColumns(sourcePosition.column, targetPosition.column);
+      }
+      sourcePosition = _positions[source]!;
+      targetPosition = _positions[target]!;
+    }
+    board = board.applyArithmeticMove(source: sourcePosition, target: targetPosition);
+  }
+
+  void _swapRows(int first, int second) {
+    board = board.swapRows(first, second);
+    for (final name in _positions.keys.toList()) {
+      final position = _positions[name]!;
+      if (position.row == first) {
+        _positions[name] = CellPosition(second, position.column);
+      } else if (position.row == second) {
+        _positions[name] = CellPosition(first, position.column);
+      }
+    }
+  }
+
+  void _swapColumns(int first, int second) {
+    board = board.swapColumns(first, second);
+    for (final name in _positions.keys.toList()) {
+      final position = _positions[name]!;
+      if (position.column == first) {
+        _positions[name] = CellPosition(position.row, second);
+      } else if (position.column == second) {
+        _positions[name] = CellPosition(position.row, first);
+      }
+    }
+  }
 }
 
 Map<int, int> _valueCounts(Board board) {
@@ -384,17 +455,16 @@ Map<int, int> _valueCounts(Board board) {
   return counts;
 }
 
-bool _doesNotCreateThirdCopy(Map<int, int> counts, int previousValue, int nextValue) {
-  final retainedCopies = (counts[nextValue] ?? 0) - (previousValue == nextValue ? 1 : 0);
-  return retainedCopies < 2;
-}
-
-Board _moveNonZeroValueToUsefulPosition(Board board) {
-  final nonZero = _firstNonZeroCell(board);
-  if (nonZero.row < board.rowCount - 1) {
-    return board.swapRows(nonZero.row, board.rowCount - 1);
+bool _historicalValuesFitInitialRange(Board board) {
+  for (var row = 0; row < board.rowCount; row++) {
+    for (var column = 0; column < board.columnCount; column++) {
+      if (board.valueAt(CellPosition(row, column)).abs() >
+          _historicalInitialValueLimit) {
+        return false;
+      }
+    }
   }
-  return board.swapColumns(nonZero.column, board.columnCount - 1);
+  return true;
 }
 
 bool _isInterestingHistoricalStart(Board board, Set<int> targetValues) {
@@ -414,60 +484,6 @@ bool _isInterestingHistoricalStart(Board board, Set<int> targetValues) {
     }
   }
   return visibleTargetValues.length < targetValues.length;
-}
-
-List<({CellPosition source, CellPosition target})> _subtractionMoves(
-  Board board, {
-  required bool requireZeroTarget,
-}) {
-  final moves = <({CellPosition source, CellPosition target})>[];
-  for (var sourceRow = 0; sourceRow < board.rowCount; sourceRow++) {
-    for (var sourceColumn = 0; sourceColumn < board.columnCount; sourceColumn++) {
-      final source = CellPosition(sourceRow, sourceColumn);
-      if (board.valueAt(source) == 0) {
-        continue;
-      }
-      for (var targetRow = 0; targetRow < sourceRow; targetRow++) {
-        for (var targetColumn = 0; targetColumn < board.columnCount; targetColumn++) {
-          final target = CellPosition(targetRow, targetColumn);
-          if (_isUsefulSubtractionTarget(board, source, target, requireZeroTarget)) {
-            moves.add((source: source, target: target));
-          }
-        }
-      }
-      for (var targetColumn = 0; targetColumn < sourceColumn; targetColumn++) {
-        final target = CellPosition(sourceRow, targetColumn);
-        if (_isUsefulSubtractionTarget(board, source, target, requireZeroTarget)) {
-          moves.add((source: source, target: target));
-        }
-      }
-    }
-  }
-  return moves;
-}
-
-bool _isUsefulSubtractionTarget(
-  Board board,
-  CellPosition source,
-  CellPosition target,
-  bool requireZeroTarget,
-) {
-  final targetValue = board.valueAt(target);
-  if (requireZeroTarget && targetValue != 0) {
-    return false;
-  }
-  return board.valueAt(source) - targetValue != 0;
-}
-
-CellPosition _firstNonZeroCell(Board board) {
-  for (var row = 0; row < board.rowCount; row++) {
-    for (var column = 0; column < board.columnCount; column++) {
-      if (board.valueAt(CellPosition(row, column)) != 0) {
-        return CellPosition(row, column);
-      }
-    }
-  }
-  throw StateError('Historical Date target must contain a non-zero date component');
 }
 
 Map<String, Object> _modeSettingsToJson(GameMode mode, ModeSettings settings) {

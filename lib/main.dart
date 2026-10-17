@@ -112,6 +112,12 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
         _showGame = true;
       });
 
+  void _returnToMenu() => setState(() {
+        _showGame = false;
+        _showTutorial = false;
+        _gameToOpen = null;
+      });
+
   Future<void> _openSettings(BuildContext context, AppSettings settings) async {
     final updatedSettings = await Navigator.of(context).push<AppSettings>(
       MaterialPageRoute(builder: (_) => SettingsScreen(settings: settings)),
@@ -166,6 +172,7 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
             onGameChanged: showTutorial ? null : _saveGame,
             onNewGame: showTutorial ? null : () => _startNewGame(settings),
             onOpenSettings: showTutorial ? null : () => _openSettings(context, settings),
+            onBackToMenu: showTutorial ? null : _returnToMenu,
           );
         },
       ),
@@ -183,6 +190,7 @@ class BoardScreen extends StatefulWidget {
     this.onGameChanged,
     this.onNewGame,
     this.onOpenSettings,
+    this.onBackToMenu,
   });
 
   final PlayableGame? initialGame;
@@ -192,6 +200,7 @@ class BoardScreen extends StatefulWidget {
   final Future<void> Function(PlayableGame game)? onGameChanged;
   final Future<PlayableGame> Function()? onNewGame;
   final Future<void> Function()? onOpenSettings;
+  final VoidCallback? onBackToMenu;
 
   @override
   State<BoardScreen> createState() => _BoardScreenState();
@@ -697,12 +706,21 @@ class _BoardScreenState extends State<BoardScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                    children: [
-                       if (usesPuzzlePresentation)
+                       if (isHistoricalDate)
                          Padding(
                           padding: const EdgeInsets.only(bottom: 16),
                           child: Row(
                             children: [
-                               const Text('← Back to menu', style: TextStyle(color: Color(0xffbcb6aa), fontSize: 12)),
+                                TextButton(
+                                  key: const Key('back-to-menu-button'),
+                                  onPressed: widget.onBackToMenu,
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: const Color(0xffbcb6aa),
+                                    padding: EdgeInsets.zero,
+                                    minimumSize: Size.zero,
+                                  ),
+                                  child: const Text('← Back to menu', style: TextStyle(fontSize: 12)),
+                                ),
                                Expanded(child: Center(child: Text(isHistoricalDate ? 'HISTORICAL DATE' : 'ONE NON-ZERO', style: const TextStyle(color: Color(0xfff4eddf), fontFamily: 'serif', fontSize: 23, letterSpacing: 1.2)))),
                                Row(mainAxisSize: MainAxisSize.min, children: [
                                  Text('${_game.moveCount.toString().padLeft(2, '0')} moves', style: TextStyle(color: isHistoricalDate ? const Color(0xfff3a486) : const Color(0xff74d7c4), fontFamily: 'monospace', fontSize: 12)),
@@ -811,8 +829,8 @@ class _BoardScreenState extends State<BoardScreen> {
                         isLost: _game.isLost,
                          showMoveCount: !usesPuzzlePresentation,
                       ),
-                      if (isHistoricalDate)
-                        const Padding(
+                       if (usesPuzzlePresentation)
+                         const Padding(
                           padding: EdgeInsets.only(top: 18),
                           child: Text(
                             'Drag the marks at a row or column edge to swap it · How moves work',

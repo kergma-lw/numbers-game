@@ -122,7 +122,14 @@ class HistoricalEventPanel extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(game.event.title, style: const TextStyle(fontFamily: 'serif', fontSize: 20)),
+              Text(
+                game.event.title,
+                style: const TextStyle(
+                  color: Color(0xfff4eddf),
+                  fontFamily: 'serif',
+                  fontSize: 20,
+                ),
+              ),
               const SizedBox(height: 4),
               Text(game.event.description, style: const TextStyle(color: Color(0xffbcb6aa), fontSize: 12)),
             ],
