@@ -229,31 +229,32 @@ class _StartScreenState extends State<StartScreen> {
                                   const SizedBox(height: 12),
                                 ],
                                 if (widget.savedGame != null) ...[
-                                  _LivingCorners(
-                                    key: const Key('continue-living-corners'),
-                                    duration: const Duration(seconds: 14),
-                                    initialDelay: const Duration(seconds: 3),
-                                    builder: (context, radius) => DecoratedBox(
-                                      key: const Key('continue-gradient'),
-                                      decoration: BoxDecoration(
-                                      gradient: const LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        colors: [Color(0xfff4be55), Color(0xffe98550)],
-                                      ),
-                                      borderRadius: radius,
-                                    ),
-                                    child: FilledButton(
-                                      key: const Key('continue-game-button'),
-                                      style: FilledButton.styleFrom(
-                                        backgroundColor: Colors.transparent,
-                                        foregroundColor: const Color(0xff252039),
-                                        shadowColor: Colors.transparent,
-                                        padding: const EdgeInsets.all(16),
-                                        shape: RoundedRectangleBorder(borderRadius: radius),
-                                      ),
-                                      onPressed: widget.onContinue,
-                                      child: Row(children: [
+                                  _MovingGradient(
+                                    key: const Key('continue-moving-gradient'),
+                                    duration: const Duration(seconds: 25),
+                                    initialProgress: .32,
+                                    colors: const [Color(0xfff4be55), Color(0xffe98550)],
+                                    builder: (context, gradient) => _LivingCorners(
+                                      key: const Key('continue-living-corners'),
+                                      duration: const Duration(seconds: 14),
+                                      initialDelay: const Duration(seconds: 3),
+                                      builder: (context, radius) => DecoratedBox(
+                                        key: const Key('continue-gradient'),
+                                        decoration: BoxDecoration(
+                                          gradient: gradient,
+                                          borderRadius: radius,
+                                        ),
+                                        child: FilledButton(
+                                          key: const Key('continue-game-button'),
+                                          style: FilledButton.styleFrom(
+                                            backgroundColor: Colors.transparent,
+                                            foregroundColor: const Color(0xff252039),
+                                            shadowColor: Colors.transparent,
+                                            padding: const EdgeInsets.all(16),
+                                            shape: RoundedRectangleBorder(borderRadius: radius),
+                                          ),
+                                          onPressed: widget.onContinue,
+                                          child: Row(children: [
                                         Container(
                                           key: const Key('continue-token'),
                                           width: 45,
@@ -275,8 +276,9 @@ class _StartScreenState extends State<StartScreen> {
                                            Text('${widget.savedGame!.mode == GameMode.oneNonZero ? 'One non-zero' : 'Historical Date'} · ${widget.savedGame!.game.moveCount} moves', style: const TextStyle(fontSize: 12)),
                                         ])),
                                         const Icon(Icons.arrow_forward),
-                                      ]),
-                                    ),
+                                          ]),
+                                        ),
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(height: 22),
@@ -437,6 +439,92 @@ class _TiltingEquationState extends State<_TiltingEquation>
         },
       );
 
+}
+
+class _MovingGradient extends StatefulWidget {
+  const _MovingGradient({
+    super.key,
+    required this.duration,
+    required this.colors,
+    required this.builder,
+    this.initialProgress = 0,
+  });
+
+  final Duration duration;
+  final List<Color> colors;
+  final Widget Function(BuildContext context, LinearGradient gradient) builder;
+  final double initialProgress;
+
+  @override
+  State<_MovingGradient> createState() => _MovingGradientState();
+}
+
+class _MovingGradientState extends State<_MovingGradient>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  bool? _reducedMotion;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: widget.duration);
+    _controller.value = widget.initialProgress;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reducedMotion = MediaQuery.disableAnimationsOf(context);
+    if (_reducedMotion == reducedMotion) return;
+    _reducedMotion = reducedMotion;
+    if (reducedMotion) {
+      _controller.stop();
+      _controller.value = 0;
+    } else {
+      if (_controller.value == 0) _controller.value = widget.initialProgress;
+      _controller.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          final progress = Curves.easeInOut.transform(_controller.value) * 4;
+          const positions = [
+            Offset(0, 0),
+            Offset(1, 0),
+            Offset(1, 1),
+            Offset(0, 1),
+            Offset(0, 0),
+          ];
+          final index = progress.floor().clamp(0, positions.length - 2);
+          final position = Offset.lerp(
+            positions[index],
+            positions[index + 1],
+            progress - index,
+          )!;
+          const excess = .70;
+          final begin = Alignment(
+            -1 - 2 * excess * position.dx,
+            -1 - 2 * excess * position.dy,
+          );
+          final end = Alignment(
+            1 + 2 * excess * (1 - position.dx),
+            1 + 2 * excess * (1 - position.dy),
+          );
+          return widget.builder(
+            context,
+            LinearGradient(begin: begin, end: end, colors: widget.colors),
+          );
+        },
+      );
 }
 
 class _ShiftingTitle extends StatefulWidget {
