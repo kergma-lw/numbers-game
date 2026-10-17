@@ -234,9 +234,11 @@ class GameBoard extends StatelessWidget {
                   height: handleCellHeight,
                 ),
               ],
-              if (sourceLineHighlight case final source?)
+              if (!useOneNonZeroStyle)
+                if (sourceLineHighlight case final source?)
                 lineHighlight(source, isDropTarget: false),
-              if (targetLineHighlight case final target?)
+              if (!useOneNonZeroStyle)
+                if (targetLineHighlight case final target?)
                 lineHighlight(target, isDropTarget: true),
               if (historicalGame case final game?)
                 DateFrameDecoration(
@@ -262,8 +264,12 @@ class GameBoard extends StatelessWidget {
                       value: board.valueAt(CellPosition(row, column)),
                       selected: selectedCell == CellPosition(row, column),
                       undoing: undoingCells.contains(CellPosition(row, column)),
-                      resolving: resolvingCell == CellPosition(row, column),
-                      dimmed: resolvingCell != null && resolvingCell != CellPosition(row, column),
+                       resolving: resolvingCell == CellPosition(row, column),
+                       dragSource: sourceLineHighlight?.kind == BoardLineKind.row && sourceLineHighlight?.index == row || sourceLineHighlight?.kind == BoardLineKind.column && sourceLineHighlight?.index == column,
+                       dragTarget: targetLineHighlight?.kind == BoardLineKind.row && targetLineHighlight?.index == row || targetLineHighlight?.kind == BoardLineKind.column && targetLineHighlight?.index == column,
+                       dimmed: resolvingCell != null && resolvingCell != CellPosition(row, column) ||
+                           sourceLineHighlight != null &&
+                               !(sourceLineHighlight?.kind == BoardLineKind.row && sourceLineHighlight?.index == row || sourceLineHighlight?.kind == BoardLineKind.column && sourceLineHighlight?.index == column || targetLineHighlight?.kind == BoardLineKind.row && targetLineHighlight?.index == row || targetLineHighlight?.kind == BoardLineKind.column && targetLineHighlight?.index == column),
                       useOneNonZeroStyle: useOneNonZeroStyle,
                       disableAnimations: disableAnimations,
                       onPressed: onCellPressed,
@@ -361,7 +367,10 @@ class GameBoard extends StatelessWidget {
         child: EdgeSwapHandle(
           target: target,
           side: side,
-          isActive: sourceLineHighlight == target || targetLineHighlight == target,
+           isActive: sourceLineHighlight == target || targetLineHighlight == target,
+           isSource: sourceLineHighlight == target,
+           isTarget: targetLineHighlight == target,
+           dimmed: sourceLineHighlight != null && sourceLineHighlight != target && targetLineHighlight != target,
           enabled: !isAnimatingSwap && !isUndoing,
           disableAnimations: disableAnimations,
           useOneNonZeroStyle: useOneNonZeroStyle,
@@ -384,6 +393,8 @@ class GameCell extends StatelessWidget {
     required this.disableAnimations,
     this.resolving = false,
     this.dimmed = false,
+    this.dragSource = false,
+    this.dragTarget = false,
     this.equation,
     this.useOneNonZeroStyle = false,
     required this.onPressed,
@@ -396,6 +407,8 @@ class GameCell extends StatelessWidget {
   final bool disableAnimations;
   final bool resolving;
   final bool dimmed;
+  final bool dragSource;
+  final bool dragTarget;
   final String? equation;
   final bool useOneNonZeroStyle;
   final ValueChanged<CellPosition> onPressed;
@@ -407,28 +420,37 @@ class GameCell extends StatelessWidget {
       button: true,
       selected: selected,
       label: 'Cell ${position.row + 1}, ${position.column + 1}: $value',
-      child: AnimatedOpacity(
+      child: _DimmingFilter(
+        enabled: dimmed && useOneNonZeroStyle,
+        disableAnimations: disableAnimations,
+        child: AnimatedOpacity(
         opacity: dimmed ? .34 : 1,
-        duration: disableAnimations ? Duration.zero : const Duration(milliseconds: 180),
+        duration: disableAnimations ? Duration.zero : const Duration(milliseconds: 700),
+        curve: Curves.ease,
         child: AnimatedScale(
         scale: undoing ? 1.08 : 1,
         duration: disableAnimations
             ? Duration.zero
             : const Duration(milliseconds: 180),
         curve: Curves.easeOutBack,
-          child: DecoratedBox(
+          child: AnimatedContainer(
+          duration: disableAnimations ? Duration.zero : const Duration(milliseconds: 200),
+          curve: Curves.ease,
           decoration: useOneNonZeroStyle && !undoing
               ? BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: selected
+                   colors: dragTarget
+                        ? const [Color.fromRGBO(163, 125, 72, .92), Color.fromRGBO(93, 69, 67, .98)]
+                        : dragSource || selected
                         ? const [Color.fromRGBO(90, 168, 158, .95), Color.fromRGBO(35, 103, 110, .98)]
                         : const [Color.fromRGBO(54, 100, 113, .92), Color.fromRGBO(28, 65, 82, .96)],
                   ),
-                  boxShadow: selected
-                      ? const [BoxShadow(color: Color.fromRGBO(116, 215, 196, .28), blurRadius: 20)]
-                      : null,
+                   boxShadow: selected || dragSource
+                       ? const [BoxShadow(color: Color.fromRGBO(116, 215, 196, .28), blurRadius: 20)]
+                       : null,
+                   border: Border.all(color: dragSource || selected ? const Color(0xffb9fff1) : dragTarget ? const Color(0xffffe0a1) : const Color.fromRGBO(116, 215, 196, .17)),
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(position.row.isEven ? 14 : 20),
                     topRight: Radius.circular(position.column.isEven ? 20 : 14),
@@ -460,9 +482,7 @@ class GameCell extends StatelessWidget {
                 ? (useOneNonZeroStyle ? Colors.transparent : (selected ? colorScheme.primaryContainer : colorScheme.tertiaryContainer))
                 : useOneNonZeroStyle ? Colors.transparent : colorScheme.surfaceContainerHighest,
             foregroundColor: colorScheme.onSurface,
-            side: useOneNonZeroStyle
-                ? BorderSide(color: selected ? const Color(0xffb9fff1) : const Color.fromRGBO(116, 215, 196, .17))
-                : null,
+              side: useOneNonZeroStyle ? BorderSide.none : null,
             padding: const EdgeInsets.all(8),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.only(
@@ -514,10 +534,59 @@ class GameCell extends StatelessWidget {
             ],
           ),
         ),
+        ),
       ),
       ),
     );
   }
+}
+
+class _DimmingFilter extends StatefulWidget {
+  const _DimmingFilter({required this.enabled, required this.disableAnimations, required this.child});
+  final bool enabled;
+  final bool disableAnimations;
+  final Widget child;
+
+  @override
+  State<_DimmingFilter> createState() => _DimmingFilterState();
+}
+
+class _DimmingFilterState extends State<_DimmingFilter> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 700), value: widget.enabled ? 1 : 0);
+  }
+
+  @override
+  void didUpdateWidget(covariant _DimmingFilter oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.disableAnimations) {
+      _controller.value = widget.enabled ? 1 : 0;
+    } else if (oldWidget.enabled != widget.enabled) {
+      _controller.animateTo(widget.enabled ? 1 : 0, curve: Curves.ease);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+        animation: _controller,
+        child: widget.child,
+        builder: (context, child) {
+          final progress = _controller.value;
+          const dim = [.348, .283, .029, 0, 0, .084, .547, .029, 0, 0, .084, .283, .293, 0, 0, 0, 0, 0, 1, 0];
+          final matrix = <double>[for (var index = 0; index < 20; index++) index == 18 ? 1 : (index == 3 || index == 4 || index == 8 || index == 9 || index == 13 || index == 14 || index == 15 || index == 16 || index == 17 || index == 19) ? 0 : (index == 0 || index == 6 || index == 12) ? 1 + (dim[index] - 1) * progress : dim[index] * progress];
+          return ColorFiltered(colorFilter: ColorFilter.matrix(matrix), child: child);
+        },
+      );
 }
 
 class EdgeSwapHandle extends StatefulWidget {
@@ -526,6 +595,9 @@ class EdgeSwapHandle extends StatefulWidget {
     required this.target,
     required this.side,
     required this.isActive,
+    this.isSource = false,
+    this.isTarget = false,
+    this.dimmed = false,
     required this.enabled,
     required this.disableAnimations,
     this.useOneNonZeroStyle = false,
@@ -539,6 +611,9 @@ class EdgeSwapHandle extends StatefulWidget {
   final BoardLineTarget target;
   final BoardHandleSide side;
   final bool isActive;
+  final bool isSource;
+  final bool isTarget;
+  final bool dimmed;
   final bool enabled;
   final bool disableAnimations;
   final bool useOneNonZeroStyle;
@@ -575,11 +650,8 @@ class _EdgeSwapHandleState extends State<EdgeSwapHandle> {
             maxSimultaneousDrags: widget.enabled ? 1 : 0,
             onDragStarted: () => widget.onDragStarted(widget.target),
             onDragEnd: (_) => widget.onDragCancelled(),
-            feedback: Material(color: Colors.transparent, child: _icon(context, active: true)),
-            childWhenDragging: Opacity(
-              opacity: 0.35,
-              child: _icon(context, active: widget.isActive),
-            ),
+            feedback: const SizedBox.shrink(),
+            childWhenDragging: _icon(context, active: true),
             child: _icon(context, active: widget.isActive || candidateData.isNotEmpty),
           ),
         ),
@@ -588,34 +660,52 @@ class _EdgeSwapHandleState extends State<EdgeSwapHandle> {
   Widget _icon(BuildContext context, {required bool active}) {
     final colorScheme = Theme.of(context).colorScheme;
     final highlighted = active || _isHovered;
-    final backgroundColor = active
+    final backgroundColor = widget.isTarget
+        ? const Color.fromRGBO(244, 185, 76, .38)
+        : widget.isSource
+        ? const Color.fromRGBO(116, 215, 196, .48)
+        : active
         ? colorScheme.secondaryContainer
         : _isHovered
             ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.55)
             : widget.useOneNonZeroStyle
                 ? const Color.fromRGBO(35, 86, 99, .40)
                 : Colors.transparent;
-    return Semantics(
+    return AnimatedOpacity(
+      opacity: widget.dimmed ? .28 : 1,
+      duration: widget.disableAnimations ? Duration.zero : const Duration(milliseconds: 700),
+      curve: Curves.ease,
+      child: AnimatedScale(
+        scale: widget.isSource ? 1.06 : 1,
+        duration: widget.disableAnimations ? Duration.zero : const Duration(milliseconds: 180),
+        curve: Curves.ease,
+        child: Semantics(
       label: '${widget.side.label} handle for ${widget.target.kind.label} ${widget.target.index + 1}',
       child: AnimatedContainer(
         key: Key('${widget.target.kind.name}-handle-${widget.side.name}-${widget.target.index}'),
         duration: widget.disableAnimations
             ? Duration.zero
-            : const Duration(milliseconds: 120),
+            : const Duration(milliseconds: 180),
+        curve: Curves.ease,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: backgroundColor,
           border: widget.useOneNonZeroStyle
-              ? const Border.fromBorderSide(BorderSide(color: Color.fromRGBO(116, 215, 196, .23)))
+              ? Border.fromBorderSide(BorderSide(color: widget.isSource ? const Color(0xffb9fff1) : widget.isTarget ? const Color(0xffffe0a1) : const Color.fromRGBO(116, 215, 196, .23)))
               : null,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(
-          widget.target.kind == BoardLineKind.row
-              ? Icons.more_horiz
-              : Icons.more_vert,
-          size: 16,
-          color: highlighted ? colorScheme.onSurfaceVariant : colorScheme.outline,
+        child: TweenAnimationBuilder<Color?>(
+          tween: ColorTween(end: widget.isSource ? const Color(0xff102f38) : widget.isTarget ? const Color(0xfffff2d6) : highlighted ? colorScheme.onSurfaceVariant : colorScheme.outline),
+          duration: widget.disableAnimations ? Duration.zero : const Duration(milliseconds: 180),
+          curve: Curves.ease,
+          builder: (context, color, _) => Icon(
+            widget.target.kind == BoardLineKind.row ? Icons.more_horiz : Icons.more_vert,
+            size: 16,
+            color: color,
+          ),
+        ),
+      ),
         ),
       ),
     );
