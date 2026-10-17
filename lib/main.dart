@@ -5,6 +5,7 @@ import 'package:numbers_game/game_core/board.dart';
 import 'package:numbers_game/game_core/historical_date_game.dart';
 import 'package:numbers_game/game_core/one_non_zero_game.dart';
 import 'package:numbers_game/game_core/playable_game.dart';
+import 'package:numbers_game/game_ui/ambient_formula.dart';
 import 'package:numbers_game/game_ui/game_board.dart';
 import 'package:numbers_game/game_ui/game_panels.dart';
 import 'package:numbers_game/game_state_store.dart';
@@ -231,6 +232,7 @@ class _BoardScreenState extends State<BoardScreen> {
   String? _resolvingEquation;
   Timer? _resolutionTimer;
   late GameFeedback _feedback;
+  late AmbientFormulaPair _ambientFormulas;
   int _tutorialStepIndex = 0;
   bool _tutorialCompleted = false;
 
@@ -275,7 +277,8 @@ class _BoardScreenState extends State<BoardScreen> {
         OneNonZeroGame(Board([
           [1, 2],
           [3, 4],
-        ]));
+         ]));
+    _ambientFormulas = AmbientFormulaPair.random();
     _feedback = _tutorialStep == null
         ? _sourcePrompt
         : GameFeedback(_tutorialStep!.instruction);
@@ -503,6 +506,7 @@ class _BoardScreenState extends State<BoardScreen> {
   void _restart() {
     setState(() {
       _game = _game.restart();
+      _ambientFormulas = AmbientFormulaPair.random();
       _tutorialStepIndex = 0;
       _tutorialCompleted = false;
       _resetInteraction();
@@ -722,49 +726,49 @@ class _BoardScreenState extends State<BoardScreen> {
         child: Stack(
           children: [
             if (isTutorial) ...[
-              const Positioned(
+              Positioned(
                 top: 54,
                 left: -18,
                 child: IgnorePointer(
-                  child: Text('1 − 1', style: TextStyle(color: Color(0x0df4eddf), fontSize: 110, fontWeight: FontWeight.bold)),
+                  child: Text(_ambientFormulas.top.display, style: const TextStyle(color: Color(0x0df4eddf), fontSize: 110, fontWeight: FontWeight.bold)),
                 ),
               ),
-              const Positioned(
+              Positioned(
                 right: -16,
                 bottom: 24,
                 child: IgnorePointer(
-                  child: Text('0 + 1', style: TextStyle(color: Color(0x0df4eddf), fontSize: 110, fontWeight: FontWeight.bold)),
+                  child: Text(_ambientFormulas.bottom.display, style: const TextStyle(color: Color(0x0df4eddf), fontSize: 110, fontWeight: FontWeight.bold)),
                 ),
               ),
             ] else if (isOneNonZero) ...[
-              const Positioned(
+              Positioned(
                 top: 54,
                 left: -18,
                 child: IgnorePointer(
-                  child: Text('1 − 1', style: TextStyle(color: Color(0x0df4eddf), fontSize: 110, fontWeight: FontWeight.bold)),
+                  child: Text(_ambientFormulas.top.display, style: const TextStyle(color: Color(0x0df4eddf), fontSize: 110, fontWeight: FontWeight.bold)),
                 ),
               ),
-              const Positioned(
+              Positioned(
                 right: -16,
                 bottom: 24,
                 child: IgnorePointer(
-                 child: Text('0 + 4', style: TextStyle(color: Color(0x0df4eddf), fontSize: 110, fontWeight: FontWeight.bold)),
+                 child: Text(_ambientFormulas.bottom.display, style: const TextStyle(color: Color(0x0df4eddf), fontSize: 110, fontWeight: FontWeight.bold)),
                 ),
               ),
             ],
             if (isHistoricalDate) ...[
-              const Positioned(
+              Positioned(
                 top: 54,
                 left: -18,
                 child: IgnorePointer(
-                  child: Text('19 · 69', style: TextStyle(color: Color(0x0df4eddf), fontSize: 110, fontWeight: FontWeight.bold)),
+                  child: Text(_ambientFormulas.top.display, style: const TextStyle(color: Color(0x0df4eddf), fontSize: 110, fontWeight: FontWeight.bold)),
                 ),
               ),
-              const Positioned(
+              Positioned(
                 right: -16,
                 bottom: 24,
                 child: IgnorePointer(
-                  child: Text('20 . 07', style: TextStyle(color: Color(0x0df4eddf), fontSize: 110, fontWeight: FontWeight.bold)),
+                  child: Text(_ambientFormulas.bottom.display, style: const TextStyle(color: Color(0x0df4eddf), fontSize: 110, fontWeight: FontWeight.bold)),
                 ),
               ),
             ],

@@ -1,7 +1,10 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:numbers_game/game_state_store.dart';
+import 'package:numbers_game/game_ui/ambient_formula.dart';
 
-class StartScreen extends StatelessWidget {
+class StartScreen extends StatefulWidget {
   const StartScreen({
     super.key,
     required this.savedGame,
@@ -18,6 +21,19 @@ class StartScreen extends StatelessWidget {
   final ValueChanged<GameMode> onStartMode;
   final VoidCallback onTutorial;
   final VoidCallback onSettings;
+
+  @override
+  State<StartScreen> createState() => _StartScreenState();
+}
+
+class _StartScreenState extends State<StartScreen> {
+  late final AmbientFormulaPair _ambientFormulas;
+
+  @override
+  void initState() {
+    super.initState();
+    _ambientFormulas = AmbientFormulaPair.random(Random());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,22 +86,25 @@ class StartScreen extends StatelessWidget {
                 ),
               ),
             ),
-            const Positioned(
-              top: 60,
-              left: -12,
+            Positioned(
+              top: 64,
+              left: -8,
               child: IgnorePointer(
-                child: Text('1 − 1',
-                    style: TextStyle(
-                        color: Color(0x12f4eddf), fontSize: 112, fontWeight: FontWeight.bold)),
+                child: _BackgroundNumber(
+                  key: Key('start-background-number-top'),
+                  value: _ambientFormulas.top.display,
+                ),
               ),
             ),
-            const Positioned(
-              right: -12,
-              bottom: 60,
+            Positioned(
+              right: 64,
+              bottom: 32,
               child: IgnorePointer(
-                child: Text('4 + 2',
-                    style: TextStyle(
-                        color: Color(0x12f4eddf), fontSize: 112, fontWeight: FontWeight.bold)),
+                child: _BackgroundNumber(
+                  key: Key('start-background-number-bottom'),
+                  value: _ambientFormulas.bottom.display,
+                  bottom: true,
+                ),
               ),
             ),
             const Positioned(
@@ -177,7 +196,7 @@ class StartScreen extends StatelessWidget {
                                 child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                if (showTutorialCallToAction) ...[
+                                if (widget.showTutorialCallToAction) ...[
                                   FilledButton(
                                     key: const Key('start-tutorial-call-to-action'),
                                     style: FilledButton.styleFrom(
@@ -188,7 +207,7 @@ class StartScreen extends StatelessWidget {
                                         borderRadius: BorderRadius.all(Radius.circular(18)),
                                       ),
                                     ),
-                                    onPressed: onTutorial,
+                                    onPressed: widget.onTutorial,
                                     child: const Row(
                                       children: [
                                         Icon(Icons.auto_stories_outlined),
@@ -208,7 +227,7 @@ class StartScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 12),
                                 ],
-                                if (savedGame != null) ...[
+                                if (widget.savedGame != null) ...[
                                   FilledButton(
                                     key: const Key('continue-game-button'),
                                     style: FilledButton.styleFrom(
@@ -217,13 +236,13 @@ class StartScreen extends StatelessWidget {
                                       padding: const EdgeInsets.all(16),
                                       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(18))),
                                     ),
-                                    onPressed: onContinue,
+                                    onPressed: widget.onContinue,
                                     child: Row(children: [
                                       const Text('−1', style: TextStyle(fontFamily: 'monospace', fontSize: 22)),
                                       const SizedBox(width: 16),
                                       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                         const Text('Continue', style: TextStyle(fontWeight: FontWeight.w800)),
-                                        Text('${savedGame!.mode == GameMode.oneNonZero ? 'One non-zero' : 'Historical Date'} · ${savedGame!.game.moveCount} moves', style: const TextStyle(fontSize: 12)),
+                                         Text('${widget.savedGame!.mode == GameMode.oneNonZero ? 'One non-zero' : 'Historical Date'} · ${widget.savedGame!.game.moveCount} moves', style: const TextStyle(fontSize: 12)),
                                       ])),
                                       const Icon(Icons.arrow_forward),
                                     ]),
@@ -233,9 +252,9 @@ class StartScreen extends StatelessWidget {
                                 const Text('CHOOSE A NEW PUZZLE', style: TextStyle(color: muted, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                                 const SizedBox(height: 10),
                                 Row(children: [
-                                  Expanded(child: _ModeCard(key: const Key('start-one-non-zero-button'), icon: '1 → 0', title: 'One non-zero', detail: 'Leave one number on the board', color: const Color(0xff74d7c4), onPressed: () => onStartMode(GameMode.oneNonZero))),
+                                   Expanded(child: _ModeCard(key: const Key('start-one-non-zero-button'), icon: '1 → 0', title: 'One non-zero', detail: 'Leave one number on the board', color: const Color(0xff74d7c4), onPressed: () => widget.onStartMode(GameMode.oneNonZero))),
                                   const SizedBox(width: 10),
-                                  Expanded(child: _ModeCard(key: const Key('start-historical-date-button'), icon: '12·04·61', title: 'Historical Date', detail: 'Rebuild a date from an event', color: const Color(0xffec765d), onPressed: () => onStartMode(GameMode.historicalDate))),
+                                   Expanded(child: _ModeCard(key: const Key('start-historical-date-button'), icon: '12·04·61', title: 'Historical Date', detail: 'Rebuild a date from an event', color: const Color(0xffec765d), onPressed: () => widget.onStartMode(GameMode.historicalDate))),
                                 ]),
                               ],
                                 ),
@@ -245,8 +264,8 @@ class StartScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 10),
                         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                          TextButton(key: const Key('how-to-play-button'), onPressed: onTutorial, child: const Text('How to play', style: TextStyle(color: muted))),
-                          TextButton(key: const Key('start-settings-button'), onPressed: onSettings, child: const Text('Settings', style: TextStyle(color: muted))),
+                          TextButton(key: const Key('how-to-play-button'), onPressed: widget.onTutorial, child: const Text('How to play', style: TextStyle(color: muted))),
+                          TextButton(key: const Key('start-settings-button'), onPressed: widget.onSettings, child: const Text('Settings', style: TextStyle(color: muted))),
                         ]),
                       ],
                     ),
@@ -255,6 +274,37 @@ class StartScreen extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BackgroundNumber extends StatelessWidget {
+  const _BackgroundNumber({super.key, required this.value, this.bottom = false});
+
+  final String value;
+  final bool bottom;
+
+  @override
+  Widget build(BuildContext context) {
+    final fontSize = (MediaQuery.sizeOf(context).width * .19).clamp(128.0, 272.0).toDouble();
+    final transform = Matrix4.identity()
+      ..rotateZ(bottom ? .157 : -.192)
+      ..setEntry(1, 0, bottom ? .122 : -.122);
+    return Transform(
+      alignment: Alignment.center,
+      transform: transform,
+      child: Text(
+        value,
+        softWrap: false,
+        style: TextStyle(
+          color: const Color(0x13f4eddf),
+          fontFamily: 'monospace',
+          fontSize: fontSize,
+          fontWeight: FontWeight.w700,
+          height: .72,
+          letterSpacing: -fontSize * .12,
         ),
       ),
     );

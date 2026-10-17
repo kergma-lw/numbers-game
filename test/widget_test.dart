@@ -484,6 +484,24 @@ void main() {
     expect(find.byKey(const Key('start-background-center')), findsOneWidget);
     expect(find.byKey(const Key('start-background-coral')), findsOneWidget);
     expect(find.byKey(const Key('start-background-teal')), findsOneWidget);
+    expect(find.byKey(const Key('start-background-number-top')), findsOneWidget);
+    expect(find.byKey(const Key('start-background-number-bottom')), findsOneWidget);
+  });
+
+  testWidgets('start screen keeps atmospheric numbers behind a narrow layout',
+      (WidgetTester tester) async {
+    await tester.binding.setSurfaceSize(const Size(360, 640));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      NumbersGameApp(
+        progressStore: _FakeTutorialProgressStore(handled: false),
+        gameStateStore: _FakeGameStateStore(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('start-tutorial-call-to-action')), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('continues the saved game from the start screen', (WidgetTester tester) async {
