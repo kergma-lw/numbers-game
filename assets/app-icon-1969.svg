@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title description">
+  <title id="title">Numbers Game icon concept</title>
+  <desc id="description">A glowing four-cell number grid showing 1, 9, 6, 9.</desc>
+  <defs>
+    <radialGradient id="backgroundGlow" cx="18%" cy="12%" r="100%">
+      <stop offset="0" stop-color="#315b70"/>
+      <stop offset="0.46" stop-color="#1f3450"/>
+      <stop offset="1" stop-color="#101727"/>
+    </radialGradient>
+    <radialGradient id="coralGlow" cx="80%" cy="72%" r="52%">
+      <stop offset="0" stop-color="#ec765d" stop-opacity=".34"/>
+      <stop offset="1" stop-color="#ec765d" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gridStroke" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#b9fff1"/>
+      <stop offset="1" stop-color="#74d7c4"/>
+    </linearGradient>
+    <linearGradient id="cellHighlight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop stop-color="#f8d875"/>
+      <stop offset="1" stop-color="#e9a645"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="28" stdDeviation="32" flood-color="#020611" flood-opacity=".7"/>
+    </filter>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="16" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1024" height="1024" fill="#101727"/>
+  <rect width="1024" height="1024" rx="224" fill="url(#backgroundGlow)"/>
+  <g filter="url(#shadow)">
+    <rect x="176" y="176" width="672" height="672" rx="82" fill="#16263b" fill-opacity=".80"/>
+    <path d="M256 194H512V512H194V256Q194 194 256 194Z" fill="url(#cellHighlight)"/>
+    <rect x="176" y="176" width="672" height="672" rx="82" fill="none" stroke="#d8fff6" stroke-opacity=".24" stroke-width="5"/>
+    <path d="M512 222V802M222 512H802" fill="none" stroke="url(#gridStroke)" stroke-opacity=".72" stroke-width="7"/>
+    <rect x="190" y="190" width="644" height="644" rx="69" fill="none" stroke="#74d7c4" stroke-opacity=".28" stroke-width="3"/>
+  </g>
+
+  <g text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="250" font-weight="bold">
+    <text x="346" y="449" fill="#131a2a">1</text>
+    <g fill="#f4eddf">
+    <text x="678" y="449">9</text>
+    <text x="346" y="779">6</text>
+    <text x="678" y="779">9</text>
+    </g>
+  </g>
+  <g filter="url(#glow)">
+    <circle cx="512" cy="512" r="14" fill="#b9fff1"/>
+    <circle cx="512" cy="512" r="5" fill="#fff8dc"/>
+  </g>
+</svg>
