@@ -38,7 +38,6 @@ class _StartScreenState extends State<StartScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const ink = Color(0xfff4eddf);
     const muted = Color(0xffbcb6aa);
     final screenSize = MediaQuery.sizeOf(context);
     return Scaffold(
@@ -155,20 +154,7 @@ class _StartScreenState extends State<StartScreen> {
                             textAlign: TextAlign.center,
                             style: TextStyle(color: Color(0xff74d7c4), fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 2)),
                         const SizedBox(height: 10),
-                        const Text('NUMBERS\nGAME',
-                            key: Key('start-title'),
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: ink,
-                              fontFamily: 'serif',
-                              fontSize: 54,
-                              height: .82,
-                              letterSpacing: 3,
-                              shadows: [
-                                Shadow(color: Color(0x47000000), offset: Offset(0, 2.4)),
-                                Shadow(color: Color(0x14f4eddf), blurRadius: 32),
-                              ],
-                            )),
+                        const _ShiftingTitle(key: Key('start-title')),
                         const SizedBox(height: 26),
                         ClipRRect(
                           borderRadius: BorderRadius.circular(22),
@@ -447,6 +433,85 @@ class _TiltingEquationState extends State<_TiltingEquation>
               ..translateByDouble(0, -travel * progress, 0, 1)
               ..rotateZ(-.314 + .700 * progress),
             child: child,
+          );
+        },
+      );
+
+}
+
+class _ShiftingTitle extends StatefulWidget {
+  const _ShiftingTitle({super.key});
+
+  @override
+  State<_ShiftingTitle> createState() => _ShiftingTitleState();
+}
+
+class _ShiftingTitleState extends State<_ShiftingTitle>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  bool? _reducedMotion;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 66),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reducedMotion = MediaQuery.disableAnimationsOf(context);
+    if (_reducedMotion == reducedMotion) return;
+    _reducedMotion = reducedMotion;
+    if (reducedMotion) {
+      _controller.stop();
+      _controller.value = 0;
+    } else {
+      _controller.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          final progress = Curves.easeInOut.transform(_controller.value);
+          const colors = [
+            Color(0xfff4eddf),
+            Color(0xffe7b6c3),
+            Color(0xffcbb3db),
+            Color(0xff9dbfdb),
+            Color(0xffa8c9ad),
+            Color(0xffe4cb8d),
+            Color(0xffe9ae8b),
+          ];
+          final segment = progress * (colors.length - 1);
+          final start = segment.floor().clamp(0, colors.length - 1);
+          final end = (start + 1).clamp(0, colors.length - 1);
+          final color = Color.lerp(colors[start], colors[end], segment - start)!;
+          return Text(
+            'NUMBERS\nGAME',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: color,
+              fontFamily: 'serif',
+              fontSize: 54,
+              height: .82,
+              letterSpacing: 3,
+              shadows: const [
+                Shadow(color: Color(0x47000000), offset: Offset(0, 2.4)),
+                Shadow(color: Color(0x14f4eddf), blurRadius: 32),
+              ],
+            ),
           );
         },
       );
