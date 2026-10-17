@@ -726,7 +726,7 @@ class _BoardScreenState extends State<BoardScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                    children: [
-                       if (isHistoricalDate)
+                       if (usesPuzzlePresentation)
                          Padding(
                           padding: const EdgeInsets.only(bottom: 16),
                           child: Row(
