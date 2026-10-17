@@ -42,6 +42,7 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
   GameMode? _activeMode;
   ModeSettings? _activeSettings;
   bool? _showTutorial;
+  bool? _tutorialWasHandled;
   bool _showGame = false;
   PlayableGame? _gameToOpen;
 
@@ -58,8 +59,10 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
     final savedGame = await _gameStateStore.loadCurrentGame();
     _activeMode = savedGame?.mode ?? settings.selectedMode;
     _activeSettings = savedGame?.settings ?? _settingsForMode(settings, _activeMode!);
+    final tutorialWasHandled = await _progressStore.hasCompletedOrDismissed();
+    _tutorialWasHandled = tutorialWasHandled;
     return _AppState(
-      tutorialWasHandled: await _progressStore.hasCompletedOrDismissed(),
+      tutorialWasHandled: tutorialWasHandled,
       settings: settings,
       savedGame: savedGame,
     );
@@ -68,7 +71,10 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
   Future<void> _finishTutorial() async {
     await _progressStore.markCompletedOrDismissed();
     if (mounted) {
-      setState(() => _showTutorial = false);
+      setState(() {
+        _showTutorial = false;
+        _tutorialWasHandled = true;
+      });
     }
   }
 
@@ -151,6 +157,8 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
           if (!_showGame && !showTutorial) {
             return StartScreen(
               savedGame: savedGame,
+              showTutorialCallToAction:
+                  !(_tutorialWasHandled ?? appState.tutorialWasHandled),
               onContinue: savedGame == null ? () {} : () => _continueGame(savedGame),
               onStartMode: (mode) => _startMode(settings, mode),
               onTutorial: _startTutorial,

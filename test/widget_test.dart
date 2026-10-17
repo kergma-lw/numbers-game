@@ -458,6 +458,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('how-to-play-button')), findsOneWidget);
+    expect(find.byKey(const Key('start-tutorial-call-to-action')), findsNothing);
     await tester.tap(find.byKey(const Key('how-to-play-button')));
     await tester.pump();
     expect(find.byKey(const Key('skip-tutorial-button')), findsOneWidget);
@@ -479,6 +480,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('how-to-play-button')), findsOneWidget);
+    expect(find.byKey(const Key('start-tutorial-call-to-action')), findsOneWidget);
   });
 
   testWidgets('continues the saved game from the start screen', (WidgetTester tester) async {

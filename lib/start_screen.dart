@@ -5,6 +5,7 @@ class StartScreen extends StatelessWidget {
   const StartScreen({
     super.key,
     required this.savedGame,
+    required this.showTutorialCallToAction,
     required this.onContinue,
     required this.onStartMode,
     required this.onTutorial,
@@ -12,6 +13,7 @@ class StartScreen extends StatelessWidget {
   });
 
   final SavedGame? savedGame;
+  final bool showTutorialCallToAction;
   final VoidCallback onContinue;
   final ValueChanged<GameMode> onStartMode;
   final VoidCallback onTutorial;
@@ -139,6 +141,37 @@ class StartScreen extends StatelessWidget {
                                 child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
+                                if (showTutorialCallToAction) ...[
+                                  FilledButton(
+                                    key: const Key('start-tutorial-call-to-action'),
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: const Color(0xffb9c4de),
+                                      foregroundColor: const Color(0xff30384d),
+                                      padding: const EdgeInsets.all(16),
+                                      shape: const RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.all(Radius.circular(18)),
+                                      ),
+                                    ),
+                                    onPressed: onTutorial,
+                                    child: const Row(
+                                      children: [
+                                        Icon(Icons.auto_stories_outlined),
+                                        SizedBox(width: 16),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text('Take the tutorial', style: TextStyle(fontWeight: FontWeight.w800)),
+                                              Text('Learn moves and transformations', style: TextStyle(fontSize: 12)),
+                                            ],
+                                          ),
+                                        ),
+                                        Icon(Icons.arrow_forward),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                ],
                                 if (savedGame != null) ...[
                                   FilledButton(
                                     key: const Key('continue-game-button'),
