@@ -425,7 +425,7 @@ void main() {
     await tester.tap(find.byKey(const Key('cell-0-1')));
     await tester.pump();
     expect(find.textContaining('swaps the whole columns'), findsWidgets);
-    expect(find.byKey(const Key('tutorial-arrow-column-0')), findsOneWidget);
+    expect(find.byKey(const Key('tutorial-guided-handle-top-column-0')), findsOneWidget);
 
     await dragTutorialTo(
       tester,

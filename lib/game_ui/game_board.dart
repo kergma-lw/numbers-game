@@ -315,25 +315,6 @@ class GameBoard extends StatelessWidget {
           );
         }
 
-        Widget tutorialArrow({
-          required Key key,
-          required double left,
-          required double top,
-        }) => Positioned(
-          left: left,
-          top: top,
-          width: 36,
-          height: 36,
-          child: IgnorePointer(
-            child: Icon(
-              Icons.arrow_downward,
-              key: key,
-              size: 36,
-              color: colorScheme.tertiary,
-            ),
-          ),
-        );
-
         return SizedBox(
           width: frameWidth + 2 * _handleSize + 2 * handleGap,
           height: frameHeight + 2 * _handleSize + 2 * handleGap,
@@ -498,16 +479,7 @@ class GameBoard extends StatelessWidget {
                       ),
                     ),
                   ),
-               for (var column = 0; column < board.columnCount; column++)
-                if (isTutorialLineHighlighted?.call(BoardLineKind.column, column) ?? false)
-                  tutorialArrow(
-                    key: Key('tutorial-arrow-column-$column'),
-                    left: _handleSize + handleGap + boardInset +
-                        column * (cellWidth + _cellGap) +
-                        (cellWidth - 36) / 2,
-                    top: 0,
-                  ),
-              if (targetLineHighlight != null)
+               if (targetLineHighlight != null)
                 Positioned.fill(
                   child: IgnorePointer(
                     child: Center(
@@ -546,7 +518,9 @@ class GameBoard extends StatelessWidget {
            isTarget: (targetLineHighlight ?? (isAnimatingSwap ? swapTarget : null)) == target,
            dimmed: (sourceLineHighlight ?? (isAnimatingSwap ? swapSource : null)) != null &&
                (sourceLineHighlight ?? (isAnimatingSwap ? swapSource : null)) != target &&
-               (targetLineHighlight ?? (isAnimatingSwap ? swapTarget : null)) != target,
+                (targetLineHighlight ?? (isAnimatingSwap ? swapTarget : null)) != target,
+           tutorialGuided:
+               isTutorialLineHighlighted?.call(target.kind, target.index) ?? false,
            enabled: true,
           disableAnimations: disableAnimations,
            visualConfig: visualConfig,
@@ -855,32 +829,64 @@ class _TutorialGuidedGlowState extends State<_TutorialGuidedGlow>
         child: AnimatedBuilder(
           animation: _controller,
           builder: (context, _) {
-            final progress = _controller.value;
-            return DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.lerp(Alignment.topLeft, Alignment(-.1, -.4), progress)!,
-                  end: Alignment.lerp(Alignment.bottomRight, Alignment(.35, .5), progress)!,
-                  colors: const [
-                    Color.fromRGBO(93, 108, 145, .96),
-                    Color.fromRGBO(174, 191, 226, .88),
-                    Color.fromRGBO(62, 76, 105, .98),
-                  ],
-                ),
-                border: Border.all(color: const Color.fromRGBO(238, 243, 255, .8)),
+            final progress = Curves.easeInOut.transform(_controller.value);
+            return CustomPaint(
+              painter: _TutorialWavePainter(
+                progress: progress,
                 borderRadius: widget.borderRadius,
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color.fromRGBO(205, 215, 239, 1).withValues(alpha: .22 + .38 * progress),
-                    blurRadius: 16 + 16 * progress,
-                  ),
-                ],
               ),
             );
           },
         ),
       );
 
+}
+
+class _TutorialWavePainter extends CustomPainter {
+  const _TutorialWavePainter({required this.progress, required this.borderRadius});
+
+  final double progress;
+  final BorderRadius borderRadius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final rrect = borderRadius.toRRect(rect);
+    final glow = Paint()
+      ..color = const Color.fromRGBO(205, 215, 239, 1).withValues(alpha: .22 + .38 * progress)
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, 16 + 16 * progress);
+    canvas.drawRRect(rrect, glow);
+
+    // Mirrors the sketch's 220% gradient background travelling from 0%/30%
+    // to 100%/70% across the clipped cell.
+    final waveRect = Rect.fromLTWH(
+      -size.width * 1.2 + size.width * 1.2 * progress,
+      -size.height * .35 + size.height * .35 * progress,
+      size.width * 2.2,
+      size.height * 2.2,
+    );
+    final wave = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Color.fromRGBO(93, 108, 145, .96),
+          Color.fromRGBO(174, 191, 226, .88),
+          Color.fromRGBO(62, 76, 105, .98),
+        ],
+      ).createShader(waveRect);
+    canvas.drawRRect(rrect, wave);
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..color = const Color.fromRGBO(238, 243, 255, .8)
+        ..style = PaintingStyle.stroke,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _TutorialWavePainter oldDelegate) =>
+      oldDelegate.progress != progress || oldDelegate.borderRadius != borderRadius;
 }
 
 class _DimmingFilter extends StatefulWidget {
@@ -947,6 +953,7 @@ class EdgeSwapHandle extends StatefulWidget {
     this.isSource = false,
     this.isTarget = false,
     this.dimmed = false,
+    this.tutorialGuided = false,
     required this.enabled,
     required this.disableAnimations,
     this.visualConfig = BoardVisualConfig.standard,
@@ -963,6 +970,7 @@ class EdgeSwapHandle extends StatefulWidget {
   final bool isSource;
   final bool isTarget;
   final bool dimmed;
+  final bool tutorialGuided;
   final bool enabled;
   final bool disableAnimations;
   final BoardVisualConfig visualConfig;
@@ -1055,8 +1063,8 @@ class _EdgeSwapHandleState extends State<EdgeSwapHandle> with SingleTickerProvid
         duration: widget.disableAnimations ? Duration.zero : const Duration(milliseconds: 180),
         curve: Curves.ease,
         child: Semantics(
-      label: '${widget.side.label} handle for ${widget.target.kind.label} ${widget.target.index + 1}',
-      child: AnimatedContainer(
+       label: '${widget.side.label} handle for ${widget.target.kind.label} ${widget.target.index + 1}',
+       child: AnimatedContainer(
         key: Key('${widget.target.kind.name}-handle-${widget.side.name}-${widget.target.index}'),
         duration: widget.disableAnimations ? Duration.zero : const Duration(milliseconds: 180),
         curve: Curves.ease,
@@ -1068,15 +1076,28 @@ class _EdgeSwapHandleState extends State<EdgeSwapHandle> with SingleTickerProvid
               : null,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: TweenAnimationBuilder<Color?>(
-          tween: ColorTween(end: widget.isSource ? widget.visualConfig.sourceHandleColor ?? const Color(0xff102f38) : widget.isTarget ? widget.visualConfig.targetHandleColor ?? const Color(0xfffff2d6) : highlighted ? colorScheme.onSurfaceVariant : widget.visualConfig.handleColor ?? colorScheme.outline),
-          duration: widget.disableAnimations ? Duration.zero : const Duration(milliseconds: 180),
-          curve: Curves.ease,
-          builder: (context, color, _) => Icon(
-            widget.target.kind == BoardLineKind.row ? Icons.more_horiz : Icons.more_vert,
-            size: 16,
-            color: color,
-          ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (widget.tutorialGuided)
+              _TutorialGuidedGlow(
+                key: Key('tutorial-guided-handle-${widget.side.name}-${widget.target.kind.name}-${widget.target.index}'),
+                borderRadius: BorderRadius.circular(8),
+                disableAnimations: widget.disableAnimations,
+              ),
+            Center(
+              child: TweenAnimationBuilder<Color?>(
+                tween: ColorTween(end: widget.isSource ? widget.visualConfig.sourceHandleColor ?? const Color(0xff102f38) : widget.isTarget ? widget.visualConfig.targetHandleColor ?? const Color(0xfffff2d6) : highlighted ? colorScheme.onSurfaceVariant : widget.visualConfig.handleColor ?? colorScheme.outline),
+                duration: widget.disableAnimations ? Duration.zero : const Duration(milliseconds: 180),
+                curve: Curves.ease,
+                builder: (context, color, _) => Icon(
+                  widget.target.kind == BoardLineKind.row ? Icons.more_horiz : Icons.more_vert,
+                  size: 16,
+                  color: color,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
         ),
