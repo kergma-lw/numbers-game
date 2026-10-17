@@ -491,6 +491,8 @@ void main() {
     expect(find.byKey(const Key('start-atmospheric-orb')), findsOneWidget);
     expect(find.byKey(const Key('start-glass-panel')), findsOneWidget);
     expect(find.byKey(const Key('start-title')), findsOneWidget);
+    expect(find.byKey(const Key('start-mode-gradient-teal')), findsOneWidget);
+    expect(find.byKey(const Key('start-mode-gradient-coral')), findsOneWidget);
   });
 
   testWidgets('start screen keeps atmospheric numbers behind a narrow layout',
@@ -528,6 +530,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('continue-game-button')), findsOneWidget);
+    expect(find.byKey(const Key('continue-gradient')), findsOneWidget);
     await tester.tap(find.byKey(const Key('continue-game-button')));
     await tester.pumpAndSettle();
     expect(find.text('Moves: 1'), findsOneWidget);

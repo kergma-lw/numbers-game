@@ -241,24 +241,48 @@ class _StartScreenState extends State<StartScreen> {
                                   const SizedBox(height: 12),
                                 ],
                                 if (widget.savedGame != null) ...[
-                                  FilledButton(
-                                    key: const Key('continue-game-button'),
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: const Color(0xfff4be55),
-                                      foregroundColor: const Color(0xff252039),
-                                      padding: const EdgeInsets.all(16),
-                                      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(18))),
+                                  DecoratedBox(
+                                    key: const Key('continue-gradient'),
+                                    decoration: const BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [Color(0xfff4be55), Color(0xffe98550)],
+                                      ),
+                                      borderRadius: BorderRadius.only(
+                                        topLeft: Radius.circular(20),
+                                        topRight: Radius.circular(11),
+                                        bottomLeft: Radius.circular(22),
+                                        bottomRight: Radius.circular(12),
+                                      ),
                                     ),
-                                    onPressed: widget.onContinue,
-                                    child: Row(children: [
-                                      const Text('−1', style: TextStyle(fontFamily: 'monospace', fontSize: 22)),
-                                      const SizedBox(width: 16),
-                                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                        const Text('Continue', style: TextStyle(fontWeight: FontWeight.w800)),
-                                         Text('${widget.savedGame!.mode == GameMode.oneNonZero ? 'One non-zero' : 'Historical Date'} · ${widget.savedGame!.game.moveCount} moves', style: const TextStyle(fontSize: 12)),
-                                      ])),
-                                      const Icon(Icons.arrow_forward),
-                                    ]),
+                                    child: FilledButton(
+                                      key: const Key('continue-game-button'),
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: Colors.transparent,
+                                        foregroundColor: const Color(0xff252039),
+                                        shadowColor: Colors.transparent,
+                                        padding: const EdgeInsets.all(16),
+                                        shape: const RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.only(
+                                            topLeft: Radius.circular(20),
+                                            topRight: Radius.circular(11),
+                                            bottomLeft: Radius.circular(22),
+                                            bottomRight: Radius.circular(12),
+                                          ),
+                                        ),
+                                      ),
+                                      onPressed: widget.onContinue,
+                                      child: Row(children: [
+                                        const Text('−1', style: TextStyle(fontFamily: 'monospace', fontSize: 22)),
+                                        const SizedBox(width: 16),
+                                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                          const Text('Continue', style: TextStyle(fontWeight: FontWeight.w800)),
+                                           Text('${widget.savedGame!.mode == GameMode.oneNonZero ? 'One non-zero' : 'Historical Date'} · ${widget.savedGame!.game.moveCount} moves', style: const TextStyle(fontSize: 12)),
+                                        ])),
+                                        const Icon(Icons.arrow_forward),
+                                      ]),
+                                    ),
                                   ),
                                   const SizedBox(height: 22),
                                 ],
@@ -403,22 +427,58 @@ class _ModeCard extends StatelessWidget {
   final Color color;
   final VoidCallback onPressed;
   @override
-  Widget build(BuildContext context) => OutlinedButton(
-        onPressed: onPressed,
-        style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.all(14),
-          minimumSize: const Size(0, 140),
-          alignment: Alignment.centerLeft,
-          backgroundColor: color.withValues(alpha: .12),
-          side: BorderSide(color: color.withValues(alpha: .35)),
-          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(18))),
+  Widget build(BuildContext context) {
+    const radius = BorderRadius.only(
+      topLeft: Radius.circular(20),
+      topRight: Radius.circular(11),
+      bottomLeft: Radius.circular(22),
+      bottomRight: Radius.circular(12),
+    );
+    final isTeal = color == const Color(0xff74d7c4);
+    final baseGradient = isTeal
+        ? const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xff304565), Color(0xff2b3855), Color(0xff26324d)],
+            stops: [0, .58, 1],
+          )
+        : const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xff3d3a5d), Color(0xff363a59), Color(0xff29354d)],
+            stops: [0, .55, 1],
+          );
+    return DecoratedBox(
+      key: Key(isTeal ? 'start-mode-gradient-teal' : 'start-mode-gradient-coral'),
+      decoration: BoxDecoration(gradient: baseGradient, borderRadius: radius),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: RadialGradient(
+            center: isTeal ? const Alignment(-.60, -.56) : const Alignment(.56, -.48),
+            radius: 1.08,
+            colors: [color.withValues(alpha: isTeal ? .26 : .24), Colors.transparent],
+          ),
+          borderRadius: radius,
         ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(icon, style: TextStyle(color: color, fontFamily: 'monospace', fontSize: 18)),
-          const SizedBox(height: 42),
-          Text(title, style: const TextStyle(color: Color(0xfff4eddf), fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Text(detail, style: const TextStyle(color: Color(0xffbcb6aa), fontSize: 11)),
-        ]),
-      );
+        child: OutlinedButton(
+          onPressed: onPressed,
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.all(14),
+            minimumSize: const Size(0, 134),
+            alignment: Alignment.centerLeft,
+            backgroundColor: Colors.transparent,
+            side: const BorderSide(color: Color(0x2eede0bf)),
+            shape: const RoundedRectangleBorder(borderRadius: radius),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(icon, style: TextStyle(color: color, fontFamily: 'monospace', fontSize: 18)),
+            const SizedBox(height: 42),
+            Text(title, style: const TextStyle(color: Color(0xfff4eddf), fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            Text(detail, style: const TextStyle(color: Color(0xffbcb6aa), fontSize: 11)),
+          ]),
+        ),
+      ),
+    );
+  }
 }
