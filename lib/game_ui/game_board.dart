@@ -85,6 +85,30 @@ class BoardVisualConfig {
     targetHandleColor: Color(0xfffff2d6),
   );
 
+  static const tutorial = BoardVisualConfig(
+    boardInset: 20,
+    handleGap: 7,
+    decorated: true,
+    boardGradient: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color.fromRGBO(46, 56, 77, .92), Color.fromRGBO(30, 37, 53, .95)],
+    ),
+    boardBorder: Color.fromRGBO(205, 215, 239, .30),
+    boardRadius: BorderRadius.all(Radius.circular(24)),
+    idleCellGradient: LinearGradient(colors: [Color.fromRGBO(81, 94, 124, .94), Color.fromRGBO(49, 60, 84, .98)]),
+    sourceCellGradient: LinearGradient(colors: [Color.fromRGBO(156, 174, 210, .98), Color.fromRGBO(82, 103, 139, .99)]),
+    targetCellGradient: LinearGradient(colors: [Color.fromRGBO(111, 128, 160, .98), Color.fromRGBO(61, 77, 105, .98)]),
+    idleCellBorder: Color.fromRGBO(215, 224, 244, .18),
+    sourceCellBorder: Color(0xfff1f4ff),
+    targetCellBorder: Color(0xffe4ebff),
+    handleBackground: Color.fromRGBO(56, 66, 91, .50),
+    handleBorder: Color.fromRGBO(205, 215, 239, .25),
+    handleColor: Color.fromRGBO(220, 227, 247, .78),
+    sourceHandleColor: Color(0xff30384d),
+    targetHandleColor: Color(0xffffffff),
+  );
+
   final double boardInset;
   final double handleGap;
   final bool decorated;
@@ -417,7 +441,8 @@ class GameBoard extends StatelessWidget {
                            dimmingSource != null &&
                                !(dimmingSource.kind == BoardLineKind.row && dimmingSource.index == row || dimmingSource.kind == BoardLineKind.column && dimmingSource.index == column || dimmingTarget?.kind == BoardLineKind.row && dimmingTarget?.index == row || dimmingTarget?.kind == BoardLineKind.column && dimmingTarget?.index == column),
                        visualConfig: visualConfig,
-                      disableAnimations: disableAnimations,
+                       tutorialGuided: isTutorialCellHighlighted?.call(CellPosition(row, column)) ?? false,
+                       disableAnimations: disableAnimations,
                       onPressed: onCellPressed,
                       ),
                     ),
@@ -473,17 +498,7 @@ class GameBoard extends StatelessWidget {
                       ),
                     ),
                   ),
-              for (var row = 0; row < board.rowCount; row++)
-                for (var column = 0; column < board.columnCount; column++)
-                  if (isTutorialCellHighlighted?.call(CellPosition(row, column)) ?? false)
-                    tutorialArrow(
-                      key: Key('tutorial-arrow-cell-$row-$column'),
-                      left: _handleSize + handleGap + boardInset +
-                          column * (cellWidth + _cellGap) +
-                          (cellWidth - 36) / 2,
-                      top: _handleSize + handleGap + boardInset + row * (cellHeight + _cellGap) - 12,
-                    ),
-              for (var column = 0; column < board.columnCount; column++)
+               for (var column = 0; column < board.columnCount; column++)
                 if (isTutorialLineHighlighted?.call(BoardLineKind.column, column) ?? false)
                   tutorialArrow(
                     key: Key('tutorial-arrow-column-$column'),
@@ -556,6 +571,7 @@ class GameCell extends StatelessWidget {
     this.dimmed = false,
     this.dragSource = false,
     this.dragTarget = false,
+    this.tutorialGuided = false,
     this.equation,
     this.visualConfig = BoardVisualConfig.standard,
     required this.onPressed,
@@ -570,6 +586,7 @@ class GameCell extends StatelessWidget {
   final bool dimmed;
   final bool dragSource;
   final bool dragTarget;
+  final bool tutorialGuided;
   final String? equation;
   final BoardVisualConfig visualConfig;
   final ValueChanged<CellPosition> onPressed;
@@ -611,7 +628,7 @@ class GameCell extends StatelessWidget {
             clipBehavior: Clip.none,
             fit: StackFit.expand,
             children: [
-               if (visualConfig.decorated && !undoing)
+                if (visualConfig.decorated && !undoing)
                 const IgnorePointer(
                   child: DecoratedBox(
                     decoration: BoxDecoration(
@@ -623,7 +640,13 @@ class GameCell extends StatelessWidget {
                     ),
                   ),
                 ),
-          OutlinedButton(
+                if (tutorialGuided)
+                  _TutorialGuidedGlow(
+                    key: Key('tutorial-guided-cell-${position.row}-${position.column}'),
+                    borderRadius: _cellBorderRadius(position),
+                    disableAnimations: disableAnimations,
+                  ),
+           OutlinedButton(
           key: Key('cell-${position.row}-${position.column}'),
           style: OutlinedButton.styleFrom(
             backgroundColor: selected || undoing
@@ -780,6 +803,84 @@ class _SwapAfterimage extends StatelessWidget {
           child: Transform.scale(scale: 1 + .16 * progress, child: child),
         ),
       );
+}
+
+class _TutorialGuidedGlow extends StatefulWidget {
+  const _TutorialGuidedGlow({super.key, required this.borderRadius, required this.disableAnimations});
+
+  final BorderRadius borderRadius;
+  final bool disableAnimations;
+
+  @override
+  State<_TutorialGuidedGlow> createState() => _TutorialGuidedGlowState();
+}
+
+class _TutorialGuidedGlowState extends State<_TutorialGuidedGlow>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3200),
+    );
+    if (!widget.disableAnimations) {
+      _controller.repeat(reverse: true);
+    } else {
+      _controller.value = .5;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _TutorialGuidedGlow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.disableAnimations && !oldWidget.disableAnimations) {
+      _controller.stop();
+      _controller.value = .5;
+    } else if (!widget.disableAnimations && oldWidget.disableAnimations) {
+      _controller.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) {
+            final progress = _controller.value;
+            return DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.lerp(Alignment.topLeft, Alignment(-.1, -.4), progress)!,
+                  end: Alignment.lerp(Alignment.bottomRight, Alignment(.35, .5), progress)!,
+                  colors: const [
+                    Color.fromRGBO(93, 108, 145, .96),
+                    Color.fromRGBO(174, 191, 226, .88),
+                    Color.fromRGBO(62, 76, 105, .98),
+                  ],
+                ),
+                border: Border.all(color: const Color.fromRGBO(238, 243, 255, .8)),
+                borderRadius: widget.borderRadius,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color.fromRGBO(205, 215, 239, 1).withValues(alpha: .22 + .38 * progress),
+                    blurRadius: 16 + 16 * progress,
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      );
+
 }
 
 class _DimmingFilter extends StatefulWidget {

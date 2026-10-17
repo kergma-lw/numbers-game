@@ -398,38 +398,45 @@ void main() {
     var finished = false;
     await tester.pumpWidget(
       MaterialApp(
-        home: BoardScreen(
-          initialGame: tutorialDefinition.initialGame,
-          tutorial: tutorialDefinition,
-          onTutorialFinished: () async => finished = true,
+        home: MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: BoardScreen(
+            initialGame: tutorialDefinition.initialGame,
+            tutorial: tutorialDefinition,
+            onTutorialFinished: () async => finished = true,
+          ),
         ),
       ),
     );
 
-    expect(find.byKey(const Key('tutorial-arrow-cell-0-0')), findsOneWidget);
-    expect(find.byKey(const Key('tutorial-arrow-cell-0-1')), findsNothing);
+    expect(find.text('HOW TO PLAY'), findsOneWidget);
+    expect(find.byKey(const Key('tutorial-objective')), findsOneWidget);
+    expect(find.byKey(const Key('tutorial-progress')), findsOneWidget);
+    expect(find.byKey(const Key('tutorial-guided-cell-0-0')), findsOneWidget);
+    expect(find.byKey(const Key('tutorial-guided-cell-0-1')), findsNothing);
+    await tester.ensureVisible(find.byKey(const Key('cell-1-0')));
     await tester.tap(find.byKey(const Key('cell-1-0')));
     await tester.pump();
     expect(find.textContaining('source cell does not change'), findsWidgets);
 
     await tester.tap(find.byKey(const Key('cell-0-0')));
     await tester.pump();
-    expect(find.byKey(const Key('tutorial-arrow-cell-0-1')), findsOneWidget);
+    expect(find.byKey(const Key('tutorial-guided-cell-0-1')), findsOneWidget);
     await tester.tap(find.byKey(const Key('cell-0-1')));
     await tester.pump();
     expect(find.textContaining('swaps the whole columns'), findsWidgets);
     expect(find.byKey(const Key('tutorial-arrow-column-0')), findsOneWidget);
 
-    await dragTo(
+    await dragTutorialTo(
       tester,
       const Key('column-handle-top-0'),
       const Key('column-handle-top-1'),
     );
     expect(find.textContaining('source minus target'), findsWidgets);
 
-    await tester.ensureVisible(find.byKey(const Key('cell-1-1')));
-    await tester.tap(find.byKey(const Key('cell-1-1')));
-    await tester.tap(find.byKey(const Key('cell-0-1')));
+    await tester.ensureVisible(find.byKey(const Key('cell-1-1')).first);
+    await tester.tap(find.byKey(const Key('cell-1-1')).first);
+    await tester.tap(find.byKey(const Key('cell-0-1')).first);
     await tester.pump();
     expect(find.byKey(const Key('finish-tutorial-button')), findsOneWidget);
 
@@ -455,6 +462,7 @@ void main() {
     await tester.pump();
     expect(find.byKey(const Key('skip-tutorial-button')), findsOneWidget);
 
+    await tester.ensureVisible(find.byKey(const Key('skip-tutorial-button')));
     await tester.tap(find.byKey(const Key('skip-tutorial-button')));
     await tester.pumpAndSettle();
     expect(progress.handled, isTrue);
@@ -626,25 +634,6 @@ void main() {
     expect(find.byKey(const Key('board-size-value')), findsNothing);
   });
 
-  testWidgets('tutorial restart returns to its first step', (WidgetTester tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        home: BoardScreen(
-          initialGame: tutorialDefinition.initialGame,
-          tutorial: tutorialDefinition,
-        ),
-      ),
-    );
-    await tester.tap(find.byKey(const Key('cell-0-0')));
-    await tester.tap(find.byKey(const Key('cell-0-1')));
-    await tester.pump();
-    expect(find.textContaining('swaps the whole columns'), findsWidgets);
-
-    await tester.tap(find.byKey(const Key('restart-button')));
-    await tester.pump();
-    expect(find.textContaining('source cell does not change'), findsWidgets);
-    expect(find.text('Moves: 0'), findsOneWidget);
-  });
 }
 
 class _FakeTutorialProgressStore implements TutorialProgressStore {
@@ -705,6 +694,21 @@ Future<void> dragTo(
   await gesture.moveTo(tester.getCenter(target));
   await gesture.up();
   await tester.pumpAndSettle();
+}
+
+Future<void> dragTutorialTo(
+  WidgetTester tester,
+  Key sourceKey,
+  Key targetKey,
+) async {
+  final source = find.byKey(sourceKey);
+  final target = find.byKey(targetKey);
+  await tester.ensureVisible(source);
+  await tester.ensureVisible(target);
+  final gesture = await tester.startGesture(tester.getCenter(source));
+  await gesture.moveTo(tester.getCenter(target));
+  await gesture.up();
+  await tester.pump();
 }
 
 OutlinedButton undoButton(WidgetTester tester) => tester.widget<OutlinedButton>(

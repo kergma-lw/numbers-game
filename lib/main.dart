@@ -172,7 +172,7 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
             onGameChanged: showTutorial ? null : _saveGame,
             onNewGame: showTutorial ? null : () => _startNewGame(settings),
             onOpenSettings: showTutorial ? null : () => _openSettings(context, settings),
-            onBackToMenu: showTutorial ? null : _returnToMenu,
+            onBackToMenu: _returnToMenu,
           );
         },
       ),
@@ -581,17 +581,39 @@ class _BoardScreenState extends State<BoardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isOneNonZero = !_isTutorial && _game is OneNonZeroGame;
-    final isHistoricalDate = !_isTutorial && _game is HistoricalDateGame;
+    final isTutorial = _isTutorial;
+    final isOneNonZero = !isTutorial && _game is OneNonZeroGame;
+    final isHistoricalDate = !isTutorial && _game is HistoricalDateGame;
     final usesPuzzlePresentation =
-        isHistoricalDate || (isOneNonZero && _board.rowCount > 2);
-    final boardVisualConfig = isHistoricalDate
+        isTutorial || isHistoricalDate || (isOneNonZero && _board.rowCount > 2);
+    final boardVisualConfig = isTutorial
+        ? BoardVisualConfig.tutorial
+        : isHistoricalDate
         ? BoardVisualConfig.historicalDate
         : isOneNonZero && _board.rowCount > 2
             ? BoardVisualConfig.oneNonZero
             : BoardVisualConfig.standard;
     final baseTheme = Theme.of(context);
-    final theme = isHistoricalDate
+    final theme = isTutorial
+        ? baseTheme.copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: Color(0xffb9c4de),
+              onPrimary: Color(0xff30384d),
+              primaryContainer: Color(0xff9caed2),
+              onPrimaryContainer: Color(0xfff1f4ff),
+              secondary: Color(0xffd9e3ff),
+              secondaryContainer: Color(0xff6f80a0),
+              tertiary: Color(0xffd9e3ff),
+              tertiaryContainer: Color(0xff3d465d),
+              surface: Color(0xff151923),
+              onSurface: Color(0xfff4eddf),
+              surfaceContainer: Color(0xff2e384d),
+              surfaceContainerHighest: Color(0xff515e7c),
+              outline: Color(0xffc7d2ed),
+            ),
+            scaffoldBackgroundColor: const Color(0xff151923),
+          )
+        : isHistoricalDate
         ? baseTheme.copyWith(
             colorScheme: const ColorScheme.dark(
               primary: Color(0xfff3a486),
@@ -649,22 +671,30 @@ class _BoardScreenState extends State<BoardScreen> {
                   style: const TextStyle(
                     color: Color(0xff74d7c4),
                     fontFamily: 'monospace',
-                    fontSize: 12,
-                  ),
-                ),
+                     fontSize: 12,
+                                  ),
+                            ),
               ),
             ),
-          if (widget.onOpenSettings != null)
+            if (widget.onOpenSettings != null)
             IconButton(
               key: const Key('settings-button'),
               icon: const Icon(Icons.settings),
               tooltip: 'Settings',
               onPressed: () => unawaited(widget.onOpenSettings!()),
-            ),
-        ],
+                            ),
+                   ],
       ),
       body: Container(
-        decoration: isHistoricalDate
+        decoration: isTutorial
+            ? const BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment(-.04, .04),
+                  radius: 1.35,
+                  colors: [Color(0xff30384d), Color(0xff151923)],
+                ),
+              )
+            : isHistoricalDate
             ? const BoxDecoration(
                 gradient: RadialGradient(
                   center: Alignment(-.66, -.66),
@@ -683,7 +713,7 @@ class _BoardScreenState extends State<BoardScreen> {
             : null,
         child: Stack(
           children: [
-            if (isOneNonZero) ...[
+            if (isTutorial) ...[
               const Positioned(
                 top: 54,
                 left: -18,
@@ -695,7 +725,22 @@ class _BoardScreenState extends State<BoardScreen> {
                 right: -16,
                 bottom: 24,
                 child: IgnorePointer(
-                  child: Text('0 + 4', style: TextStyle(color: Color(0x0df4eddf), fontSize: 110, fontWeight: FontWeight.bold)),
+                  child: Text('0 + 1', style: TextStyle(color: Color(0x0df4eddf), fontSize: 110, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ] else if (isOneNonZero) ...[
+              const Positioned(
+                top: 54,
+                left: -18,
+                child: IgnorePointer(
+                  child: Text('1 − 1', style: TextStyle(color: Color(0x0df4eddf), fontSize: 110, fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const Positioned(
+                right: -16,
+                bottom: 24,
+                child: IgnorePointer(
+                 child: Text('0 + 4', style: TextStyle(color: Color(0x0df4eddf), fontSize: 110, fontWeight: FontWeight.bold)),
                 ),
               ),
             ],
@@ -719,7 +764,7 @@ class _BoardScreenState extends State<BoardScreen> {
         child: SingleChildScrollView(
           child: Center(
             child: ConstrainedBox(
-               constraints: BoxConstraints(maxWidth: usesPuzzlePresentation ? 620 : 420),
+                constraints: BoxConstraints(maxWidth: isTutorial ? 448 : usesPuzzlePresentation ? 620 : 420),
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Column(
@@ -741,9 +786,9 @@ class _BoardScreenState extends State<BoardScreen> {
                                   ),
                                   child: const Text('← Back to menu', style: TextStyle(fontSize: 12)),
                                 ),
-                               Expanded(child: Center(child: Text(isHistoricalDate ? 'HISTORICAL DATE' : 'ONE NON-ZERO', style: const TextStyle(color: Color(0xfff4eddf), fontFamily: 'serif', fontSize: 23, letterSpacing: 1.2)))),
-                               Row(mainAxisSize: MainAxisSize.min, children: [
-                                 Text('${_game.moveCount.toString().padLeft(2, '0')} moves', style: TextStyle(color: isHistoricalDate ? const Color(0xfff3a486) : const Color(0xff74d7c4), fontFamily: 'monospace', fontSize: 12)),
+                                Expanded(child: Center(child: Text(isTutorial ? 'HOW TO PLAY' : isHistoricalDate ? 'HISTORICAL DATE' : 'ONE NON-ZERO', style: const TextStyle(color: Color(0xfff4eddf), fontFamily: 'serif', fontSize: 23, letterSpacing: 1.2)))),
+                                Row(mainAxisSize: MainAxisSize.min, children: [
+                                  Text(isTutorial ? 'Step ${_tutorialStepIndex + 1} / ${widget.tutorial!.steps.length}' : '${_game.moveCount.toString().padLeft(2, '0')} moves', style: TextStyle(color: isTutorial ? const Color(0xffc7d2ed) : isHistoricalDate ? const Color(0xfff3a486) : const Color(0xff74d7c4), fontFamily: 'monospace', fontSize: 12)),
                                 if (widget.onOpenSettings != null)
                                   IconButton(
                                     key: const Key('settings-button'),
@@ -755,7 +800,9 @@ class _BoardScreenState extends State<BoardScreen> {
                             ],
                           ),
                         ),
-                       if (!usesPuzzlePresentation)
+                        if (isTutorial)
+                          _TutorialObjective(stepIndex: _tutorialStepIndex)
+                        else if (!usesPuzzlePresentation)
                       Text(
                        _tutorialCompleted
                            ? 'Tutorial complete!'
@@ -769,7 +816,8 @@ class _BoardScreenState extends State<BoardScreen> {
                        if (isOneNonZero && _board.rowCount > 2)
                          const _OneNonZeroObjective(),
                      const SizedBox(height: 12),
-                      GameActionControls(
+                      if (!isTutorial)
+                       GameActionControls(
                        children: [
                          OutlinedButton.icon(
                           key: const Key('undo-button'),
@@ -792,12 +840,6 @@ class _BoardScreenState extends State<BoardScreen> {
                               icon: const Icon(Icons.add),
                               label: const Text('New game'),
                             ),
-                         if (_isTutorial && !_tutorialCompleted)
-                           OutlinedButton(
-                             key: const Key('skip-tutorial-button'),
-                             onPressed: widget.onTutorialFinished,
-                             child: const Text('Skip tutorial'),
-                           ),
                           if (!_isTutorial && (!isOneNonZero || isHistoricalDate) && widget.onStartTutorial != null)
                             OutlinedButton(
                               key: const Key('start-tutorial-button'),
@@ -842,22 +884,30 @@ class _BoardScreenState extends State<BoardScreen> {
                        onDragCancelled: _cancelSwap,
                      ),
                      const SizedBox(height: 24),
-                      GameStatusPanel(
+                       GameStatusPanel(
                        moveCount: _game.moveCount,
                        feedback: _feedback,
                        isWon: _game.isWon,
                         isLost: _game.isLost,
-                         showMoveCount: !usesPuzzlePresentation,
-                      ),
-                       if (usesPuzzlePresentation)
-                         const Padding(
-                          padding: EdgeInsets.only(top: 18),
-                          child: Text(
-                            'Drag the marks at a row or column edge to swap it · How moves work',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Color(0xffbcb6aa), fontSize: 12),
-                          ),
-                        ),
+                          showMoveCount: !usesPuzzlePresentation,
+                       ),
+                       if (isTutorial)
+                         _TutorialProgress(stepIndex: _tutorialStepIndex, count: widget.tutorial!.steps.length),
+                        if (usesPuzzlePresentation)
+                          Padding(
+                           padding: EdgeInsets.only(top: 18),
+                           child: isTutorial
+                               ? TextButton(
+                                   key: const Key('skip-tutorial-button'),
+                                   onPressed: widget.onTutorialFinished,
+                                   child: const Text('Skip tutorial', style: TextStyle(color: Color(0xffb9c4de), fontSize: 12)),
+                                 )
+                                : const Text(
+                                    'Drag the marks at a row or column edge to swap it · How moves work',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(color: Color(0xffbcb6aa), fontSize: 12),
+                                  ),
+                            ),
                   ],
                 ),
               ),
@@ -905,6 +955,100 @@ class _OneNonZeroObjective extends StatelessWidget {
           ],
         ),
       );
+}
+
+class _TutorialObjective extends StatelessWidget {
+  const _TutorialObjective({required this.stepIndex});
+
+  final int stepIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    const objectives = [
+      (
+        eyebrow: 'THE SOURCE STAYS UNCHANGED',
+        title: 'Make a zero.',
+        detail: 'Select the upper-left 1, then the −1 to its right. Moving right adds the source to the target.',
+      ),
+      (
+        eyebrow: 'REARRANGE THE BOARD',
+        title: 'Swap two columns.',
+        detail: 'Drag the highlighted top handle onto the other column handle.',
+      ),
+      (
+        eyebrow: 'MOVING UP SUBTRACTS',
+        title: 'Make the final zero.',
+        detail: 'Select the lower-right 1, then the upper-right 1.',
+      ),
+    ];
+    final objective = objectives[stepIndex.clamp(0, objectives.length - 1)];
+    return Container(
+      key: const Key('tutorial-objective'),
+      margin: const EdgeInsets.only(top: 20, bottom: 12),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color.fromRGBO(59, 68, 91, .90), Color.fromRGBO(42, 48, 67, .92)],
+        ),
+        border: Border.all(color: const Color.fromRGBO(205, 215, 239, .28)),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(16),
+          bottomLeft: Radius.circular(21),
+          bottomRight: Radius.circular(14),
+        ),
+        boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 20)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(objective.eyebrow, style: const TextStyle(color: Color(0xffc7d2ed), fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.6)),
+          const SizedBox(height: 3),
+          Text(objective.title, style: const TextStyle(color: Color(0xfff4eddf), fontFamily: 'serif', fontSize: 21)),
+          const SizedBox(height: 4),
+          Text(objective.detail, style: const TextStyle(color: Color(0xffbcb6aa), fontSize: 12)),
+        ],
+      ),
+    );
+  }
+}
+
+class _TutorialProgress extends StatelessWidget {
+  const _TutorialProgress({required this.stepIndex, required this.count});
+
+  final int stepIndex;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: 16),
+        child: Semantics(
+          label: 'Tutorial progress: step ${stepIndex + 1} of $count',
+          child: Row(
+            key: const Key('tutorial-progress'),
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              for (var index = 0; index < count; index++)
+                Container(
+                  key: Key('tutorial-progress-$index'),
+                  width: 24,
+                  height: 5,
+                  margin: EdgeInsets.only(right: index == count - 1 ? 0 : 6),
+                  decoration: BoxDecoration(
+                    color: index == stepIndex
+                        ? const Color(0xffd9e3ff)
+                        : const Color.fromRGBO(205, 215, 239, .22),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+
 }
 
 class _AppState {
