@@ -41,6 +41,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           maxInitialValue: _maxInitialValue,
         ),
         historicalDateSettings: widget.settings.historicalDateSettings,
+        swapHandlesVisible: widget.settings.swapHandlesVisible,
       ),
     );
   }

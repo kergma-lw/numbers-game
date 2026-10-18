@@ -59,11 +59,13 @@ class AppSettings {
     this.selectedMode = GameMode.oneNonZero,
     this.oneNonZeroSettings = const OneNonZeroSettings(),
     this.historicalDateSettings = const HistoricalDateSettings(),
+    this.swapHandlesVisible = true,
   });
 
   final GameMode selectedMode;
   final OneNonZeroSettings oneNonZeroSettings;
   final HistoricalDateSettings historicalDateSettings;
+  final bool swapHandlesVisible;
 
   Map<String, Object> toJson() => {
     'selectedMode': selectedMode.name,
@@ -71,6 +73,7 @@ class AppSettings {
       GameMode.oneNonZero.name: oneNonZeroSettings.toJson(),
       GameMode.historicalDate.name: historicalDateSettings.toJson(),
     },
+    'swapHandlesVisible': swapHandlesVisible,
   };
 
   factory AppSettings.fromJson(Map<String, Object?> json) {
@@ -80,6 +83,10 @@ class AppSettings {
     final modes = _jsonMap(json['modes']);
     if (selectedMode == null) {
       throw const FormatException('Invalid application settings');
+    }
+    final swapHandlesVisible = json['swapHandlesVisible'];
+    if (swapHandlesVisible != null && swapHandlesVisible is! bool) {
+      throw const FormatException('Invalid swap handle preference');
     }
     return AppSettings(
       selectedMode: selectedMode,
@@ -91,6 +98,9 @@ class AppSettings {
             ? _jsonMap(modes[GameMode.historicalDate.name])
             : const {},
       ),
+      swapHandlesVisible: swapHandlesVisible is bool
+          ? swapHandlesVisible
+          : true,
     );
   }
 }

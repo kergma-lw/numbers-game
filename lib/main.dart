@@ -171,6 +171,17 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
     }
   }
 
+  void _setSwapHandlesVisible(AppSettings settings, bool visible) {
+    final updatedSettings = AppSettings(
+      selectedMode: settings.selectedMode,
+      oneNonZeroSettings: settings.oneNonZeroSettings,
+      historicalDateSettings: settings.historicalDateSettings,
+      swapHandlesVisible: visible,
+    );
+    setState(() => _settings = updatedSettings);
+    unawaited(_gameStateStore.saveSettings(updatedSettings));
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -225,6 +236,9 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
             onOpenSettings: showTutorial
                 ? null
                 : () => _openSettings(context, settings),
+            swapHandlesVisible: settings.swapHandlesVisible,
+            onSwapHandlesChanged: (visible) =>
+                _setSwapHandlesVisible(settings, visible),
             onBackToMenu: _returnToMenu,
             onVictoryBackToMenu: showTutorial
                 ? null
@@ -246,6 +260,8 @@ class BoardScreen extends StatefulWidget {
     this.onGameChanged,
     this.onNewGame,
     this.onOpenSettings,
+    this.swapHandlesVisible = true,
+    this.onSwapHandlesChanged,
     this.onBackToMenu,
     this.onVictoryBackToMenu,
   });
@@ -257,6 +273,8 @@ class BoardScreen extends StatefulWidget {
   final Future<void> Function(PlayableGame game)? onGameChanged;
   final Future<PlayableGame> Function()? onNewGame;
   final Future<void> Function()? onOpenSettings;
+  final bool swapHandlesVisible;
+  final ValueChanged<bool>? onSwapHandlesChanged;
   final VoidCallback? onBackToMenu;
   final Future<void> Function()? onVictoryBackToMenu;
 
@@ -284,6 +302,7 @@ class _BoardScreenState extends State<BoardScreen> {
   bool _showCelebration = false;
   late GameFeedback _feedback;
   late AmbientFormulaPair _ambientFormulas;
+  late bool _swapHandlesVisible;
   int _tutorialStepIndex = 0;
   bool _tutorialCompleted = false;
 
@@ -337,9 +356,24 @@ class _BoardScreenState extends State<BoardScreen> {
           ]),
         );
     _ambientFormulas = AmbientFormulaPair.random();
+    _swapHandlesVisible = widget.swapHandlesVisible;
     _feedback = _tutorialStep == null
         ? _sourcePrompt
         : GameFeedback(_tutorialStep!.instruction);
+  }
+
+  @override
+  void didUpdateWidget(covariant BoardScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.swapHandlesVisible != widget.swapHandlesVisible) {
+      _swapHandlesVisible = widget.swapHandlesVisible;
+    }
+  }
+
+  void _toggleSwapHandles() {
+    final visible = !_swapHandlesVisible;
+    setState(() => _swapHandlesVisible = visible);
+    widget.onSwapHandlesChanged?.call(visible);
   }
 
   void _selectCell(CellPosition position) {
@@ -1079,6 +1113,30 @@ class _BoardScreenState extends State<BoardScreen> {
                                 if (!isTutorial)
                                   GameActionControls(
                                     children: [
+                                      Tooltip(
+                                        message: _swapHandlesVisible
+                                            ? 'Hide row and column swap handles'
+                                            : 'Show row and column swap handles',
+                                        child: OutlinedButton.icon(
+                                          key: const Key(
+                                            'swap-handles-toggle-button',
+                                          ),
+                                          onPressed: _toggleSwapHandles,
+                                          icon: const Icon(Icons.swap_horiz),
+                                          style: OutlinedButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                            ),
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                          ),
+                                          label: Text(
+                                            _swapHandlesVisible
+                                                ? 'Swaps on'
+                                                : 'Swaps off',
+                                          ),
+                                        ),
+                                      ),
                                       OutlinedButton.icon(
                                         key: const Key('undo-button'),
                                         onPressed:
@@ -1144,6 +1202,8 @@ class _BoardScreenState extends State<BoardScreen> {
                                   sourceLineHighlight: _swapSource,
                                   targetLineHighlight: _swapTarget,
                                   historicalGame: _historicalGame,
+                                  showSwapHandles:
+                                      _isTutorial || _swapHandlesVisible,
                                   isTutorialCellHighlighted:
                                       _isTutorialCellHighlighted,
                                   isTutorialLineHighlighted:
