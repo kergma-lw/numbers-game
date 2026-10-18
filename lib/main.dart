@@ -254,6 +254,8 @@ class _BoardScreenState extends State<BoardScreen> {
   CellPosition? _resolvingCell;
   String? _resolvingEquation;
   Timer? _resolutionTimer;
+  Timer? _celebrationTimer;
+  bool _showCelebration = false;
   late GameFeedback _feedback;
   late AmbientFormulaPair _ambientFormulas;
   int _tutorialStepIndex = 0;
@@ -374,6 +376,7 @@ class _BoardScreenState extends State<BoardScreen> {
     });
     _persistGame();
     _advanceTutorial();
+    if (!_isTutorial && _game.isWon) _showVictoryDemo();
     if (!disableAnimations) {
       _resolutionTimer = Timer(const Duration(milliseconds: 2210), () {
         if (mounted) {
@@ -473,6 +476,7 @@ class _BoardScreenState extends State<BoardScreen> {
     });
     _persistGame();
     _advanceTutorial();
+    if (!_isTutorial && _game.isWon) _showVictoryDemo();
     if (disableAnimations) {
       return;
     }
@@ -612,6 +616,11 @@ class _BoardScreenState extends State<BoardScreen> {
     });
   }
 
+  void _showVictoryDemo() {
+    _celebrationTimer?.cancel();
+    setState(() => _showCelebration = true);
+  }
+
   void _showTutorialFeedback() {
     setState(() {
       _arithmeticSource = null;
@@ -628,6 +637,7 @@ class _BoardScreenState extends State<BoardScreen> {
     }
     _swapAfterimageTimers.clear();
     _resolutionTimer?.cancel();
+    _celebrationTimer?.cancel();
     _arithmeticSource = null;
     _swapSource = null;
     _swapTarget = null;
@@ -643,6 +653,7 @@ class _BoardScreenState extends State<BoardScreen> {
   @override
   void dispose() {
     _swapAnimationTimer?.cancel();
+    _celebrationTimer?.cancel();
     for (final timer in _swapAfterimageTimers) {
       timer.cancel();
     }
@@ -875,224 +886,291 @@ class _BoardScreenState extends State<BoardScreen> {
                   ),
                 ),
               ],
-              SafeArea(
-                child: SingleChildScrollView(
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: isTutorial
-                            ? 448
-                            : usesPuzzlePresentation
-                            ? 620
-                            : 420,
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            if (usesPuzzlePresentation)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 16),
-                                child: Row(
-                                  children: [
-                                    TextButton(
-                                      key: const Key('back-to-menu-button'),
-                                      onPressed: widget.onBackToMenu,
-                                      style: TextButton.styleFrom(
-                                        foregroundColor: const Color(
-                                          0xffbcb6aa,
-                                        ),
-                                        padding: EdgeInsets.zero,
-                                        minimumSize: Size.zero,
-                                      ),
-                                      child: const Text(
-                                        '← Back to menu',
-                                        style: TextStyle(fontSize: 12),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Center(
-                                        child: Text(
-                                          isTutorial
-                                              ? 'TUTORIAL'
-                                              : isHistoricalDate
-                                              ? 'HISTORICAL DATE'
-                                              : 'ONE NON-ZERO',
-                                          style: const TextStyle(
-                                            color: Color(0xfff4eddf),
-                                            fontFamily: 'serif',
-                                            fontSize: 23,
-                                            letterSpacing: 1.2,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
+              if (_showCelebration)
+                Positioned.fill(
+                  child: Container(
+                    color: const Color(0xdd101727),
+                    alignment: Alignment.center,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.auto_awesome,
+                          color: Color(0xfff4b94c),
+                          size: 64,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'ONE REMAINS',
+                          style: TextStyle(
+                            color: Color(0xfff4eddf),
+                            fontFamily: 'serif',
+                            fontSize: 34,
+                            letterSpacing: 2,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        FilledButton(
+                          onPressed: widget.onNewGame == null
+                              ? null
+                              : () {
+                                  _celebrationTimer?.cancel();
+                                  setState(() => _showCelebration = false);
+                                  unawaited(_startNewGame());
+                                },
+                          child: const Text('New game'),
+                        ),
+                        TextButton(
+                          onPressed: widget.onBackToMenu == null
+                              ? null
+                              : () {
+                                  _celebrationTimer?.cancel();
+                                  setState(() => _showCelebration = false);
+                                  widget.onBackToMenu!();
+                                },
+                          child: const Text('Back to menu'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              AnimatedOpacity(
+                duration: const Duration(milliseconds: 700),
+                opacity: _showCelebration ? .42 : 1,
+                child: IgnorePointer(
+                  ignoring: _showCelebration,
+                  child: SafeArea(
+                    child: SingleChildScrollView(
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: isTutorial
+                                ? 448
+                                : usesPuzzlePresentation
+                                ? 620
+                                : 420,
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                if (usesPuzzlePresentation)
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 16),
+                                    child: Row(
                                       children: [
-                                        Text(
-                                          isTutorial
-                                              ? '${_tutorialStepIndex + 1} / ${widget.tutorial!.steps.length}'
-                                              : '${_game.moveCount.toString().padLeft(2, '0')} moves',
-                                          style: TextStyle(
-                                            color: isTutorial
-                                                ? const Color(0xffc7d2ed)
-                                                : isHistoricalDate
-                                                ? const Color(0xfff3a486)
-                                                : const Color(0xff74d7c4),
-                                            fontFamily: 'monospace',
-                                            fontSize: 12,
+                                        TextButton(
+                                          key: const Key('back-to-menu-button'),
+                                          onPressed: widget.onBackToMenu,
+                                          style: TextButton.styleFrom(
+                                            foregroundColor: const Color(
+                                              0xffbcb6aa,
+                                            ),
+                                            padding: EdgeInsets.zero,
+                                            minimumSize: Size.zero,
+                                          ),
+                                          child: const Text(
+                                            '← Back to menu',
+                                            style: TextStyle(fontSize: 12),
                                           ),
                                         ),
-                                        if (widget.onOpenSettings != null)
-                                          IconButton(
-                                            key: const Key('settings-button'),
-                                            icon: const Icon(
-                                              Icons.settings_outlined,
-                                              size: 18,
-                                            ),
-                                            tooltip: 'Settings',
-                                            onPressed: () => unawaited(
-                                              widget.onOpenSettings!(),
+                                        Expanded(
+                                          child: Center(
+                                            child: Text(
+                                              isTutorial
+                                                  ? 'TUTORIAL'
+                                                  : isHistoricalDate
+                                                  ? 'HISTORICAL DATE'
+                                                  : 'ONE NON-ZERO',
+                                              style: const TextStyle(
+                                                color: Color(0xfff4eddf),
+                                                fontFamily: 'serif',
+                                                fontSize: 23,
+                                                letterSpacing: 1.2,
+                                              ),
                                             ),
                                           ),
+                                        ),
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              isTutorial
+                                                  ? '${_tutorialStepIndex + 1} / ${widget.tutorial!.steps.length}'
+                                                  : '${_game.moveCount.toString().padLeft(2, '0')} moves',
+                                              style: TextStyle(
+                                                color: isTutorial
+                                                    ? const Color(0xffc7d2ed)
+                                                    : isHistoricalDate
+                                                    ? const Color(0xfff3a486)
+                                                    : const Color(0xff74d7c4),
+                                                fontFamily: 'monospace',
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                            if (widget.onOpenSettings != null)
+                                              IconButton(
+                                                key: const Key(
+                                                  'settings-button',
+                                                ),
+                                                icon: const Icon(
+                                                  Icons.settings_outlined,
+                                                  size: 18,
+                                                ),
+                                                tooltip: 'Settings',
+                                                onPressed: () => unawaited(
+                                                  widget.onOpenSettings!(),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
                                       ],
                                     ),
-                                  ],
-                                ),
-                              ),
-                            if (isTutorial)
-                              _TutorialObjective(stepIndex: _tutorialStepIndex)
-                            else if (!usesPuzzlePresentation)
-                              Text(
-                                _tutorialCompleted
-                                    ? 'Tutorial complete!'
-                                    : _tutorialStep?.instruction ?? 'Select a source cell, then a target cell.',
-                                style: Theme.of(context).textTheme.titleMedium,
-                                textAlign: TextAlign.center,
-                              ),
-                            if (_historicalGame
-                                case final HistoricalDateGame game)
-                              HistoricalEventPanel(game: game),
-                            if (isOneNonZero && _board.rowCount > 2)
-                              const _OneNonZeroObjective(),
-                            const SizedBox(height: 12),
-                            if (!isTutorial)
-                              GameActionControls(
-                                children: [
-                                  OutlinedButton.icon(
-                                    key: const Key('undo-button'),
-                                    onPressed: _game.canUndo && !_isResolving
-                                        ? _undo
-                                        : null,
-                                    icon: const Icon(Icons.undo),
-                                    label: const Text('Undo'),
                                   ),
-                                  OutlinedButton.icon(
-                                    key: const Key('restart-button'),
-                                    onPressed: _restart,
-                                    icon: const Icon(Icons.restart_alt),
-                                    label: const Text('Restart'),
+                                if (isTutorial)
+                                  _TutorialObjective(
+                                    stepIndex: _tutorialStepIndex,
+                                  )
+                                else if (!usesPuzzlePresentation)
+                                  Text(
+                                    _tutorialCompleted
+                                        ? 'Tutorial complete!'
+                                        : _tutorialStep?.instruction ?? 'Select a source cell, then a target cell.',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium,
+                                    textAlign: TextAlign.center,
                                   ),
-                                  if (widget.onNewGame != null &&
-                                      !isHistoricalDate)
-                                    OutlinedButton.icon(
-                                      key: const Key('new-game-button'),
-                                      onPressed: _startNewGame,
-                                      icon: const Icon(Icons.add),
-                                      label: const Text('New game'),
-                                    ),
-                                  if (!_isTutorial &&
-                                      (!isOneNonZero || isHistoricalDate) &&
-                                      widget.onStartTutorial != null)
-                                    OutlinedButton(
-                                      key: const Key('start-tutorial-button'),
-                                      onPressed: widget.onStartTutorial,
-                                      child: Text(
-                                        usesPuzzlePresentation
-                                            ? '? Rules'
-                                            : 'Tutorial',
+                                if (_historicalGame
+                                    case final HistoricalDateGame game)
+                                  HistoricalEventPanel(game: game),
+                                if (isOneNonZero && _board.rowCount > 2)
+                                  const _OneNonZeroObjective(),
+                                const SizedBox(height: 12),
+                                if (!isTutorial)
+                                  GameActionControls(
+                                    children: [
+                                      OutlinedButton.icon(
+                                        key: const Key('undo-button'),
+                                        onPressed:
+                                            _game.canUndo && !_isResolving
+                                            ? _undo
+                                            : null,
+                                        icon: const Icon(Icons.undo),
+                                        label: const Text('Undo'),
                                       ),
-                                    ),
-                                ],
-                              ),
-                            if (_tutorialCompleted)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 12),
-                                child: FilledButton(
-                                  key: const Key('finish-tutorial-button'),
-                                  onPressed: widget.onTutorialFinished,
-                                  child: const Text('Play'),
-                                ),
-                              ),
-                            const SizedBox(height: 12),
-                            const SizedBox(height: 24),
-                            GameBoard(
-                              board: _board,
-                              selectedCell: _arithmeticSource,
-                              swapAfterimages: _swapAfterimages,
-                              isAnimatingSwap: _isAnimatingSwap,
-                              swapSource: _animatedSwapSource,
-                              swapTarget: _animatedSwapTarget,
-                              swapAnimationId: _swapAnimationId,
-                              disableAnimations: _disableAnimations,
-                              resolvingCell: _resolvingCell,
-                              resolvingEquation: _resolvingEquation,
-                              visualConfig: boardVisualConfig,
-                              sourceLineHighlight: _swapSource,
-                              targetLineHighlight: _swapTarget,
-                              historicalGame: _historicalGame,
-                              isTutorialCellHighlighted:
-                                  _isTutorialCellHighlighted,
-                              isTutorialLineHighlighted:
-                                  _isTutorialLineHighlighted,
-                              onCellPressed: _selectCell,
-                              onDragStarted: _startSwap,
-                              onHover: _hoverSwapTarget,
-                              onLeave: _leaveSwapTarget,
-                              onAccept: _completeSwap,
-                              onDragCancelled: _cancelSwap,
-                            ),
-                            const SizedBox(height: 24),
-                            GameStatusPanel(
-                              moveCount: _game.moveCount,
-                              feedback: _feedback,
-                              isWon: _game.isWon,
-                              isLost: _game.isLost,
-                              showMoveCount: !usesPuzzlePresentation,
-                            ),
-                            if (isTutorial)
-                              _TutorialProgress(
-                                stepIndex: _tutorialStepIndex,
-                                count: widget.tutorial!.steps.length,
-                              ),
-                            if (usesPuzzlePresentation)
-                              Padding(
-                                padding: EdgeInsets.only(top: 18),
-                                child: isTutorial
-                                    ? TextButton(
-                                        key: const Key('skip-tutorial-button'),
-                                        onPressed: widget.onTutorialFinished,
-                                        child: const Text(
-                                          'Skip tutorial',
-                                          style: TextStyle(
-                                            color: Color(0xffb9c4de),
-                                            fontSize: 12,
+                                      OutlinedButton.icon(
+                                        key: const Key('restart-button'),
+                                        onPressed: _restart,
+                                        icon: const Icon(Icons.restart_alt),
+                                        label: const Text('Restart'),
+                                      ),
+                                      if (widget.onNewGame != null &&
+                                          !isHistoricalDate)
+                                        OutlinedButton.icon(
+                                          key: const Key('new-game-button'),
+                                          onPressed: _startNewGame,
+                                          icon: const Icon(Icons.add),
+                                          label: const Text('New game'),
+                                        ),
+                                      if (!_isTutorial &&
+                                          (!isOneNonZero || isHistoricalDate) &&
+                                          widget.onStartTutorial != null)
+                                        OutlinedButton(
+                                          key: const Key(
+                                            'start-tutorial-button',
+                                          ),
+                                          onPressed: widget.onStartTutorial,
+                                          child: Text(
+                                            usesPuzzlePresentation
+                                                ? '? Rules'
+                                                : 'Tutorial',
                                           ),
                                         ),
-                                      )
-                                    : const Text(
-                                        'Drag the marks at a row or column edge to swap it · How moves work',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: Color(0xffbcb6aa),
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                              ),
-                          ],
+                                    ],
+                                  ),
+                                if (_tutorialCompleted)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 12),
+                                    child: FilledButton(
+                                      key: const Key('finish-tutorial-button'),
+                                      onPressed: widget.onTutorialFinished,
+                                      child: const Text('Play'),
+                                    ),
+                                  ),
+                                const SizedBox(height: 12),
+                                const SizedBox(height: 24),
+                                GameBoard(
+                                  board: _board,
+                                  selectedCell: _arithmeticSource,
+                                  swapAfterimages: _swapAfterimages,
+                                  isAnimatingSwap: _isAnimatingSwap,
+                                  swapSource: _animatedSwapSource,
+                                  swapTarget: _animatedSwapTarget,
+                                  swapAnimationId: _swapAnimationId,
+                                  disableAnimations: _disableAnimations,
+                                  resolvingCell: _resolvingCell,
+                                  resolvingEquation: _resolvingEquation,
+                                  visualConfig: boardVisualConfig,
+                                  sourceLineHighlight: _swapSource,
+                                  targetLineHighlight: _swapTarget,
+                                  historicalGame: _historicalGame,
+                                  isTutorialCellHighlighted:
+                                      _isTutorialCellHighlighted,
+                                  isTutorialLineHighlighted:
+                                      _isTutorialLineHighlighted,
+                                  onCellPressed: _selectCell,
+                                  onDragStarted: _startSwap,
+                                  onHover: _hoverSwapTarget,
+                                  onLeave: _leaveSwapTarget,
+                                  onAccept: _completeSwap,
+                                  onDragCancelled: _cancelSwap,
+                                ),
+                                const SizedBox(height: 24),
+                                GameStatusPanel(
+                                  moveCount: _game.moveCount,
+                                  feedback: _feedback,
+                                  isWon: _game.isWon,
+                                  isLost: _game.isLost,
+                                  showMoveCount: !usesPuzzlePresentation,
+                                ),
+                                if (isTutorial)
+                                  _TutorialProgress(
+                                    stepIndex: _tutorialStepIndex,
+                                    count: widget.tutorial!.steps.length,
+                                  ),
+                                if (usesPuzzlePresentation)
+                                  Padding(
+                                    padding: EdgeInsets.only(top: 18),
+                                    child: isTutorial
+                                        ? TextButton(
+                                            key: const Key(
+                                              'skip-tutorial-button',
+                                            ),
+                                            onPressed:
+                                                widget.onTutorialFinished,
+                                            child: const Text(
+                                              'Skip tutorial',
+                                              style: TextStyle(
+                                                color: Color(0xffb9c4de),
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          )
+                                        : const Text(
+                                            'Drag the marks at a row or column edge to swap it · How moves work',
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              color: Color(0xffbcb6aa),
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                  ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
