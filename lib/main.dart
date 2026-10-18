@@ -900,15 +900,14 @@ class _BoardScreenState extends State<BoardScreen> {
                           size: 64,
                         ),
                         const SizedBox(height: 16),
-                        const Text(
-                          'ONE REMAINS',
-                          style: TextStyle(
-                            color: Color(0xfff4eddf),
-                            fontFamily: 'serif',
-                            fontSize: 34,
-                            letterSpacing: 2,
-                          ),
-                        ),
+                          if (_historicalGame case final game?) ...[
+                            Text(game.formattedDate, style: const TextStyle(color: Color(0xffffe6ae), fontFamily: 'serif', fontSize: 40)),
+                            const SizedBox(height: 12),
+                            Text(game.event.title, textAlign: TextAlign.center, style: const TextStyle(color: Color(0xfff4eddf), fontFamily: 'serif', fontSize: 30)),
+                            const SizedBox(height: 8),
+                            Padding(padding: const EdgeInsets.symmetric(horizontal: 32), child: Text(game.event.description, textAlign: TextAlign.center, style: const TextStyle(color: Color(0xffd2d0c8), fontSize: 20))),
+                          ] else
+                            const Text('ONE REMAINS', style: TextStyle(color: Color(0xfff4eddf), fontFamily: 'serif', fontSize: 34, letterSpacing: 2)),
                         const SizedBox(height: 24),
                         FilledButton(
                           onPressed: widget.onNewGame == null
@@ -936,7 +935,7 @@ class _BoardScreenState extends State<BoardScreen> {
                 ),
               AnimatedOpacity(
                 duration: const Duration(milliseconds: 700),
-                opacity: _showCelebration ? .42 : 1,
+                opacity: _showCelebration ? .25 : 1,
                 child: IgnorePointer(
                   ignoring: _showCelebration,
                   child: SafeArea(
