@@ -684,6 +684,43 @@ void main() {
     expect(find.byKey(const Key('continue-game-button')), findsOneWidget);
   });
 
+  testWidgets('clears a won game when returning to the menu', (
+    WidgetTester tester,
+  ) async {
+    final store = _FakeGameStateStore(
+      currentGame: SavedGame(
+        settings: const OneNonZeroSettings(),
+        game: OneNonZeroGame(
+          Board([
+            [1, -1],
+            [0, 0],
+          ]),
+        ),
+      ),
+    );
+    await tester.pumpWidget(
+      NumbersGameApp(
+        progressStore: _FakeTutorialProgressStore(handled: true),
+        gameStateStore: store,
+      ),
+    );
+    await pumpApp(tester);
+
+    await tester.tap(find.byKey(const Key('continue-game-button')));
+    await pumpApp(tester);
+    await tester.tap(find.byKey(const Key('cell-0-0')));
+    await tester.tap(find.byKey(const Key('cell-0-1')));
+    await tester.pump();
+    expect(find.text('ONE REMAINS'), findsOneWidget);
+
+    await tester.tap(find.text('Back to menu'));
+    await pumpApp(tester);
+
+    expect(store.clearCount, 1);
+    expect(store.currentGame, isNull);
+    expect(find.byKey(const Key('continue-game-button')), findsNothing);
+  });
+
   testWidgets('new game retains settings and replaces the saved session', (
     WidgetTester tester,
   ) async {

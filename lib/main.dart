@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:numbers_game/game_core/board.dart';
 import 'package:numbers_game/game_core/historical_date_game.dart';
 import 'package:numbers_game/game_core/one_non_zero_game.dart';
@@ -37,6 +38,7 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
   late final Future<_AppState> _appState;
   AppSettings? _settings;
   SavedGame? _savedGame;
+  bool _hasCurrentGameOverride = false;
   GameMode? _activeMode;
   ModeSettings? _activeSettings;
   bool? _showTutorial;
@@ -95,7 +97,10 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
     );
     await _gameStateStore.saveCurrentGame(savedGame);
     if (mounted) {
-      setState(() => _savedGame = savedGame);
+      setState(() {
+        _savedGame = savedGame;
+        _hasCurrentGameOverride = true;
+      });
     }
   }
 
@@ -139,6 +144,20 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
     _gameToOpen = null;
   });
 
+  Future<void> _discardWonGameAndReturnToMenu() async {
+    await _gameStateStore.clearCurrentGame();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _savedGame = null;
+      _hasCurrentGameOverride = true;
+      _showGame = false;
+      _showTutorial = false;
+      _gameToOpen = null;
+    });
+  }
+
   Future<void> _openSettings(BuildContext context, AppSettings settings) async {
     final updatedSettings = await Navigator.of(context).push<AppSettings>(
       MaterialPageRoute(builder: (_) => SettingsScreen(settings: settings)),
@@ -169,7 +188,9 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
           }
           final appState = snapshot.data!;
           final showTutorial = _showTutorial ?? false;
-          final savedGame = _savedGame ?? appState.savedGame;
+          final savedGame = _hasCurrentGameOverride
+              ? _savedGame
+              : appState.savedGame;
           final settings = _settings ?? appState.settings;
           if (!_showGame && !showTutorial) {
             return StartScreen(
@@ -205,6 +226,9 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
                 ? null
                 : () => _openSettings(context, settings),
             onBackToMenu: _returnToMenu,
+            onVictoryBackToMenu: showTutorial
+                ? null
+                : _discardWonGameAndReturnToMenu,
           );
         },
       ),
@@ -223,6 +247,7 @@ class BoardScreen extends StatefulWidget {
     this.onNewGame,
     this.onOpenSettings,
     this.onBackToMenu,
+    this.onVictoryBackToMenu,
   });
 
   final PlayableGame? initialGame;
@@ -233,6 +258,7 @@ class BoardScreen extends StatefulWidget {
   final Future<PlayableGame> Function()? onNewGame;
   final Future<void> Function()? onOpenSettings;
   final VoidCallback? onBackToMenu;
+  final Future<void> Function()? onVictoryBackToMenu;
 
   @override
   State<BoardScreen> createState() => _BoardScreenState();
@@ -374,6 +400,7 @@ class _BoardScreenState extends State<BoardScreen> {
         'Choose a source cell.',
       );
     });
+    unawaited(HapticFeedback.selectionClick());
     _persistGame();
     _advanceTutorial();
     if (!_isTutorial && _game.isWon) _showVictoryDemo();
@@ -474,6 +501,7 @@ class _BoardScreenState extends State<BoardScreen> {
         'Choose a source cell.',
       );
     });
+    unawaited(HapticFeedback.lightImpact());
     _persistGame();
     _advanceTutorial();
     if (!_isTutorial && _game.isWon) _showVictoryDemo();
@@ -920,12 +948,12 @@ class _BoardScreenState extends State<BoardScreen> {
                           child: const Text('New game'),
                         ),
                         TextButton(
-                          onPressed: widget.onBackToMenu == null
+                          onPressed: widget.onVictoryBackToMenu == null
                               ? null
-                              : () {
+                              : () async {
                                   _celebrationTimer?.cancel();
                                   setState(() => _showCelebration = false);
-                                  widget.onBackToMenu!();
+                                  await widget.onVictoryBackToMenu!();
                                 },
                           child: const Text('Back to menu'),
                         ),
