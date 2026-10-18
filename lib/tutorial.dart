@@ -39,10 +39,12 @@ class TutorialDefinition {
 }
 
 final tutorialDefinition = TutorialDefinition(
-  initialGame: OneNonZeroGame(Board([
-    [1, -1],
-    [1, 0],
-  ])),
+  initialGame: OneNonZeroGame(
+    Board([
+      [1, -1],
+      [1, 0],
+    ]),
+  ),
   steps: const [
     TutorialStep(
       instruction: 'The number in the source cell does not change. When the target is to its right, add the two numbers in the target cell. Select 1, then -1 to make 0.',

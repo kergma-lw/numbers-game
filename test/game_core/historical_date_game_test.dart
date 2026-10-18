@@ -35,18 +35,26 @@ void main() {
   });
 
   test('locale formats capture order and separator', () {
-    expect(DateFrameFormat.forLocale('en_US').order,
-        [DateComponent.month, DateComponent.day, DateComponent.year]);
-    expect(DateFrameFormat.forLocale('ja_JP').order,
-        [DateComponent.year, DateComponent.month, DateComponent.day]);
+    expect(DateFrameFormat.forLocale('en_US').order, [
+      DateComponent.month,
+      DateComponent.day,
+      DateComponent.year,
+    ]);
+    expect(DateFrameFormat.forLocale('ja_JP').order, [
+      DateComponent.year,
+      DateComponent.month,
+      DateComponent.day,
+    ]);
     expect(DateFrameFormat.forLocale('fr_FR').separator, '.');
   });
 
   test('formats the displayed target date from its captured frame format', () {
     final game = HistoricalDateGame(
-      session: GameSession(Board([
-        [4, 10, 1957],
-      ])),
+      session: GameSession(
+        Board([
+          [4, 10, 1957],
+        ]),
+      ),
       targetBoard: Board([
         [4, 10, 1957],
       ]),
@@ -79,17 +87,13 @@ void main() {
 
     final scrambled = moves.fold(
       target,
-      (board, move) => board.applyArithmeticMove(
-        source: move.source,
-        target: move.target,
-      ),
+      (board, move) =>
+          board.applyArithmeticMove(source: move.source, target: move.target),
     );
     final restored = moves.reversed.fold(
       scrambled,
-      (board, move) => board.applyArithmeticMove(
-        source: move.source,
-        target: move.target,
-      ),
+      (board, move) =>
+          board.applyArithmeticMove(source: move.source, target: move.target),
     );
 
     expect(

@@ -6,10 +6,13 @@ void main() {
     test('rejects empty and non-rectangular grids', () {
       expect(() => Board([]), throwsArgumentError);
       expect(() => Board([[]]), throwsArgumentError);
-      expect(() => Board([
-            [1],
-            [2, 3],
-          ]), throwsArgumentError);
+      expect(
+        () => Board([
+          [1],
+          [2, 3],
+        ]),
+        throwsArgumentError,
+      );
     });
 
     test('allows one-dimensional boards and arbitrary integers', () {
@@ -27,62 +30,68 @@ void main() {
 
   group('arithmetic moves', () {
     test('adds when the target is to the right', () {
-      final result = Board([
-        [2, 3],
-      ]).applyArithmeticMove(
-        source: const CellPosition(0, 0),
-        target: const CellPosition(0, 1),
-      );
+      final result =
+          Board([
+            [2, 3],
+          ]).applyArithmeticMove(
+            source: const CellPosition(0, 0),
+            target: const CellPosition(0, 1),
+          );
 
       expect(values(result), [2, 5]);
     });
 
     test('subtracts when the target is to the left', () {
-      final result = Board([
-        [2, 3],
-      ]).applyArithmeticMove(
-        source: const CellPosition(0, 1),
-        target: const CellPosition(0, 0),
-      );
+      final result =
+          Board([
+            [2, 3],
+          ]).applyArithmeticMove(
+            source: const CellPosition(0, 1),
+            target: const CellPosition(0, 0),
+          );
 
       expect(values(result), [1, 3]);
     });
 
     test('adds below and subtracts above', () {
-      final below = Board([
-        [2],
-        [3],
-      ]).applyArithmeticMove(
-        source: const CellPosition(0, 0),
-        target: const CellPosition(1, 0),
-      );
-      final above = Board([
-        [2],
-        [3],
-      ]).applyArithmeticMove(
-        source: const CellPosition(1, 0),
-        target: const CellPosition(0, 0),
-      );
+      final below =
+          Board([
+            [2],
+            [3],
+          ]).applyArithmeticMove(
+            source: const CellPosition(0, 0),
+            target: const CellPosition(1, 0),
+          );
+      final above =
+          Board([
+            [2],
+            [3],
+          ]).applyArithmeticMove(
+            source: const CellPosition(1, 0),
+            target: const CellPosition(0, 0),
+          );
 
       expect(values(below), [2, 5]);
       expect(values(above), [1, 3]);
     });
 
     test('uses vertical direction for cells in different rows', () {
-      final lowerTarget = Board([
-        [0, 2],
-        [3, 0],
-      ]).applyArithmeticMove(
-        source: const CellPosition(0, 1),
-        target: const CellPosition(1, 0),
-      );
-      final upperTarget = Board([
-        [0, 2],
-        [3, 0],
-      ]).applyArithmeticMove(
-        source: const CellPosition(1, 0),
-        target: const CellPosition(0, 1),
-      );
+      final lowerTarget =
+          Board([
+            [0, 2],
+            [3, 0],
+          ]).applyArithmeticMove(
+            source: const CellPosition(0, 1),
+            target: const CellPosition(1, 0),
+          );
+      final upperTarget =
+          Board([
+            [0, 2],
+            [3, 0],
+          ]).applyArithmeticMove(
+            source: const CellPosition(1, 0),
+            target: const CellPosition(0, 1),
+          );
 
       expect(values(lowerTarget), [0, 2, 5, 0]);
       expect(values(upperTarget), [0, 1, 3, 0]);
@@ -169,14 +178,13 @@ void main() {
 }
 
 List<int> values(Board board) => [
-      for (var row = 0; row < board.rowCount; row++)
-        for (var column = 0; column < board.columnCount; column++)
-          board.valueAt(CellPosition(row, column)),
-    ];
+  for (var row = 0; row < board.rowCount; row++)
+    for (var column = 0; column < board.columnCount; column++)
+      board.valueAt(CellPosition(row, column)),
+];
 
-int greatestCommonDivisor(Iterable<int> values) => values
-    .map((value) => value.abs())
-    .reduce((result, value) {
+int greatestCommonDivisor(Iterable<int> values) =>
+    values.map((value) => value.abs()).reduce((result, value) {
       while (value != 0) {
         final remainder = result % value;
         result = value;

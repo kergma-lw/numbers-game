@@ -9,7 +9,10 @@ void main() {
     for (final step in tutorialDefinition.steps) {
       switch (step.action) {
         case TutorialAction.arithmeticMove:
-          game = game.applyArithmeticMove(source: step.source!, target: step.target!);
+          game = game.applyArithmeticMove(
+            source: step.source!,
+            target: step.target!,
+          );
         case TutorialAction.swapColumns:
           game = game.swapColumns(step.firstLine!, step.secondLine!);
       }

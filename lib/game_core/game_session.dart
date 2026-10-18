@@ -3,9 +3,9 @@ import 'package:numbers_game/game_core/board.dart';
 /// An immutable game session with an initial board and undo history.
 class GameSession {
   GameSession(Board initialBoard)
-      : _initialBoard = initialBoard,
-        currentBoard = initialBoard,
-        _history = const [];
+    : _initialBoard = initialBoard,
+      currentBoard = initialBoard,
+      _history = const [];
 
   const GameSession._(this._initialBoard, this.currentBoard, this._history);
 
@@ -14,8 +14,11 @@ class GameSession {
     required Board initialBoard,
     required Board currentBoard,
     required List<Board> history,
-  }) =>
-      GameSession._(initialBoard, currentBoard, List<Board>.unmodifiable(history));
+  }) => GameSession._(
+    initialBoard,
+    currentBoard,
+    List<Board>.unmodifiable(history),
+  );
 
   final Board _initialBoard;
   final Board currentBoard;
@@ -31,10 +34,9 @@ class GameSession {
   GameSession applyArithmeticMove({
     required CellPosition source,
     required CellPosition target,
-  }) =>
-      _withMove(
-        currentBoard.applyArithmeticMove(source: source, target: target),
-      );
+  }) => _withMove(
+    currentBoard.applyArithmeticMove(source: source, target: target),
+  );
 
   /// Swaps two rows and saves the current board for undo.
   GameSession swapRows(int first, int second) =>
@@ -59,11 +61,12 @@ class GameSession {
   }
 
   /// Restores the initial board and clears all undo history.
-  GameSession restart() => GameSession._(_initialBoard, _initialBoard, const []);
+  GameSession restart() =>
+      GameSession._(_initialBoard, _initialBoard, const []);
 
   GameSession _withMove(Board nextBoard) => GameSession._(
-        _initialBoard,
-        nextBoard,
-        List<Board>.unmodifiable([..._history, currentBoard]),
-      );
+    _initialBoard,
+    nextBoard,
+    List<Board>.unmodifiable([..._history, currentBoard]),
+  );
 }

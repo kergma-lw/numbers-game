@@ -198,6 +198,17 @@ void main() {
     expect(find.bySemanticsLabel('Cell 2, 1: 1'), findsOneWidget);
   });
 
+  testWidgets('swaps rows when dropped over a target row', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const MaterialApp(home: BoardScreen()));
+
+    await dragTo(tester, const Key('row-handle-left-0'), const Key('cell-1-0'));
+
+    expect(find.bySemanticsLabel('Cell 1, 1: 3'), findsOneWidget);
+    expect(find.bySemanticsLabel('Cell 2, 1: 1'), findsOneWidget);
+  });
+
   testWidgets('leaves fading afterimages for the affected cells', (
     WidgetTester tester,
   ) async {

@@ -160,9 +160,16 @@ class _StartScreenState extends State<StartScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Text('DREAM ARITHMETIC PUZZLE',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Color(0xff74d7c4), fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 2)),
+                        const Text(
+                          'DREAM ARITHMETIC PUZZLE',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Color(0xff74d7c4),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 2,
+                          ),
+                        ),
                         const SizedBox(height: 10),
                         const _ShiftingTitle(key: Key('start-title')),
                         const SizedBox(height: 26),
@@ -174,7 +181,9 @@ class _StartScreenState extends State<StartScreen> {
                               key: const Key('start-glass-panel'),
                               decoration: BoxDecoration(
                                 color: const Color(0xd61c263a),
-                                border: Border.all(color: const Color(0x2eede0bf)),
+                                border: Border.all(
+                                  color: const Color(0x2eede0bf),
+                                ),
                                 borderRadius: BorderRadius.circular(22),
                                 boxShadow: const [
                                   BoxShadow(
@@ -185,155 +194,338 @@ class _StartScreenState extends State<StartScreen> {
                                 ],
                               ),
                               child: Stack(
-                            children: [
-                              const Positioned.fill(
-                                child: IgnorePointer(
-                                  child: _Meteor(key: Key('start-meteor')),
-                                ),
-                              ),
-                              const Positioned(
-                                top: 10,
-                                right: 12,
-                                child: IgnorePointer(
-                                  child: SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: DecoratedBox(
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        border: Border.fromBorderSide(BorderSide(color: Color(0x38f4b94c))),
-                                      ),
+                                children: [
+                                  const Positioned.fill(
+                                    child: IgnorePointer(
+                                      child: _Meteor(key: Key('start-meteor')),
                                     ),
                                   ),
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(18),
-                                child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  if (widget.showTutorialCallToAction) ...[
-                                   Padding(
-                                     padding: const EdgeInsets.all(10),
-                                     child: _RandomDrift(
-                                      key: const Key('tutorial-random-drift'),
-                                      initialDelay: const Duration(milliseconds: 700),
-                                      verticalRange: 26,
-                                      child: FilledButton(
-                                        key: const Key('start-tutorial-call-to-action'),
-                                        style: FilledButton.styleFrom(
-                                          backgroundColor: const Color(0xffb9c4de),
-                                          foregroundColor: const Color(0xff30384d),
-                                          padding: const EdgeInsets.all(16),
-                                          shape: const RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.all(Radius.circular(18)),
-                                          ),
-                                        ),
-                                        onPressed: widget.onTutorial,
-                                        child: const Row(
-                                          children: [
-                                            Icon(Icons.auto_stories_outlined),
-                                            SizedBox(width: 16),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text('Take the tutorial', style: TextStyle(fontWeight: FontWeight.w800)),
-                                                  Text('Learn moves and transformations', style: TextStyle(fontSize: 12)),
-                                                ],
+                                  const Positioned(
+                                    top: 10,
+                                    right: 12,
+                                    child: IgnorePointer(
+                                      child: SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: DecoratedBox(
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.fromBorderSide(
+                                              BorderSide(
+                                                color: Color(0x38f4b94c),
                                               ),
                                             ),
-                                            Icon(Icons.arrow_forward),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(18),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        if (widget
+                                            .showTutorialCallToAction) ...[
+                                          Padding(
+                                            padding: const EdgeInsets.all(10),
+                                            child: _RandomDrift(
+                                              key: const Key(
+                                                'tutorial-random-drift',
+                                              ),
+                                              initialDelay: const Duration(
+                                                milliseconds: 700,
+                                              ),
+                                              verticalRange: 26,
+                                              child: FilledButton(
+                                                key: const Key(
+                                                  'start-tutorial-call-to-action',
+                                                ),
+                                                style: FilledButton.styleFrom(
+                                                  backgroundColor: const Color(
+                                                    0xffb9c4de,
+                                                  ),
+                                                  foregroundColor: const Color(
+                                                    0xff30384d,
+                                                  ),
+                                                  padding: const EdgeInsets.all(
+                                                    16,
+                                                  ),
+                                                  shape:
+                                                      const RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.all(
+                                                              Radius.circular(
+                                                                18,
+                                                              ),
+                                                            ),
+                                                      ),
+                                                ),
+                                                onPressed: widget.onTutorial,
+                                                child: const Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons
+                                                          .auto_stories_outlined,
+                                                    ),
+                                                    SizedBox(width: 16),
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          Text(
+                                                            'Take the tutorial',
+                                                            style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w800,
+                                                            ),
+                                                          ),
+                                                          Text(
+                                                            'Learn moves and transformations',
+                                                            style: TextStyle(
+                                                              fontSize: 12,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    Icon(Icons.arrow_forward),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                        ],
+                                        if (widget.savedGame != null) ...[
+                                          Padding(
+                                            padding: const EdgeInsets.all(10),
+                                            child: _RandomDrift(
+                                              key: const Key(
+                                                'continue-random-drift',
+                                              ),
+                                              initialDelay: const Duration(
+                                                milliseconds: 700,
+                                              ),
+                                              verticalRange: 26,
+                                              child: _MovingGradient(
+                                                key: const Key(
+                                                  'continue-moving-gradient',
+                                                ),
+                                                duration: const Duration(
+                                                  seconds: 25,
+                                                ),
+                                                initialProgress: .32,
+                                                colors: const [
+                                                  Color(0xfff4be55),
+                                                  Color(0xffe98550),
+                                                ],
+                                                builder: (context, gradient) => _LivingCorners(
+                                                  key: const Key(
+                                                    'continue-living-corners',
+                                                  ),
+                                                  duration: const Duration(
+                                                    seconds: 14,
+                                                  ),
+                                                  initialDelay: const Duration(
+                                                    seconds: 3,
+                                                  ),
+                                                  builder: (context, radius) => DecoratedBox(
+                                                    key: const Key(
+                                                      'continue-gradient',
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      gradient: gradient,
+                                                      borderRadius: radius,
+                                                    ),
+                                                    child: FilledButton(
+                                                      key: const Key(
+                                                        'continue-game-button',
+                                                      ),
+                                                      style: FilledButton.styleFrom(
+                                                        backgroundColor:
+                                                            Colors.transparent,
+                                                        foregroundColor:
+                                                            const Color(
+                                                              0xff252039,
+                                                            ),
+                                                        shadowColor:
+                                                            Colors.transparent,
+                                                        padding:
+                                                            const EdgeInsets.all(
+                                                              16,
+                                                            ),
+                                                        shape:
+                                                            RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  radius,
+                                                            ),
+                                                      ),
+                                                      onPressed:
+                                                          widget.onContinue,
+                                                      child: Row(
+                                                        children: [
+                                                          Container(
+                                                            key: const Key(
+                                                              'continue-token',
+                                                            ),
+                                                            width: 45,
+                                                            height: 45,
+                                                            alignment: Alignment
+                                                                .center,
+                                                            decoration: BoxDecoration(
+                                                              color:
+                                                                  const Color(
+                                                                    0x29252039,
+                                                                  ),
+                                                              border: Border.all(
+                                                                color:
+                                                                    const Color(
+                                                                      0x24252039,
+                                                                    ),
+                                                              ),
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    11,
+                                                                  ),
+                                                            ),
+                                                            child: const Text(
+                                                              '−1',
+                                                              style: TextStyle(
+                                                                fontFamily:
+                                                                    'monospace',
+                                                                fontSize: 22,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          const SizedBox(
+                                                            width: 16,
+                                                          ),
+                                                          Expanded(
+                                                            child: Column(
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment
+                                                                      .start,
+                                                              children: [
+                                                                const Text(
+                                                                  'Continue',
+                                                                  style: TextStyle(
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w800,
+                                                                  ),
+                                                                ),
+                                                                Text(
+                                                                  '${widget.savedGame!.mode == GameMode.oneNonZero ? 'One non-zero' : 'Historical Date'} · ${widget.savedGame!.game.moveCount} moves',
+                                                                  style:
+                                                                      const TextStyle(
+                                                                        fontSize:
+                                                                            12,
+                                                                      ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                          const Icon(
+                                                            Icons.arrow_forward,
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 22),
+                                        ],
+                                        const SizedBox(height: 13),
+                                        const SizedBox(height: 10),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 10,
+                                                    ),
+                                                child: _ModeCard(
+                                                  key: const Key(
+                                                    'start-one-non-zero-button',
+                                                  ),
+                                                  icon: '1 → 0',
+                                                  title: 'One non-zero',
+                                                  detail: 'Leave one number on the board',
+                                                  color: const Color(
+                                                    0xff74d7c4,
+                                                  ),
+                                                  onPressed: () =>
+                                                      widget.onStartMode(
+                                                        GameMode.oneNonZero,
+                                                      ),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 10,
+                                                    ),
+                                                child: _ModeCard(
+                                                  key: const Key(
+                                                    'start-historical-date-button',
+                                                  ),
+                                                  icon: '12·04·61',
+                                                  title: 'Historical Date',
+                                                  detail: 'Rebuild a date from an event',
+                                                  color: const Color(
+                                                    0xffec765d,
+                                                  ),
+                                                  onPressed: () =>
+                                                      widget.onStartMode(
+                                                        GameMode.historicalDate,
+                                                      ),
+                                                ),
+                                              ),
+                                            ),
                                           ],
                                         ),
-                                      ),
-                                     ),
-                                   ),
-                                   const SizedBox(height: 12),
-                                ],
-                                if (widget.savedGame != null) ...[
-                                  Padding(
-                                    padding: const EdgeInsets.all(10),
-                                    child: _RandomDrift(
-                                    key: const Key('continue-random-drift'),
-                                    initialDelay: const Duration(milliseconds: 700),
-                                    verticalRange: 26,
-                                    child: _MovingGradient(
-                                      key: const Key('continue-moving-gradient'),
-                                      duration: const Duration(seconds: 25),
-                                      initialProgress: .32,
-                                      colors: const [Color(0xfff4be55), Color(0xffe98550)],
-                                      builder: (context, gradient) => _LivingCorners(
-                                      key: const Key('continue-living-corners'),
-                                      duration: const Duration(seconds: 14),
-                                      initialDelay: const Duration(seconds: 3),
-                                      builder: (context, radius) => DecoratedBox(
-                                        key: const Key('continue-gradient'),
-                                        decoration: BoxDecoration(
-                                          gradient: gradient,
-                                          borderRadius: radius,
-                                        ),
-                                        child: FilledButton(
-                                          key: const Key('continue-game-button'),
-                                          style: FilledButton.styleFrom(
-                                            backgroundColor: Colors.transparent,
-                                            foregroundColor: const Color(0xff252039),
-                                            shadowColor: Colors.transparent,
-                                            padding: const EdgeInsets.all(16),
-                                            shape: RoundedRectangleBorder(borderRadius: radius),
-                                          ),
-                                          onPressed: widget.onContinue,
-                                          child: Row(children: [
-                                        Container(
-                                          key: const Key('continue-token'),
-                                          width: 45,
-                                          height: 45,
-                                          alignment: Alignment.center,
-                                          decoration: BoxDecoration(
-                                            color: const Color(0x29252039),
-                                            border: Border.all(color: const Color(0x24252039)),
-                                            borderRadius: BorderRadius.circular(11),
-                                          ),
-                                          child: const Text(
-                                            '−1',
-                                            style: TextStyle(fontFamily: 'monospace', fontSize: 22),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 16),
-                                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                          const Text('Continue', style: TextStyle(fontWeight: FontWeight.w800)),
-                                           Text('${widget.savedGame!.mode == GameMode.oneNonZero ? 'One non-zero' : 'Historical Date'} · ${widget.savedGame!.game.moveCount} moves', style: const TextStyle(fontSize: 12)),
-                                        ])),
-                                        const Icon(Icons.arrow_forward),
-                                          ]),
-                                        ),
-                                      ),
+                                      ],
                                     ),
-                                    ),
-                                   ),
                                   ),
-                                  const SizedBox(height: 22),
                                 ],
-                                const SizedBox(height: 13),
-                                const SizedBox(height: 10),
-                                Row(children: [
-                                    Expanded(child: Padding(padding: const EdgeInsets.symmetric(vertical: 10), child: _ModeCard(key: const Key('start-one-non-zero-button'), icon: '1 → 0', title: 'One non-zero', detail: 'Leave one number on the board', color: const Color(0xff74d7c4), onPressed: () => widget.onStartMode(GameMode.oneNonZero)))),
-                                   const SizedBox(width: 8),
-                                     Expanded(child: Padding(padding: const EdgeInsets.symmetric(vertical: 10), child: _ModeCard(key: const Key('start-historical-date-button'), icon: '12·04·61', title: 'Historical Date', detail: 'Rebuild a date from an event', color: const Color(0xffec765d), onPressed: () => widget.onStartMode(GameMode.historicalDate)))),
-                                ]),
-                              ],
-                                ),
-                              ),
-                            ],
                               ),
                             ),
                           ),
                         ),
                         const SizedBox(height: 10),
-                        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                          TextButton(key: const Key('how-to-play-button'), onPressed: widget.onTutorial, child: const Text('How to play', style: TextStyle(color: muted))),
-                          TextButton(key: const Key('start-settings-button'), onPressed: widget.onSettings, child: const Text('Settings', style: TextStyle(color: muted))),
-                        ]),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            TextButton(
+                              key: const Key('how-to-play-button'),
+                              onPressed: widget.onTutorial,
+                              child: const Text(
+                                'How to play',
+                                style: TextStyle(color: muted),
+                              ),
+                            ),
+                            TextButton(
+                              key: const Key('start-settings-button'),
+                              onPressed: widget.onSettings,
+                              child: const Text(
+                                'Settings',
+                                style: TextStyle(color: muted),
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -348,14 +540,20 @@ class _StartScreenState extends State<StartScreen> {
 }
 
 class _BackgroundNumber extends StatelessWidget {
-  const _BackgroundNumber({super.key, required this.value, this.bottom = false});
+  const _BackgroundNumber({
+    super.key,
+    required this.value,
+    this.bottom = false,
+  });
 
   final String value;
   final bool bottom;
 
   @override
   Widget build(BuildContext context) {
-    final fontSize = (MediaQuery.sizeOf(context).width * .19).clamp(128.0, 272.0).toDouble();
+    final fontSize = (MediaQuery.sizeOf(context).width * .19)
+        .clamp(128.0, 272.0)
+        .toDouble();
     final transform = Matrix4.identity()
       ..rotateZ(bottom ? .157 : -.192)
       ..setEntry(1, 0, bottom ? .122 : -.122);
@@ -397,12 +595,18 @@ class _MeteorState extends State<_Meteor> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1100))
-      ..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          _timer = Timer(Duration(milliseconds: 35000 + _random.nextInt(25001)), _launch);
-        }
-      });
+    _controller =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 1100),
+        )..addStatusListener((status) {
+          if (status == AnimationStatus.completed) {
+            _timer = Timer(
+              Duration(milliseconds: 35000 + _random.nextInt(25001)),
+              _launch,
+            );
+          }
+        });
   }
 
   @override
@@ -416,7 +620,10 @@ class _MeteorState extends State<_Meteor> with SingleTickerProviderStateMixin {
       _controller.stop();
       _controller.value = 0;
     } else {
-      _timer = Timer(Duration(milliseconds: 12000 + _random.nextInt(10001)), _launch);
+      _timer = Timer(
+        Duration(milliseconds: 12000 + _random.nextInt(10001)),
+        _launch,
+      );
     }
   }
 
@@ -430,7 +637,10 @@ class _MeteorState extends State<_Meteor> with SingleTickerProviderStateMixin {
         _end = Offset(784, 96 + _random.nextDouble() * 208);
         _angle = (-31 + _random.nextDouble() * 14) * pi / 180;
       case 1:
-        _start = Offset(size.width + 16, size.height * (.14 + _random.nextDouble() * .62));
+        _start = Offset(
+          size.width + 16,
+          size.height * (.14 + _random.nextDouble() * .62),
+        );
         _end = Offset(-784, -304 + _random.nextDouble() * 208);
         _angle = (149 + _random.nextDouble() * 14) * pi / 180;
       case 2:
@@ -438,7 +648,10 @@ class _MeteorState extends State<_Meteor> with SingleTickerProviderStateMixin {
         _end = Offset(-192 + _random.nextDouble() * 384, 320);
         _angle = (49 + _random.nextDouble() * 18) * pi / 180;
       case 3:
-        _start = Offset(size.width * (.15 + _random.nextDouble() * .66), size.height + 16);
+        _start = Offset(
+          size.width * (.15 + _random.nextDouble() * .66),
+          size.height + 16,
+        );
         _end = Offset(-192 + _random.nextDouble() * 384, -320);
         _angle = (-131 + _random.nextDouble() * 18) * pi / 180;
     }
@@ -454,58 +667,64 @@ class _MeteorState extends State<_Meteor> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-        animation: _controller,
-        builder: (context, _) {
-          final progress = Curves.easeOut.transform(_controller.value);
-          final opacity = progress < .14
-              ? .42 * progress / .14
-              : .42 * (1 - (progress - .14) / .86);
-          final offset = Offset.lerp(_start, _start + _end, progress)!;
-          return Transform.translate(
-            offset: offset,
-            child: Transform.rotate(
-              angle: _angle,
-              child: Opacity(
-                opacity: opacity.clamp(0, 1),
-                child: Container(
-                  width: 64,
-                  height: 1,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.transparent,
-                        Color(0x1ff4eddf),
-                        Color(0xa8f4b94c),
-                        Colors.transparent,
+    animation: _controller,
+    builder: (context, _) {
+      final progress = Curves.easeOut.transform(_controller.value);
+      final opacity = progress < .14
+          ? .42 * progress / .14
+          : .42 * (1 - (progress - .14) / .86);
+      final offset = Offset.lerp(_start, _start + _end, progress)!;
+      return Transform.translate(
+        offset: offset,
+        child: Transform.rotate(
+          angle: _angle,
+          child: Opacity(
+            opacity: opacity.clamp(0, 1),
+            child: Container(
+              width: 64,
+              height: 1,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.transparent,
+                    Color(0x1ff4eddf),
+                    Color(0xa8f4b94c),
+                    Colors.transparent,
+                  ],
+                  stops: [0, .18, .55, 1],
+                ),
+                boxShadow: [BoxShadow(color: Color(0x47f4b94c), blurRadius: 4)],
+              ),
+              child: const Align(
+                alignment: Alignment(.68, 0),
+                child: SizedBox(
+                  width: 3,
+                  height: 3,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Color(0xfffff4cf),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(color: Color(0xccfff4cf), blurRadius: 4),
                       ],
-                      stops: [0, .18, .55, 1],
-                    ),
-                    boxShadow: [BoxShadow(color: Color(0x47f4b94c), blurRadius: 4)],
-                  ),
-                  child: const Align(
-                    alignment: Alignment(.68, 0),
-                    child: SizedBox(
-                      width: 3,
-                      height: 3,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: Color(0xfffff4cf),
-                          shape: BoxShape.circle,
-                          boxShadow: [BoxShadow(color: Color(0xccfff4cf), blurRadius: 4)],
-                        ),
-                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          );
-        },
+          ),
+        ),
       );
+    },
+  );
 }
 
 class _BackgroundLens extends StatefulWidget {
-  const _BackgroundLens({super.key, required this.topValue, required this.bottomValue});
+  const _BackgroundLens({
+    super.key,
+    required this.topValue,
+    required this.bottomValue,
+  });
 
   final String topValue;
   final String bottomValue;
@@ -526,12 +745,13 @@ class _BackgroundLensState extends State<_BackgroundLens>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 24))
-      ..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          _timer = Timer(const Duration(milliseconds: 500), _startSegment);
-        }
-      });
+    _controller =
+        AnimationController(vsync: this, duration: const Duration(seconds: 24))
+          ..addStatusListener((status) {
+            if (status == AnimationStatus.completed) {
+              _timer = Timer(const Duration(milliseconds: 500), _startSegment);
+            }
+          });
   }
 
   @override
@@ -554,11 +774,10 @@ class _BackgroundLensState extends State<_BackgroundLens>
   void _startSegment() {
     if (!mounted || _reducedMotion == true) return;
     _from = Offset.lerp(_from, _to, _controller.value)!;
-    _to = Offset(
-      _random.nextDouble(),
-      -.2 + _random.nextDouble() * 1.4,
+    _to = Offset(_random.nextDouble(), -.2 + _random.nextDouble() * 1.4);
+    _controller.duration = Duration(
+      milliseconds: 24000 + _random.nextInt(20001),
     );
-    _controller.duration = Duration(milliseconds: 24000 + _random.nextInt(20001));
     _controller.forward(from: 0);
   }
 
@@ -571,25 +790,25 @@ class _BackgroundLensState extends State<_BackgroundLens>
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-        builder: (context, constraints) => AnimatedBuilder(
-          animation: _controller,
-          builder: (context, _) {
-            const lensSize = 208.0;
-            final position = Offset.lerp(
-              _from,
-              _to,
-              const Cubic(.42, 0, .25, 1).transform(_controller.value),
-            )!;
-            final horizontalRange = max(0.0, constraints.maxWidth - lensSize);
-            final verticalRange = max(0.0, constraints.maxHeight - lensSize);
-            final left = horizontalRange * position.dx;
-            final top = verticalRange * position.dy;
-            return Stack(
-              children: [
-                Positioned(
-                  left: left,
-                  top: top,
-                  child: Opacity(
+    builder: (context, constraints) => AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        const lensSize = 208.0;
+        final position = Offset.lerp(
+          _from,
+          _to,
+          const Cubic(.42, 0, .25, 1).transform(_controller.value),
+        )!;
+        final horizontalRange = max(0.0, constraints.maxWidth - lensSize);
+        final verticalRange = max(0.0, constraints.maxHeight - lensSize);
+        final left = horizontalRange * position.dx;
+        final top = verticalRange * position.dy;
+        return Stack(
+          children: [
+            Positioned(
+              left: left,
+              top: top,
+              child: Opacity(
                 opacity: .62,
                 child: ShaderMask(
                   blendMode: BlendMode.dstIn,
@@ -618,7 +837,10 @@ class _BackgroundLensState extends State<_BackgroundLens>
                                 gradient: RadialGradient(
                                   center: Alignment(-.04, .04),
                                   radius: 1.48,
-                                  colors: [Color(0xff273356), Colors.transparent],
+                                  colors: [
+                                    Color(0xff273356),
+                                    Colors.transparent,
+                                  ],
                                 ),
                               ),
                             ),
@@ -629,7 +851,10 @@ class _BackgroundLensState extends State<_BackgroundLens>
                                 gradient: RadialGradient(
                                   center: Alignment(.64, .52),
                                   radius: 1.16,
-                                  colors: [Color(0x2eec765d), Colors.transparent],
+                                  colors: [
+                                    Color(0x2eec765d),
+                                    Colors.transparent,
+                                  ],
                                 ),
                               ),
                             ),
@@ -640,7 +865,10 @@ class _BackgroundLensState extends State<_BackgroundLens>
                                 gradient: RadialGradient(
                                   center: Alignment(-.66, -.64),
                                   radius: 1.22,
-                                  colors: [Color(0x3374d7c4), Colors.transparent],
+                                  colors: [
+                                    Color(0x3374d7c4),
+                                    Colors.transparent,
+                                  ],
                                 ),
                               ),
                             ),
@@ -648,7 +876,8 @@ class _BackgroundLensState extends State<_BackgroundLens>
                           Positioned.fill(
                             child: Transform(
                               alignment: Alignment.center,
-                              transform: Matrix4.identity()..scaleByDouble(1.18, 1.18, 1, 1),
+                              transform: Matrix4.identity()
+                                ..scaleByDouble(1.18, 1.18, 1, 1),
                               child: Transform.translate(
                                 offset: Offset(-left, -top),
                                 child: SizedBox(
@@ -659,12 +888,17 @@ class _BackgroundLensState extends State<_BackgroundLens>
                                       Positioned(
                                         top: 64,
                                         left: -8,
-                                        child: _BackgroundNumber(value: widget.topValue),
+                                        child: _BackgroundNumber(
+                                          value: widget.topValue,
+                                        ),
                                       ),
                                       Positioned(
                                         right: 64,
                                         bottom: 32,
-                                        child: _BackgroundNumber(value: widget.bottomValue, bottom: true),
+                                        child: _BackgroundNumber(
+                                          value: widget.bottomValue,
+                                          bottom: true,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -678,12 +912,12 @@ class _BackgroundLensState extends State<_BackgroundLens>
                   ),
                 ),
               ),
-                ),
-              ],
-            );
-          },
-        ),
-      );
+            ),
+          ],
+        );
+      },
+    ),
+  );
 }
 
 class _BackgroundEquation extends StatelessWidget {
@@ -700,7 +934,9 @@ class _BackgroundEquation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fontSize = (MediaQuery.sizeOf(context).width * .026).clamp(17.6, 32.0).toDouble();
+    final fontSize = (MediaQuery.sizeOf(context).width * .026)
+        .clamp(17.6, 32.0)
+        .toDouble();
     return Transform.rotate(
       angle: rotation,
       child: Text(
@@ -763,21 +999,20 @@ class _TiltingEquationState extends State<_TiltingEquation>
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-        animation: _controller,
-        child: widget.child,
-        builder: (context, child) {
-          final progress = Curves.easeInOut.transform(_controller.value);
-          final travel = MediaQuery.sizeOf(context).height * .20;
-          return Transform(
-            alignment: Alignment.center,
-            transform: Matrix4.identity()
-              ..translateByDouble(0, -travel * progress, 0, 1)
-              ..rotateZ(-.314 + .700 * progress),
-            child: child,
-          );
-        },
+    animation: _controller,
+    child: widget.child,
+    builder: (context, child) {
+      final progress = Curves.easeInOut.transform(_controller.value);
+      final travel = MediaQuery.sizeOf(context).height * .20;
+      return Transform(
+        alignment: Alignment.center,
+        transform: Matrix4.identity()
+          ..translateByDouble(0, -travel * progress, 0, 1)
+          ..rotateZ(-.314 + .700 * progress),
+        child: child,
       );
-
+    },
+  );
 }
 
 class _RandomDrift extends StatefulWidget {
@@ -810,12 +1045,13 @@ class _RandomDriftState extends State<_RandomDrift>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 7))
-      ..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          _timer = Timer(const Duration(milliseconds: 400), _startSegment);
-        }
-      });
+    _controller =
+        AnimationController(vsync: this, duration: const Duration(seconds: 7))
+          ..addStatusListener((status) {
+            if (status == AnimationStatus.completed) {
+              _timer = Timer(const Duration(milliseconds: 400), _startSegment);
+            }
+          });
   }
 
   @override
@@ -846,7 +1082,9 @@ class _RandomDriftState extends State<_RandomDrift>
       (_random.nextDouble() - .5) * 2 * widget.verticalRange,
     );
     _toRotation = (_random.nextDouble() - .5) * 6;
-    _controller.duration = Duration(milliseconds: 28000 + _random.nextInt(24001));
+    _controller.duration = Duration(
+      milliseconds: 28000 + _random.nextInt(24001),
+    );
     _controller.forward(from: 0);
   }
 
@@ -859,21 +1097,21 @@ class _RandomDriftState extends State<_RandomDrift>
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-        animation: _controller,
-        child: widget.child,
-        builder: (context, child) {
-          final progress = const Cubic(.42, 0, .25, 1).transform(_controller.value);
-          final offset = Offset.lerp(_fromOffset, _toOffset, progress)!;
-          final rotation = lerpDouble(_fromRotation, _toRotation, progress)!;
-          return Transform(
-            alignment: Alignment.center,
-            transform: Matrix4.identity()
-              ..translateByDouble(offset.dx, offset.dy, 0, 1)
-              ..rotateZ(rotation * pi / 180),
-            child: child,
-          );
-        },
+    animation: _controller,
+    child: widget.child,
+    builder: (context, child) {
+      final progress = const Cubic(.42, 0, .25, 1).transform(_controller.value);
+      final offset = Offset.lerp(_fromOffset, _toOffset, progress)!;
+      final rotation = lerpDouble(_fromRotation, _toRotation, progress)!;
+      return Transform(
+        alignment: Alignment.center,
+        transform: Matrix4.identity()
+          ..translateByDouble(offset.dx, offset.dy, 0, 1)
+          ..rotateZ(rotation * pi / 180),
+        child: child,
       );
+    },
+  );
 }
 
 class _MovingGradient extends StatefulWidget {
@@ -929,37 +1167,37 @@ class _MovingGradientState extends State<_MovingGradient>
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-        animation: _controller,
-        builder: (context, _) {
-          final progress = Curves.easeInOut.transform(_controller.value) * 4;
-          const positions = [
-            Offset(0, 0),
-            Offset(1, 0),
-            Offset(1, 1),
-            Offset(0, 1),
-            Offset(0, 0),
-          ];
-          final index = progress.floor().clamp(0, positions.length - 2);
-          final position = Offset.lerp(
-            positions[index],
-            positions[index + 1],
-            progress - index,
-          )!;
-          const excess = .70;
-          final begin = Alignment(
-            -1 - 2 * excess * position.dx,
-            -1 - 2 * excess * position.dy,
-          );
-          final end = Alignment(
-            1 + 2 * excess * (1 - position.dx),
-            1 + 2 * excess * (1 - position.dy),
-          );
-          return widget.builder(
-            context,
-            LinearGradient(begin: begin, end: end, colors: widget.colors),
-          );
-        },
+    animation: _controller,
+    builder: (context, _) {
+      final progress = Curves.easeInOut.transform(_controller.value) * 4;
+      const positions = [
+        Offset(0, 0),
+        Offset(1, 0),
+        Offset(1, 1),
+        Offset(0, 1),
+        Offset(0, 0),
+      ];
+      final index = progress.floor().clamp(0, positions.length - 2);
+      final position = Offset.lerp(
+        positions[index],
+        positions[index + 1],
+        progress - index,
+      )!;
+      const excess = .70;
+      final begin = Alignment(
+        -1 - 2 * excess * position.dx,
+        -1 - 2 * excess * position.dy,
       );
+      final end = Alignment(
+        1 + 2 * excess * (1 - position.dx),
+        1 + 2 * excess * (1 - position.dy),
+      );
+      return widget.builder(
+        context,
+        LinearGradient(begin: begin, end: end, colors: widget.colors),
+      );
+    },
+  );
 }
 
 class _ShiftingTitle extends StatefulWidget {
@@ -1005,40 +1243,39 @@ class _ShiftingTitleState extends State<_ShiftingTitle>
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-        animation: _controller,
-        builder: (context, _) {
-          final progress = Curves.easeInOut.transform(_controller.value);
-          const colors = [
-            Color(0xfff4eddf),
-            Color(0xffe7b6c3),
-            Color(0xffcbb3db),
-            Color(0xff9dbfdb),
-            Color(0xffa8c9ad),
-            Color(0xffe4cb8d),
-            Color(0xffe9ae8b),
-          ];
-          final segment = progress * (colors.length - 1);
-          final start = segment.floor().clamp(0, colors.length - 1);
-          final end = (start + 1).clamp(0, colors.length - 1);
-          final color = Color.lerp(colors[start], colors[end], segment - start)!;
-          return Text(
-            'NUMBERS\nGAME',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: color,
-              fontFamily: 'serif',
-              fontSize: 54,
-              height: .82,
-              letterSpacing: 3,
-              shadows: const [
-                Shadow(color: Color(0x47000000), offset: Offset(0, 2.4)),
-                Shadow(color: Color(0x14f4eddf), blurRadius: 32),
-              ],
-            ),
-          );
-        },
+    animation: _controller,
+    builder: (context, _) {
+      final progress = Curves.easeInOut.transform(_controller.value);
+      const colors = [
+        Color(0xfff4eddf),
+        Color(0xffe7b6c3),
+        Color(0xffcbb3db),
+        Color(0xff9dbfdb),
+        Color(0xffa8c9ad),
+        Color(0xffe4cb8d),
+        Color(0xffe9ae8b),
+      ];
+      final segment = progress * (colors.length - 1);
+      final start = segment.floor().clamp(0, colors.length - 1);
+      final end = (start + 1).clamp(0, colors.length - 1);
+      final color = Color.lerp(colors[start], colors[end], segment - start)!;
+      return Text(
+        'NUMBERS\nGAME',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: color,
+          fontFamily: 'serif',
+          fontSize: 54,
+          height: .82,
+          letterSpacing: 3,
+          shadows: const [
+            Shadow(color: Color(0x47000000), offset: Offset(0, 2.4)),
+            Shadow(color: Color(0x14f4eddf), blurRadius: 32),
+          ],
+        ),
       );
-
+    },
+  );
 }
 
 class _AtmosphericOrb extends StatefulWidget {
@@ -1084,47 +1321,50 @@ class _AtmosphericOrbState extends State<_AtmosphericOrb>
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) {
-          final progress = Curves.easeInOut.transform(_controller.value);
-          return Transform(
-            alignment: Alignment.center,
-            transform: Matrix4.identity()
-              ..translateByDouble(-19.2 * progress, 16 * progress, 0, 1)
-              ..rotateZ(-.279 + (.227 + .279) * progress)
-              ..scaleByDouble(1 + .08 * progress, 1 + .08 * progress, 1, 1),
-            child: child,
-          );
-        },
-        child: Container(
-          width: 128,
-          height: 128,
-          decoration: BoxDecoration(
-            border: Border.all(color: const Color(0x3374d7c4)),
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.elliptical(60, 61),
-              topRight: Radius.elliptical(68, 55),
-              bottomRight: Radius.elliptical(65, 73),
-              bottomLeft: Radius.elliptical(63, 67),
-            ),
-            gradient: const RadialGradient(
-              center: Alignment(-.34, -.50),
-              colors: [
-                Color.fromRGBO(255, 255, 255, .34),
-                Color.fromRGBO(116, 215, 196, .16),
-                Color.fromRGBO(19, 26, 42, .08),
-                Colors.transparent,
-              ],
-              stops: [0, .30, .68, 1],
-            ),
-            boxShadow: const [
-              BoxShadow(color: Color(0x14030a19), offset: Offset(-8, -11), blurRadius: 22),
-              BoxShadow(color: Color(0x1474d7c4), blurRadius: 48),
-            ],
-          ),
-        ),
+    animation: _controller,
+    builder: (context, child) {
+      final progress = Curves.easeInOut.transform(_controller.value);
+      return Transform(
+        alignment: Alignment.center,
+        transform: Matrix4.identity()
+          ..translateByDouble(-19.2 * progress, 16 * progress, 0, 1)
+          ..rotateZ(-.279 + (.227 + .279) * progress)
+          ..scaleByDouble(1 + .08 * progress, 1 + .08 * progress, 1, 1),
+        child: child,
       );
-
+    },
+    child: Container(
+      width: 128,
+      height: 128,
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0x3374d7c4)),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.elliptical(60, 61),
+          topRight: Radius.elliptical(68, 55),
+          bottomRight: Radius.elliptical(65, 73),
+          bottomLeft: Radius.elliptical(63, 67),
+        ),
+        gradient: const RadialGradient(
+          center: Alignment(-.34, -.50),
+          colors: [
+            Color.fromRGBO(255, 255, 255, .34),
+            Color.fromRGBO(116, 215, 196, .16),
+            Color.fromRGBO(19, 26, 42, .08),
+            Colors.transparent,
+          ],
+          stops: [0, .30, .68, 1],
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14030a19),
+            offset: Offset(-8, -11),
+            blurRadius: 22,
+          ),
+          BoxShadow(color: Color(0x1474d7c4), blurRadius: 48),
+        ],
+      ),
+    ),
+  );
 }
 
 class _LivingCorners extends StatefulWidget {
@@ -1166,8 +1406,9 @@ class _LivingCornersState extends State<_LivingCorners>
     super.initState();
     _controller = AnimationController(vsync: this, duration: widget.duration);
     _controller.value =
-        widget.initialDelay.inMilliseconds % widget.duration.inMilliseconds /
-            widget.duration.inMilliseconds;
+        widget.initialDelay.inMilliseconds %
+        widget.duration.inMilliseconds /
+        widget.duration.inMilliseconds;
   }
 
   @override
@@ -1194,16 +1435,16 @@ class _LivingCornersState extends State<_LivingCorners>
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-        animation: _controller,
-        builder: (context, _) => widget.builder(
-          context,
-          BorderRadius.lerp(
-            _initial,
-            _softened,
-            Curves.easeInOut.transform(_controller.value),
-          )!,
-        ),
-      );
+    animation: _controller,
+    builder: (context, _) => widget.builder(
+      context,
+      BorderRadius.lerp(
+        _initial,
+        _softened,
+        Curves.easeInOut.transform(_controller.value),
+      )!,
+    ),
+  );
 }
 
 class _MovingModeGradients extends StatefulWidget {
@@ -1257,59 +1498,84 @@ class _MovingModeGradientsState extends State<_MovingModeGradients>
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-        animation: _controller,
-        builder: (context, _) {
-          final progress = Curves.easeInOut.transform(_controller.value) * 4;
-          final radialPositions = widget.isTeal ? const [
-            Offset(0, 0),
-            Offset(1, 0),
-            Offset(1, 1),
-            Offset(0, 1),
-            Offset(0, 0),
-          ] : const [
-            Offset(1, 0),
-            Offset(0, 0),
-            Offset(0, 1),
-            Offset(1, 1),
-            Offset(1, 0),
-          ];
-          final linearPositions = widget.isTeal ? const [
-            Offset(.5, .5),
-            Offset(.65, .35),
-            Offset(.5, .5),
-            Offset(.35, .65),
-            Offset(.5, .5),
-          ] : const [
-            Offset(.5, .5),
-            Offset(.35, .65),
-            Offset(.5, .5),
-            Offset(.65, .35),
-            Offset(.5, .5),
-          ];
-          final index = progress.floor().clamp(0, radialPositions.length - 2);
-          final t = progress - index;
-          final radialPosition = Offset.lerp(radialPositions[index], radialPositions[index + 1], t)!;
-          final linearPosition = Offset.lerp(linearPositions[index], linearPositions[index + 1], t)!;
-          final gradient = LinearGradient(
-            begin: Alignment(-1 - linearPosition.dx, -1 - linearPosition.dy),
-            end: Alignment(2 - linearPosition.dx, 2 - linearPosition.dy),
-            colors: widget.isTeal
-                ? const [Color(0xff304565), Color(0xff2b3855), Color(0xff26324d)]
-                : const [Color(0xff3d3a5d), Color(0xff363a59), Color(0xff29354d)],
-            stops: widget.isTeal ? const [0, .58, 1] : const [0, .55, 1],
-          );
-          final glow = RadialGradient(
-            center: Alignment(-.8 + 1.6 * radialPosition.dx, -.56 + 1.12 * radialPosition.dy),
-            radius: 1.08,
-            colors: [widget.color.withValues(alpha: widget.isTeal ? .26 : .24), Colors.transparent],
-          );
-          return widget.builder(gradient, glow);
-        },
+    animation: _controller,
+    builder: (context, _) {
+      final progress = Curves.easeInOut.transform(_controller.value) * 4;
+      final radialPositions = widget.isTeal
+          ? const [
+              Offset(0, 0),
+              Offset(1, 0),
+              Offset(1, 1),
+              Offset(0, 1),
+              Offset(0, 0),
+            ]
+          : const [
+              Offset(1, 0),
+              Offset(0, 0),
+              Offset(0, 1),
+              Offset(1, 1),
+              Offset(1, 0),
+            ];
+      final linearPositions = widget.isTeal
+          ? const [
+              Offset(.5, .5),
+              Offset(.65, .35),
+              Offset(.5, .5),
+              Offset(.35, .65),
+              Offset(.5, .5),
+            ]
+          : const [
+              Offset(.5, .5),
+              Offset(.35, .65),
+              Offset(.5, .5),
+              Offset(.65, .35),
+              Offset(.5, .5),
+            ];
+      final index = progress.floor().clamp(0, radialPositions.length - 2);
+      final t = progress - index;
+      final radialPosition = Offset.lerp(
+        radialPositions[index],
+        radialPositions[index + 1],
+        t,
+      )!;
+      final linearPosition = Offset.lerp(
+        linearPositions[index],
+        linearPositions[index + 1],
+        t,
+      )!;
+      final gradient = LinearGradient(
+        begin: Alignment(-1 - linearPosition.dx, -1 - linearPosition.dy),
+        end: Alignment(2 - linearPosition.dx, 2 - linearPosition.dy),
+        colors: widget.isTeal
+            ? const [Color(0xff304565), Color(0xff2b3855), Color(0xff26324d)]
+            : const [Color(0xff3d3a5d), Color(0xff363a59), Color(0xff29354d)],
+        stops: widget.isTeal ? const [0, .58, 1] : const [0, .55, 1],
       );
+      final glow = RadialGradient(
+        center: Alignment(
+          -.8 + 1.6 * radialPosition.dx,
+          -.56 + 1.12 * radialPosition.dy,
+        ),
+        radius: 1.08,
+        colors: [
+          widget.color.withValues(alpha: widget.isTeal ? .26 : .24),
+          Colors.transparent,
+        ],
+      );
+      return widget.builder(gradient, glow);
+    },
+  );
 }
 
 class _ModeCard extends StatelessWidget {
-  const _ModeCard({super.key, required this.icon, required this.title, required this.detail, required this.color, required this.onPressed});
+  const _ModeCard({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.detail,
+    required this.color,
+    required this.onPressed,
+  });
   final String icon;
   final String title;
   final String detail;
@@ -1318,42 +1584,77 @@ class _ModeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isTeal = color == const Color(0xff74d7c4);
-    Widget buildCard(LinearGradient gradient, RadialGradient glow) => _LivingCorners(
-          key: Key(isTeal ? 'start-mode-living-teal' : 'start-mode-living-coral'),
+    Widget buildCard(LinearGradient gradient, RadialGradient glow) =>
+        _LivingCorners(
+          key: Key(
+            isTeal ? 'start-mode-living-teal' : 'start-mode-living-coral',
+          ),
           duration: Duration(seconds: isTeal ? 12 : 13),
           initialDelay: Duration(seconds: isTeal ? 0 : 4),
           builder: (context, radius) => DecoratedBox(
-            key: Key(isTeal ? 'start-mode-gradient-teal' : 'start-mode-gradient-coral'),
+            key: Key(
+              isTeal ? 'start-mode-gradient-teal' : 'start-mode-gradient-coral',
+            ),
             decoration: BoxDecoration(gradient: gradient, borderRadius: radius),
             child: DecoratedBox(
               decoration: BoxDecoration(gradient: glow, borderRadius: radius),
               child: OutlinedButton(
-          onPressed: onPressed,
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.all(14),
-            minimumSize: const Size(0, 134),
-            alignment: Alignment.centerLeft,
-            backgroundColor: Colors.transparent,
-            side: const BorderSide(color: Color(0x2eede0bf)),
-            shape: RoundedRectangleBorder(borderRadius: radius),
-          ),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(icon, style: TextStyle(color: color, fontFamily: 'monospace', fontSize: 18)),
-            const SizedBox(height: 42),
-            Text(title, style: const TextStyle(color: Color(0xfff4eddf), fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            Text(detail, style: const TextStyle(color: Color(0xffbcb6aa), fontSize: 11)),
-          ]),
+                onPressed: onPressed,
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.all(14),
+                  minimumSize: const Size(0, 134),
+                  alignment: Alignment.centerLeft,
+                  backgroundColor: Colors.transparent,
+                  side: const BorderSide(color: Color(0x2eede0bf)),
+                  shape: RoundedRectangleBorder(borderRadius: radius),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      icon,
+                      style: TextStyle(
+                        color: color,
+                        fontFamily: 'monospace',
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 42),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Color(0xfff4eddf),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      detail,
+                      style: const TextStyle(
+                        color: Color(0xffbcb6aa),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         );
     return _RandomDrift(
-      key: Key(isTeal ? 'start-mode-random-drift-teal' : 'start-mode-random-drift-coral'),
+      key: Key(
+        isTeal
+            ? 'start-mode-random-drift-teal'
+            : 'start-mode-random-drift-coral',
+      ),
       initialDelay: Duration(milliseconds: isTeal ? 2300 : 3900),
       verticalRange: 32,
       child: _MovingModeGradients(
-        key: Key(isTeal ? 'start-mode-moving-teal-gradient' : 'start-mode-moving-coral-gradient'),
+        key: Key(
+          isTeal
+              ? 'start-mode-moving-teal-gradient'
+              : 'start-mode-moving-coral-gradient',
+        ),
         duration: const Duration(seconds: 100),
         color: color,
         isTeal: isTeal,

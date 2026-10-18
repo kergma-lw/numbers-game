@@ -57,10 +57,12 @@ class Board {
     final nextCells = _copyCells();
     final sourceValue = valueAt(source);
     final targetValue = valueAt(target);
-    final adds = target.row > source.row ||
+    final adds =
+        target.row > source.row ||
         (target.row == source.row && target.column > source.column);
-    nextCells[target.row][target.column] =
-        adds ? sourceValue + targetValue : sourceValue - targetValue;
+    nextCells[target.row][target.column] = adds
+        ? sourceValue + targetValue
+        : sourceValue - targetValue;
     return Board(nextCells);
   }
 
@@ -97,17 +99,27 @@ class Board {
 
   static List<List<int>> _validatedCopy(List<List<int>> cells) {
     if (cells.isEmpty) {
-      throw ArgumentError.value(cells, 'cells', 'must contain at least one row');
+      throw ArgumentError.value(
+        cells,
+        'cells',
+        'must contain at least one row',
+      );
     }
     if (cells.first.isEmpty) {
-      throw ArgumentError.value(cells, 'cells', 'must contain at least one column');
+      throw ArgumentError.value(
+        cells,
+        'cells',
+        'must contain at least one column',
+      );
     }
 
     final columnCount = cells.first.length;
     if (cells.any((row) => row.length != columnCount)) {
       throw ArgumentError.value(cells, 'cells', 'must be rectangular');
     }
-    return cells.map((row) => List<int>.unmodifiable(row)).toList(growable: false);
+    return cells
+        .map((row) => List<int>.unmodifiable(row))
+        .toList(growable: false);
   }
 
   void _validatePosition(CellPosition position) {
@@ -128,7 +140,11 @@ class Board {
 
   static void _validateDistinctIndices(int first, int second, String kind) {
     if (first == second) {
-      throw ArgumentError.value(second, 'second', 'must select two distinct $kind');
+      throw ArgumentError.value(
+        second,
+        'second',
+        'must select two distinct $kind',
+      );
     }
   }
 }

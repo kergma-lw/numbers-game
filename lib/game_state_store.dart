@@ -16,19 +16,17 @@ sealed class ModeSettings {
 }
 
 class OneNonZeroSettings extends ModeSettings {
-  const OneNonZeroSettings({
-    this.boardSize = 4,
-    this.maxInitialValue = 10,
-  })  : assert(boardSize >= 2),
-        assert(maxInitialValue >= 1);
+  const OneNonZeroSettings({this.boardSize = 4, this.maxInitialValue = 10})
+    : assert(boardSize >= 2),
+      assert(maxInitialValue >= 1);
 
   final int boardSize;
   final int maxInitialValue;
 
   Map<String, Object> toJson() => {
-        'boardSize': boardSize,
-        'maxInitialValue': maxInitialValue,
-      };
+    'boardSize': boardSize,
+    'maxInitialValue': maxInitialValue,
+  };
 
   factory OneNonZeroSettings.fromJson(Map<String, Object?> json) {
     final boardSize = json['boardSize'];
@@ -68,16 +66,17 @@ class AppSettings {
   final HistoricalDateSettings historicalDateSettings;
 
   Map<String, Object> toJson() => {
-        'selectedMode': selectedMode.name,
-        'modes': {
-          GameMode.oneNonZero.name: oneNonZeroSettings.toJson(),
-          GameMode.historicalDate.name: historicalDateSettings.toJson(),
-        },
-      };
+    'selectedMode': selectedMode.name,
+    'modes': {
+      GameMode.oneNonZero.name: oneNonZeroSettings.toJson(),
+      GameMode.historicalDate.name: historicalDateSettings.toJson(),
+    },
+  };
 
   factory AppSettings.fromJson(Map<String, Object?> json) {
-    final selectedMode =
-        GameMode.values.where((mode) => mode.name == json['selectedMode']).firstOrNull;
+    final selectedMode = GameMode.values
+        .where((mode) => mode.name == json['selectedMode'])
+        .firstOrNull;
     final modes = _jsonMap(json['modes']);
     if (selectedMode == null) {
       throw const FormatException('Invalid application settings');
@@ -103,9 +102,10 @@ class SavedGame {
     required this.settings,
     required this.game,
   }) : assert(
-          (mode == GameMode.oneNonZero && settings is OneNonZeroSettings) ||
-              (mode == GameMode.historicalDate && settings is HistoricalDateSettings),
-        );
+         (mode == GameMode.oneNonZero && settings is OneNonZeroSettings) ||
+             (mode == GameMode.historicalDate &&
+                 settings is HistoricalDateSettings),
+       );
 
   static const formatVersion = 3;
 
@@ -114,29 +114,31 @@ class SavedGame {
   final PlayableGame game;
 
   Map<String, Object> toJson() => {
-        'version': formatVersion,
-        'mode': mode.name,
-        'settings': _modeSettingsToJson(mode, settings),
-        'game': {
-          'initialBoard': _boardToJson(game.session.initialBoard),
-          'currentBoard': _boardToJson(game.currentBoard),
-          'history': game.session.history.map(_boardToJson).toList(),
-          'moveCount': game.moveCount,
-          if (game case HistoricalDateGame historical) ...{
-            'targetBoard': _boardToJson(historical.targetBoard),
-            'event': historical.event.toJson(),
-            'frame': historical.frame.toJson(),
-            'format': historical.format.toJson(),
-          },
-        },
-      };
+    'version': formatVersion,
+    'mode': mode.name,
+    'settings': _modeSettingsToJson(mode, settings),
+    'game': {
+      'initialBoard': _boardToJson(game.session.initialBoard),
+      'currentBoard': _boardToJson(game.currentBoard),
+      'history': game.session.history.map(_boardToJson).toList(),
+      'moveCount': game.moveCount,
+      if (game case HistoricalDateGame historical) ...{
+        'targetBoard': _boardToJson(historical.targetBoard),
+        'event': historical.event.toJson(),
+        'frame': historical.frame.toJson(),
+        'format': historical.format.toJson(),
+      },
+    },
+  };
 
   factory SavedGame.fromJson(Map<String, Object?> json) {
     final version = json['version'];
     if (version != 2 && version != formatVersion) {
       throw const FormatException('Unsupported saved game version');
     }
-    final mode = GameMode.values.where((mode) => mode.name == json['mode']).firstOrNull;
+    final mode = GameMode.values
+        .where((mode) => mode.name == json['mode'])
+        .firstOrNull;
     if (mode == null) {
       throw const FormatException('Invalid saved game mode');
     }
@@ -157,17 +159,17 @@ class SavedGame {
       settings: settings,
       game: switch (mode) {
         GameMode.oneNonZero => OneNonZeroGame.restore(
-            session: session,
-            moveCount: moveCount,
-          ),
+          session: session,
+          moveCount: moveCount,
+        ),
         GameMode.historicalDate => HistoricalDateGame(
-            session: session,
-            targetBoard: _boardFromJson(_jsonMap(game['targetBoard'])),
-            event: HistoricalEvent.fromJson(_jsonMap(game['event'])),
-            frame: DateFrame.fromJson(_jsonMap(game['frame'])),
-            format: DateFrameFormat.fromJson(_jsonMap(game['format'])),
-            moveCount: moveCount,
-          ),
+          session: session,
+          targetBoard: _boardFromJson(_jsonMap(game['targetBoard'])),
+          event: HistoricalEvent.fromJson(_jsonMap(game['event'])),
+          frame: DateFrame.fromJson(_jsonMap(game['frame'])),
+          format: DateFrameFormat.fromJson(_jsonMap(game['format'])),
+          moveCount: moveCount,
+        ),
       },
     );
   }
@@ -207,7 +209,9 @@ class SharedPreferencesGameStateStore implements GameStateStore {
 
   @override
   Future<AppSettings> loadSettings() async {
-    final value = (await SharedPreferences.getInstance()).getString(_settingsKey);
+    final value = (await SharedPreferences.getInstance()).getString(
+      _settingsKey,
+    );
     if (value == null) {
       return const AppSettings();
     }
@@ -271,10 +275,7 @@ OneNonZeroGame newOneNonZeroGame(
   return OneNonZeroGame(Board(cells));
 }
 
-HistoricalDateGame newHistoricalDateGame({
-  Random? random,
-  String? locale,
-}) {
+HistoricalDateGame newHistoricalDateGame({Random? random, String? locale}) {
   final generator = random ?? Random();
   final event = _historicalEvents[generator.nextInt(_historicalEvents.length)];
   final format = DateFrameFormat.forLocale(
@@ -282,7 +283,10 @@ HistoricalDateGame newHistoricalDateGame({
   );
   const rows = 3;
   const columns = 5;
-  final frame = DateFrame(generator.nextInt(rows), generator.nextInt(columns - 2));
+  final frame = DateFrame(
+    generator.nextInt(rows),
+    generator.nextInt(columns - 2),
+  );
   final targetCells = List.generate(rows, (_) => List.filled(columns, 0));
   for (var offset = 0; offset < format.order.length; offset++) {
     final component = format.order[offset];
@@ -315,12 +319,14 @@ Board _scrambleHistoricalTarget(Board target, Set<int> targetValues, Random _) {
   for (var row = 0; row < target.rowCount; row++) {
     for (var column = 0; column < target.columnCount; column++) {
       final position = CellPosition(row, column);
-      (target.valueAt(position) == 0 ? zeroPositions : nonZeroPositions)
-          .add(position);
+      (target.valueAt(position) == 0 ? zeroPositions : nonZeroPositions).add(
+        position,
+      );
     }
   }
   nonZeroPositions.sort(
-    (first, second) => target.valueAt(first).abs().compareTo(target.valueAt(second).abs()),
+    (first, second) =>
+        target.valueAt(first).abs().compareTo(target.valueAt(second).abs()),
   );
 
   final builder = _HistoricalScrambleBuilder(target, {
@@ -378,7 +384,9 @@ Board _scrambleHistoricalTarget(Board target, Set<int> targetValues, Random _) {
       _historicalValuesFitInitialRange(candidate)) {
     return candidate;
   }
-  throw StateError('Could not generate an interesting Historical Date start board');
+  throw StateError(
+    'Could not generate an interesting Historical Date start board',
+  );
 }
 
 class _HistoricalScrambleBuilder {
@@ -404,7 +412,8 @@ class _HistoricalScrambleBuilder {
   }) {
     var sourcePosition = _positions[source]!;
     var targetPosition = _positions[target]!;
-    final sourceIsBeforeTarget = sourcePosition.row < targetPosition.row ||
+    final sourceIsBeforeTarget =
+        sourcePosition.row < targetPosition.row ||
         (sourcePosition.row == targetPosition.row &&
             sourcePosition.column < targetPosition.column);
     if (sourceIsBeforeTarget != sourceBeforeTarget) {
@@ -416,7 +425,10 @@ class _HistoricalScrambleBuilder {
       sourcePosition = _positions[source]!;
       targetPosition = _positions[target]!;
     }
-    board = board.applyArithmeticMove(source: sourcePosition, target: targetPosition);
+    board = board.applyArithmeticMove(
+      source: sourcePosition,
+      target: targetPosition,
+    );
   }
 
   void _swapRows(int first, int second) {
@@ -507,23 +519,25 @@ ModeSettings _modeSettingsFromJson(GameMode mode, Map<String, Object?> json) {
 }
 
 Map<String, Object> _boardToJson(Board board) => {
-      'cells': [
-        for (var row = 0; row < board.rowCount; row++)
-          [
-            for (var column = 0; column < board.columnCount; column++)
-              board.valueAt(CellPosition(row, column)),
-          ],
+  'cells': [
+    for (var row = 0; row < board.rowCount; row++)
+      [
+        for (var column = 0; column < board.columnCount; column++)
+          board.valueAt(CellPosition(row, column)),
       ],
-    };
+  ],
+};
 
 Board _boardFromJson(Object? value) {
   final cells = _jsonList(_jsonMap(value)['cells'])
-      .map((row) => _jsonList(row).map((cell) {
-            if (cell is! int) {
-              throw const FormatException('Invalid board cell');
-            }
-            return cell;
-          }).toList())
+      .map(
+        (row) => _jsonList(row).map((cell) {
+          if (cell is! int) {
+            throw const FormatException('Invalid board cell');
+          }
+          return cell;
+        }).toList(),
+      )
       .toList();
   try {
     return Board(cells);
