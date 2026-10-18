@@ -5,8 +5,8 @@ import 'package:numbers_game/game_core/playable_game.dart';
 /// A game mode won by leaving exactly one non-zero cell on the board.
 class OneNonZeroGame implements PlayableGame {
   OneNonZeroGame(Board initialBoard)
-      : _session = GameSession(initialBoard),
-        moveCount = 0;
+    : _session = GameSession(initialBoard),
+      moveCount = 0;
 
   const OneNonZeroGame._(this._session, this.moveCount);
 
@@ -14,8 +14,7 @@ class OneNonZeroGame implements PlayableGame {
   factory OneNonZeroGame.restore({
     required GameSession session,
     required int moveCount,
-  }) =>
-      OneNonZeroGame._(session, moveCount);
+  }) => OneNonZeroGame._(session, moveCount);
 
   final GameSession _session;
   @override
@@ -47,11 +46,10 @@ class OneNonZeroGame implements PlayableGame {
   OneNonZeroGame applyArithmeticMove({
     required CellPosition source,
     required CellPosition target,
-  }) =>
-      OneNonZeroGame._(
-        _session.applyArithmeticMove(source: source, target: target),
-        moveCount + 1,
-      );
+  }) => OneNonZeroGame._(
+    _session.applyArithmeticMove(source: source, target: target),
+    moveCount + 1,
+  );
 
   /// Swaps two rows and increments this mode's move count.
   @override
@@ -65,9 +63,8 @@ class OneNonZeroGame implements PlayableGame {
 
   /// Undoes a move and restores its previous move count.
   @override
-  OneNonZeroGame undo() => canUndo
-      ? OneNonZeroGame._(_session.undo(), moveCount - 1)
-      : this;
+  OneNonZeroGame undo() =>
+      canUndo ? OneNonZeroGame._(_session.undo(), moveCount - 1) : this;
 
   /// Restarts this mode at its initial board with zero moves.
   @override

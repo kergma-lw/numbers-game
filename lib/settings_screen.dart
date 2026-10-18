@@ -11,10 +11,7 @@ const _maximumContentWidth = 420.0;
 const _initialValuePresets = [5, 10, 30, 100];
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({
-    super.key,
-    required this.settings,
-  });
+  const SettingsScreen({super.key, required this.settings});
 
   final AppSettings settings;
 
@@ -36,25 +33,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _save() {
-    Navigator.of(context).pop(AppSettings(
-      selectedMode: _selectedMode,
-      oneNonZeroSettings: OneNonZeroSettings(
-        boardSize: _boardSize,
-        maxInitialValue: _maxInitialValue,
+    Navigator.of(context).pop(
+      AppSettings(
+        selectedMode: _selectedMode,
+        oneNonZeroSettings: OneNonZeroSettings(
+          boardSize: _boardSize,
+          maxInitialValue: _maxInitialValue,
+        ),
+        historicalDateSettings: widget.settings.historicalDateSettings,
       ),
-      historicalDateSettings: widget.settings.historicalDateSettings,
-    ));
+    );
   }
 
   int _maximumBoardSize(BuildContext context) {
-    final availableBoardWidth = math.min(
-          MediaQuery.sizeOf(context).width,
-          _maximumContentWidth,
-        ) -
+    final availableBoardWidth =
+        math.min(MediaQuery.sizeOf(context).width, _maximumContentWidth) -
         2 * _boardHandleSize;
     return math.max(
       _minimumBoardSize,
-      ((availableBoardWidth + _cellGap) / (_minimumCellTouchSize + _cellGap)).floor(),
+      ((availableBoardWidth + _cellGap) / (_minimumCellTouchSize + _cellGap))
+          .floor(),
     );
   }
 
@@ -96,83 +94,89 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           if (_selectedMode == GameMode.oneNonZero) ...[
-          const SizedBox(height: 24),
-          Text('Board size', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                key: const Key('decrease-board-size-button'),
-                tooltip: 'Decrease board size',
-                onPressed: _boardSize > _minimumBoardSize
-                    ? () => setState(() => _boardSize--)
-                    : null,
-                icon: const Icon(Icons.remove),
-              ),
-              SizedBox(
-                width: 96,
-                child: Text(
-                  '$_boardSize × $_boardSize',
-                  key: const Key('board-size-value'),
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineSmall,
+            const SizedBox(height: 24),
+            Text('Board size', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  key: const Key('decrease-board-size-button'),
+                  tooltip: 'Decrease board size',
+                  onPressed: _boardSize > _minimumBoardSize
+                      ? () => setState(() => _boardSize--)
+                      : null,
+                  icon: const Icon(Icons.remove),
                 ),
-              ),
-              IconButton(
-                key: const Key('increase-board-size-button'),
-                tooltip: 'Increase board size',
-                onPressed: _boardSize < maximumBoardSize
-                    ? () => setState(() => _boardSize++)
-                    : null,
-                icon: const Icon(Icons.add),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'The largest size keeps every cell at least 48 dp wide.',
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          Text('Maximum initial value', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                key: const Key('decrease-maximum-initial-value-button'),
-                tooltip: 'Decrease maximum initial value',
-                onPressed: _initialValuePresetIndex > 0
-                    ? () => setState(
-                          () => _maxInitialValue =
-                              _initialValuePresets[_initialValuePresetIndex - 1],
-                        )
-                    : null,
-                icon: const Icon(Icons.remove),
-              ),
-              SizedBox(
-                width: 96,
-                child: Text(
-                  '$_maxInitialValue',
-                  key: const Key('maximum-initial-value-value'),
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineSmall,
+                SizedBox(
+                  width: 96,
+                  child: Text(
+                    '$_boardSize × $_boardSize',
+                    key: const Key('board-size-value'),
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
                 ),
-              ),
-              IconButton(
-                key: const Key('increase-maximum-initial-value-button'),
-                tooltip: 'Increase maximum initial value',
-                onPressed: _initialValuePresetIndex < _initialValuePresets.length - 1
-                    ? () => setState(
+                IconButton(
+                  key: const Key('increase-board-size-button'),
+                  tooltip: 'Increase board size',
+                  onPressed: _boardSize < maximumBoardSize
+                      ? () => setState(() => _boardSize++)
+                      : null,
+                  icon: const Icon(Icons.add),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'The largest size keeps every cell at least 48 dp wide.',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Maximum initial value',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  key: const Key('decrease-maximum-initial-value-button'),
+                  tooltip: 'Decrease maximum initial value',
+                  onPressed: _initialValuePresetIndex > 0
+                      ? () => setState(
                           () => _maxInitialValue =
-                              _initialValuePresets[_initialValuePresetIndex + 1],
+                              _initialValuePresets[_initialValuePresetIndex -
+                                  1],
                         )
-                    : null,
-                icon: const Icon(Icons.add),
-              ),
-            ],
-          ),
+                      : null,
+                  icon: const Icon(Icons.remove),
+                ),
+                SizedBox(
+                  width: 96,
+                  child: Text(
+                    '$_maxInitialValue',
+                    key: const Key('maximum-initial-value-value'),
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                ),
+                IconButton(
+                  key: const Key('increase-maximum-initial-value-button'),
+                  tooltip: 'Increase maximum initial value',
+                  onPressed:
+                      _initialValuePresetIndex < _initialValuePresets.length - 1
+                      ? () => setState(
+                          () => _maxInitialValue =
+                              _initialValuePresets[_initialValuePresetIndex +
+                                  1],
+                        )
+                      : null,
+                  icon: const Icon(Icons.add),
+                ),
+              ],
+            ),
           ],
           const SizedBox(height: 24),
           FilledButton(

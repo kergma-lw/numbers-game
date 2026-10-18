@@ -10,15 +10,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   test('round-trips a game with its undo history', () {
-    final original = OneNonZeroGame(Board([
-      [1, 2],
-      [3, 4],
-    ]))
-        .applyArithmeticMove(
-          source: const CellPosition(0, 0),
-          target: const CellPosition(0, 1),
-        )
-        .swapRows(0, 1);
+    final original =
+        OneNonZeroGame(
+              Board([
+                [1, 2],
+                [3, 4],
+              ]),
+            )
+            .applyArithmeticMove(
+              source: const CellPosition(0, 0),
+              target: const CellPosition(0, 1),
+            )
+            .swapRows(0, 1);
 
     final restored = SavedGame.fromJson(
       SavedGame(settings: const OneNonZeroSettings(), game: original).toJson(),
@@ -51,11 +54,15 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await SharedPreferencesGameStateStore().saveSettings(
       const AppSettings(
-        oneNonZeroSettings: OneNonZeroSettings(boardSize: 3, maxInitialValue: 30),
+        oneNonZeroSettings: OneNonZeroSettings(
+          boardSize: 3,
+          maxInitialValue: 30,
+        ),
       ),
     );
 
-    final restoredSettings = await SharedPreferencesGameStateStore().loadSettings();
+    final restoredSettings = await SharedPreferencesGameStateStore()
+        .loadSettings();
 
     expect(restoredSettings.selectedMode, GameMode.oneNonZero);
     expect(restoredSettings.oneNonZeroSettings.boardSize, 3);
@@ -143,17 +150,22 @@ void main() {
     }
   });
 
-  test('generates a rectangular Historical Date board with a locale-specific target', () {
+  test('generates bounded rectangular Historical Date boards', () {
     final game = newHistoricalDateGame(random: Random(1), locale: 'en_US');
 
     expect(game.currentBoard.rowCount, 3);
     expect(game.currentBoard.columnCount, 5);
     expect(game.targetBoard.rowCount, 3);
-    expect(game.format.order, [DateComponent.month, DateComponent.day, DateComponent.year]);
+    expect(game.format.order, [
+      DateComponent.month,
+      DateComponent.day,
+      DateComponent.year,
+    ]);
     expect(game.format.separator, '/');
     for (var row = 0; row < game.targetBoard.rowCount; row++) {
       for (var column = 0; column < game.targetBoard.columnCount; column++) {
-        final insideFrame = row == game.frame.row &&
+        final insideFrame =
+            row == game.frame.row &&
             column >= game.frame.column &&
             column < game.frame.column + 3;
         if (!insideFrame) {
@@ -173,16 +185,24 @@ void main() {
       counts[value] = (counts[value] ?? 0) + 1;
     }
     expect(
-      targetValues.every((targetValue) =>
-          startValues.any((value) => value.abs() == targetValue)),
+      targetValues.every(
+        (targetValue) => startValues.any((value) => value.abs() == targetValue),
+      ),
       isFalse,
     );
     expect(counts.values.every((count) => count <= 2), isTrue);
+
+    for (var seed = 0; seed < 100; seed++) {
+      final generated = newHistoricalDateGame(random: Random(seed));
+      for (final value in values(generated.currentBoard)) {
+        expect(value.abs(), lessThanOrEqualTo(999));
+      }
+    }
   });
 }
 
 List<int> values(Board board) => [
-      for (var row = 0; row < board.rowCount; row++)
-        for (var column = 0; column < board.columnCount; column++)
-          board.valueAt(CellPosition(row, column)),
-    ];
+  for (var row = 0; row < board.rowCount; row++)
+    for (var column = 0; column < board.columnCount; column++)
+      board.valueAt(CellPosition(row, column)),
+];

@@ -1,0 +1,25 @@
+body.tutorial-screen {
+  --aqua: #b9c4de;
+  background:
+    radial-gradient(ellipse at 18% 18%, rgba(152, 170, 208, .18), transparent 28rem),
+    radial-gradient(ellipse at 82% 76%, rgba(183, 169, 202, .13), transparent 27rem),
+    radial-gradient(ellipse at 48% 52%, #30384d 0%, transparent 38rem), #151923;
+}
+
+.tutorial-screen .objective { background: linear-gradient(135deg, rgba(59, 68, 91, .9), rgba(42, 48, 67, .92)); border-color: rgba(205, 215, 239, .28); }
+.tutorial-screen .objective::before { background: radial-gradient(circle, rgba(205, 215, 239, .22), transparent 68%); }
+.tutorial-screen .eyebrow, .tutorial-screen .moves { color: #c7d2ed; }
+.tutorial-screen .control { background: rgba(61, 70, 93, .76); border-color: rgba(205, 215, 239, .24); }
+.tutorial-screen .board { background: linear-gradient(145deg, rgba(46, 56, 77, .92), rgba(30, 37, 53, .95)); border-color: rgba(205, 215, 239, .3); box-shadow: 0 1.6rem 3rem rgba(0,0,0,.25), inset 0 0 3rem rgba(205,215,239,.07); }
+.tutorial-screen .board-wrap { max-width: 28rem; }
+.tutorial-screen .cell { background: linear-gradient(145deg, rgba(81, 94, 124, .94), rgba(49, 60, 84, .98)); border-color: rgba(215, 224, 244, .18); }
+.tutorial-screen .cell:hover { background: linear-gradient(145deg, rgba(111, 128, 160, .98), rgba(61, 77, 105, .98)); border-color: #e4ebff; }
+.tutorial-screen .cell.drag-source, .tutorial-screen .cell.arithmetic-source { background: linear-gradient(145deg, rgba(156, 174, 210, .98), rgba(82, 103, 139, .99)); border-color: #f1f4ff; box-shadow: 0 0 1.25rem rgba(205,215,239,.3); }
+.tutorial-screen .handles button { background: rgba(56, 66, 91, .5); border-color: rgba(205,215,239,.25); color: rgba(220,227,247,.78); }
+.tutorial-screen .handles button:hover { background: rgba(97, 111, 144, .55); border-color: #e4ebff; color: #fff; }
+.tutorial-progress { color: var(--muted); display: flex; font-size: .75rem; gap: .4rem; justify-content: center; margin: 1rem auto 0; }
+.tutorial-progress span { background: rgba(205,215,239,.22); border-radius: 999px; height: .32rem; width: 1.5rem; }
+.tutorial-progress span:first-child { background: #d9e3ff; }
+.tutorial-screen .cell.tutorial-guided { animation: tutorial-cell-glow 3.2s ease-in-out infinite alternate; background: linear-gradient(125deg, rgba(93, 108, 145, .96), rgba(174, 191, 226, .88), rgba(62, 76, 105, .98)); background-size: 220% 220%; border-color: rgba(238, 243, 255, .8); box-shadow: 0 0 1.4rem rgba(205, 215, 239, .34); }
+@keyframes tutorial-cell-glow { 0% { background-position: 0% 30%; box-shadow: 0 0 1rem rgba(205, 215, 239, .22); } 100% { background-position: 100% 70%; box-shadow: 0 0 2rem rgba(205, 215, 239, .6); } }
+@media (prefers-reduced-motion: reduce) { .tutorial-screen .cell.tutorial-guided { animation: none; } }

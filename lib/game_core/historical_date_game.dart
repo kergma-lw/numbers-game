@@ -15,14 +15,10 @@ class HistoricalEvent {
   final DateTime date;
 
   Map<String, Object> toJson() => {
-        'title': title,
-        'description': description,
-        'date': {
-          'year': date.year,
-          'month': date.month,
-          'day': date.day,
-        },
-      };
+    'title': title,
+    'description': description,
+    'date': {'year': date.year, 'month': date.month, 'day': date.day},
+  };
 
   factory HistoricalEvent.fromJson(Map<String, Object?> json) {
     final title = json['title'];
@@ -43,7 +39,11 @@ class HistoricalEvent {
       if (parsed.year != year || parsed.month != month || parsed.day != day) {
         throw const FormatException('Invalid historical event date');
       }
-      return HistoricalEvent(title: title, description: description, date: parsed);
+      return HistoricalEvent(
+        title: title,
+        description: description,
+        date: parsed,
+      );
     } on ArgumentError {
       throw const FormatException('Invalid historical event date');
     }
@@ -55,15 +55,15 @@ enum DateComponent { day, month, year }
 /// The locale-derived presentation of the date frame, captured at level creation.
 class DateFrameFormat {
   const DateFrameFormat({required this.order, required this.separator})
-      : assert(separator != '');
+    : assert(separator != '');
 
   final List<DateComponent> order;
   final String separator;
 
   Map<String, Object> toJson() => {
-        'order': order.map((component) => component.name).toList(),
-        'separator': separator,
-      };
+    'order': order.map((component) => component.name).toList(),
+    'separator': separator,
+  };
 
   factory DateFrameFormat.fromJson(Map<String, Object?> json) {
     final order = json['order'];
@@ -72,9 +72,14 @@ class DateFrameFormat {
       throw const FormatException('Invalid date frame format');
     }
     final components = order
-        .map((value) => DateComponent.values.where((item) => item.name == value).firstOrNull)
+        .map(
+          (value) => DateComponent.values
+              .where((item) => item.name == value)
+              .firstOrNull,
+        )
         .toList();
-    if (components.length != 3 || components.any((item) => item == null) ||
+    if (components.length != 3 ||
+        components.any((item) => item == null) ||
         components.toSet().length != 3) {
       throw const FormatException('Invalid date frame format');
     }
@@ -86,7 +91,8 @@ class DateFrameFormat {
 
   factory DateFrameFormat.forLocale(String locale) {
     final normalized = locale.toLowerCase().replaceAll('-', '_');
-    if (normalized.startsWith('ja') || normalized.startsWith('zh') ||
+    if (normalized.startsWith('ja') ||
+        normalized.startsWith('zh') ||
         normalized.startsWith('ko')) {
       return const DateFrameFormat(
         order: [DateComponent.year, DateComponent.month, DateComponent.day],
@@ -109,8 +115,8 @@ class DateFrameFormat {
 /// The non-interactive decoration identifying the three date cells on a board.
 class DateFrame {
   const DateFrame(this.row, this.column)
-      : assert(row >= 0),
-        assert(column >= 0);
+    : assert(row >= 0),
+      assert(column >= 0);
 
   final int row;
   final int column;
@@ -172,7 +178,10 @@ class HistoricalDateGame implements PlayableGame {
   HistoricalDateGame applyArithmeticMove({
     required CellPosition source,
     required CellPosition target,
-  }) => _withSession(_session.applyArithmeticMove(source: source, target: target), moveCount + 1);
+  }) => _withSession(
+    _session.applyArithmeticMove(source: source, target: target),
+    moveCount + 1,
+  );
 
   @override
   HistoricalDateGame swapRows(int first, int second) =>
@@ -183,12 +192,14 @@ class HistoricalDateGame implements PlayableGame {
       _withSession(_session.swapColumns(first, second), moveCount + 1);
 
   @override
-  HistoricalDateGame undo() => canUndo ? _withSession(_session.undo(), moveCount - 1) : this;
+  HistoricalDateGame undo() =>
+      canUndo ? _withSession(_session.undo(), moveCount - 1) : this;
 
   @override
   HistoricalDateGame restart() => _withSession(_session.restart(), 0);
 
-  HistoricalDateGame _withSession(GameSession session, int moves) => HistoricalDateGame(
+  HistoricalDateGame _withSession(GameSession session, int moves) =>
+      HistoricalDateGame(
         session: session,
         targetBoard: targetBoard,
         event: event,
@@ -199,7 +210,8 @@ class HistoricalDateGame implements PlayableGame {
 }
 
 bool _sameBoard(Board first, Board second) {
-  if (first.rowCount != second.rowCount || first.columnCount != second.columnCount) {
+  if (first.rowCount != second.rowCount ||
+      first.columnCount != second.columnCount) {
     return false;
   }
   for (var row = 0; row < first.rowCount; row++) {

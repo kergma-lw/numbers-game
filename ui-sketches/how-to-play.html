@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>How to play — Numbers Game</title>
+    <link rel="stylesheet" href="styles/puzzle-board.css" />
+    <link rel="stylesheet" href="styles/tutorial.css?v=4" />
+  </head>
+  <body class="puzzle-screen tutorial-screen">
+    <div aria-hidden="true" class="ghost top">1 − 1</div>
+    <div aria-hidden="true" class="ghost bottom">0 + 1</div>
+    <main>
+      <header class="topbar">
+        <a class="back" href="index.html">← Back to menu</a>
+        <h1>HOW TO PLAY</h1>
+        <span class="moves">Step 1 / 3</span>
+      </header>
+
+      <section class="objective">
+        <p class="eyebrow">The source stays unchanged</p>
+        <strong>Make a zero.</strong>
+        <span>Select the upper-left 1, then the −1 to its right. Moving right adds the source to the target.</span>
+      </section>
+
+      <section aria-label="Tutorial board" class="board-wrap">
+        <div class="handles handle-top" aria-label="Column swap handles"><button data-index="0" data-kind="column" type="button">⋮</button><button data-index="1" data-kind="column" type="button">⋮</button></div>
+        <div class="handles handle-bottom" aria-label="Column swap handles"><button data-index="0" data-kind="column" type="button">⋮</button><button data-index="1" data-kind="column" type="button">⋮</button></div>
+        <div class="handles handle-left" aria-label="Row swap handles"><button data-index="0" data-kind="row" type="button">⋯</button><button data-index="1" data-kind="row" type="button">⋯</button></div>
+        <div class="handles handle-right" aria-label="Row swap handles"><button data-index="0" data-kind="row" type="button">⋯</button><button data-index="1" data-kind="row" type="button">⋯</button></div>
+        <div class="board">
+          <button class="cell" type="button">1</button><button class="cell" type="button">−1</button>
+          <button class="cell" type="button">1</button><button class="cell" type="button">0</button>
+        </div>
+      </section>
+
+      <p class="instruction" id="game-feedback"><strong>Select the upper-left 1.</strong> Then select −1.</p>
+      <div class="tutorial-progress" aria-label="Tutorial progress"><span></span><span></span><span></span></div>
+      <p class="help"><a href="index.html">Skip tutorial</a></p>
+    </main>
+    <script>
+      const tutorialCells = [...document.querySelectorAll('.board .cell')];
+      function guideTutorialCell(cell) {
+        tutorialCells.forEach((item) => item.classList.remove('tutorial-guided'));
+        cell.classList.add('tutorial-guided');
+      }
+      window.puzzleBoardConfig = {
+        rows: 2,
+        columns: 2,
+        trackMoves: false,
+        onSourceSelected(cell) {
+          if (cell === tutorialCells[0]) guideTutorialCell(tutorialCells[1]);
+        },
+      };
+      guideTutorialCell(tutorialCells[0]);
+    </script>
+    <script src="scripts/puzzle-board.js?v=5"></script>
+    <script>
+      window.initializePuzzleBoard(window.puzzleBoardConfig);
+    </script>
+  </body>
+</html>

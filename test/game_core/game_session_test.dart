@@ -49,7 +49,7 @@ void main() {
 }
 
 List<int> values(Board board) => [
-      for (var row = 0; row < board.rowCount; row++)
-        for (var column = 0; column < board.columnCount; column++)
-          board.valueAt(CellPosition(row, column)),
-    ];
+  for (var row = 0; row < board.rowCount; row++)
+    for (var column = 0; column < board.columnCount; column++)
+      board.valueAt(CellPosition(row, column)),
+];

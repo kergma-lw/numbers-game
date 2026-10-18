@@ -1,0 +1,28 @@
+body.historical-date {
+  --aqua: #f19a7e;
+  background:
+    radial-gradient(ellipse at 17% 17%, rgba(236, 118, 93, .23), transparent 28rem),
+    radial-gradient(ellipse at 82% 78%, rgba(184, 139, 218, .2), transparent 28rem),
+    radial-gradient(ellipse at 47% 50%, #493758 0%, transparent 38rem), #171525;
+}
+
+.historical-date .objective {
+  background: linear-gradient(135deg, rgba(86, 56, 83, .9), rgba(52, 43, 74, .92));
+  border-color: rgba(236, 118, 93, .38);
+}
+.historical-date .objective::before { background: radial-gradient(circle, rgba(244, 185, 76, .28), transparent 68%); }
+.historical-date .eyebrow, .historical-date .moves { color: #f3a486; }
+.historical-date .control { background: rgba(82, 55, 88, .76); border-color: rgba(236, 118, 93, .3); }
+.historical-date .control:not([disabled]):hover { border-color: #f3a486; }
+.historical-date .board { background: linear-gradient(145deg, rgba(69, 46, 76, .9), rgba(44, 37, 65, .94)); border-color: rgba(236, 118, 93, .44); box-shadow: 0 1.6rem 3rem rgba(0,0,0,.25), inset 0 0 3rem rgba(236,118,93,.1); }
+.historical-date .cell { background: linear-gradient(145deg, rgba(103, 70, 101, .93), rgba(63, 48, 82, .97)); border-color: rgba(239, 168, 145, .2); }
+.historical-date .cell:hover { background: linear-gradient(145deg, rgba(142, 88, 109, .98), rgba(81, 55, 91, .98)); border-color: #ffc0a8; }
+.historical-date .cell.drag-source, .historical-date .cell.arithmetic-source { background: linear-gradient(145deg, rgba(218, 122, 109, .97), rgba(123, 69, 98, .99)); border-color: #ffe3b6; box-shadow: 0 0 1.25rem rgba(236,118,93,.32); }
+.historical-date .handles button { background: rgba(95, 59, 91, .46); border-color: rgba(236,118,93,.28); color: rgba(255, 191, 162, .8); }
+.historical-date .handles button:hover { background: rgba(151, 79, 99, .52); border-color: #ffc0a8; color: #fff0db; }
+.historical-date .handles button.drag-source { background: rgba(236,118,93,.55); border-color: #ffe3b6; color: #44283c; }
+.historical-date .operation-equation { background: radial-gradient(circle at 34% 25%, rgba(255,221,163,.32), transparent 38%), linear-gradient(145deg, rgba(105,50,78,.99), rgba(156,72,91,.98)); border-color: #ffcfad; box-shadow: 0 0 2.8rem rgba(236,118,93,.58), 0 1rem 2rem rgba(0,0,0,.35); }
+
+.historical-date .objective .target-date { color: #ffe6ae; display: block; font: 1.28rem Georgia, serif; letter-spacing: .025em; margin: .05rem 0 .52rem; }
+.date-frame { border: 2px solid rgba(244,185,76,.85); border-radius: .8rem; box-shadow: 0 0 1rem rgba(244,185,76,.18); pointer-events: none; position: absolute; z-index: 3; }
+.date-separator { color: #ffd782; font: 1.1rem Georgia,serif; position: absolute; top: 50%; transform: translate(-50%, -50%); }
