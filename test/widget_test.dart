@@ -131,7 +131,7 @@ void main() {
     expect(find.text('3'), findsNWidgets(2));
   });
 
-  testWidgets('shows feedback when target is the selected source', (
+  testWidgets('clears selection when the selected source is tapped again', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const MaterialApp(home: BoardScreen()));
@@ -140,7 +140,26 @@ void main() {
     await tester.tap(find.byKey(const Key('cell-0-0')));
     await tester.pump();
 
-    expect(find.text('Choose a different target cell.'), findsOneWidget);
+    expect(
+      feedbackText(tester),
+      'Choose a source cell. Then choose a target to transform it.',
+    );
+  });
+
+  testWidgets('clears the selected source when it is tapped again', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const MaterialApp(home: BoardScreen()));
+
+    await tester.tap(find.byKey(const Key('cell-0-0')));
+    await tester.tap(find.byKey(const Key('cell-0-0')));
+    await tester.tap(find.byKey(const Key('cell-0-1')));
+    await tester.pump();
+
+    expect(
+      find.text('2 is the source. Choose a different target cell.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('undo restores the previous board and disables itself', (

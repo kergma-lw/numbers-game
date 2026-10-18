@@ -340,7 +340,8 @@ class _BoardScreenState extends State<BoardScreen> {
 
     if (source == position) {
       setState(() {
-        _feedback = const GameFeedback('Choose a different target cell.');
+        _arithmeticSource = null;
+        _feedback = _sourcePrompt;
       });
       return;
     }
