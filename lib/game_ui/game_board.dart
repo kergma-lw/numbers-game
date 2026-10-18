@@ -331,8 +331,9 @@ class GameBoard extends StatelessWidget {
           if (!isAnimatingSwap ||
               source == null ||
               target == null ||
-              !inLine(source, row, column) && !inLine(target, row, column))
+              !inLine(source, row, column) && !inLine(target, row, column)) {
             return false;
+          }
           return inLine(target, row, column);
         }
 
@@ -342,16 +343,18 @@ class GameBoard extends StatelessWidget {
           if (!isAnimatingSwap ||
               source == null ||
               target == null ||
-              !inLine(source, row, column) && !inLine(target, row, column))
+              !inLine(source, row, column) && !inLine(target, row, column)) {
             return false;
+          }
           return inLine(source, row, column);
         }
 
         Offset swapOffsetFor(int row, int column) {
           final source = swapSource;
           final target = swapTarget;
-          if (!isAnimatingSwap || source == null || target == null)
+          if (!isAnimatingSwap || source == null || target == null) {
             return Offset.zero;
+          }
           if (source.kind == BoardLineKind.row &&
               (row == source.index || row == target.index)) {
             final oldRow = row == source.index ? target.index : source.index;
