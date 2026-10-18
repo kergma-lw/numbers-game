@@ -54,6 +54,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await SharedPreferencesGameStateStore().saveSettings(
       const AppSettings(
+        swapHandlesVisible: false,
         oneNonZeroSettings: OneNonZeroSettings(
           boardSize: 3,
           maxInitialValue: 30,
@@ -67,6 +68,18 @@ void main() {
     expect(restoredSettings.selectedMode, GameMode.oneNonZero);
     expect(restoredSettings.oneNonZeroSettings.boardSize, 3);
     expect(restoredSettings.oneNonZeroSettings.maxInitialValue, 30);
+    expect(restoredSettings.swapHandlesVisible, isFalse);
+  });
+
+  test('defaults missing swap handle preference to visible', () {
+    final settings = AppSettings.fromJson({
+      'selectedMode': 'oneNonZero',
+      'modes': {
+        'oneNonZero': {'boardSize': 4, 'maxInitialValue': 10},
+      },
+    });
+
+    expect(settings.swapHandlesVisible, isTrue);
   });
 
   test('round-trips a Historical Date game and its level metadata', () {

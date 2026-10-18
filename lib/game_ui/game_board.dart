@@ -267,6 +267,7 @@ class GameBoard extends StatelessWidget {
     this.isTutorialCellHighlighted,
     this.isTutorialLineHighlighted,
     this.visualConfig = BoardVisualConfig.standard,
+    this.showSwapHandles = true,
   });
 
   final Board board;
@@ -291,6 +292,7 @@ class GameBoard extends StatelessWidget {
   final bool Function(CellPosition)? isTutorialCellHighlighted;
   final bool Function(BoardLineKind, int)? isTutorialLineHighlighted;
   final BoardVisualConfig visualConfig;
+  final bool showSwapHandles;
 
   @override
   Widget build(BuildContext context) {
@@ -449,7 +451,8 @@ class GameBoard extends StatelessWidget {
                   ),
                 ),
               ),
-              for (var column = 0; column < board.columnCount; column++) ...[
+              if (showSwapHandles)
+                for (var column = 0; column < board.columnCount; column++) ...[
                 _positionedHandle(
                   target: BoardLineTarget(BoardLineKind.column, column),
                   side: BoardHandleSide.top,
@@ -473,7 +476,8 @@ class GameBoard extends StatelessWidget {
                   height: _handleSize,
                 ),
               ],
-              for (var row = 0; row < board.rowCount; row++) ...[
+              if (showSwapHandles)
+                for (var row = 0; row < board.rowCount; row++) ...[
                 _positionedHandle(
                   target: BoardLineTarget(BoardLineKind.row, row),
                   side: BoardHandleSide.left,

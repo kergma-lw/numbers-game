@@ -31,6 +31,23 @@ void main() {
     expect(undoButton(tester).onPressed, isNull);
   });
 
+  testWidgets('toggles swap handles without changing the board', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const MaterialApp(home: BoardScreen()));
+
+    expect(find.text('Swaps on'), findsOneWidget);
+    expect(find.byKey(const Key('row-handle-left-0')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('swap-handles-toggle-button')));
+    await tester.pump();
+
+    expect(find.text('Swaps off'), findsOneWidget);
+    expect(find.byKey(const Key('row-handle-left-0')), findsNothing);
+    expect(find.bySemanticsLabel('Cell 1, 1: 1'), findsOneWidget);
+    expect(find.text('Moves: 0'), findsOneWidget);
+  });
+
   testWidgets('disables non-essential board animations for reduced motion', (
     WidgetTester tester,
   ) async {
@@ -360,6 +377,7 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: BoardScreen()));
 
     final source = find.byKey(const Key('column-handle-bottom-0'));
+    await tester.ensureVisible(source);
     final gesture = await tester.startGesture(tester.getCenter(source));
     await gesture.moveTo(const Offset(0, 0));
     await gesture.up();
@@ -377,12 +395,18 @@ void main() {
   ) async {
     await tester.pumpWidget(const MaterialApp(home: BoardScreen()));
 
+    await tester.ensureVisible(
+      find.byKey(const Key('row-handle-right-0')),
+    );
     await dragTo(
       tester,
       const Key('row-handle-right-0'),
       const Key('row-handle-right-1'),
     );
     await tester.pumpAndSettle();
+    await tester.ensureVisible(
+      find.byKey(const Key('column-handle-bottom-0')),
+    );
     await dragTo(
       tester,
       const Key('column-handle-bottom-0'),
@@ -480,6 +504,33 @@ void main() {
     },
   );
 
+  testWidgets('persists swap handle visibility from Historical Date', (
+    WidgetTester tester,
+  ) async {
+    final store = _FakeGameStateStore(
+      settings: const AppSettings(selectedMode: GameMode.historicalDate),
+    );
+    await tester.pumpWidget(
+      NumbersGameApp(
+        progressStore: _FakeTutorialProgressStore(handled: true),
+        gameStateStore: store,
+      ),
+    );
+    await pumpApp(tester);
+    await tester.tap(find.byKey(const Key('start-historical-date-button')));
+    await pumpApp(tester);
+
+    expect(find.text('Swaps on'), findsOneWidget);
+    expect(find.byKey(const Key('column-handle-top-0')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('swap-handles-toggle-button')));
+    await tester.pump();
+
+    expect(store.settings.swapHandlesVisible, isFalse);
+    expect(find.text('Swaps off'), findsOneWidget);
+    expect(find.byKey(const Key('column-handle-top-0')), findsNothing);
+  });
+
   testWidgets('tutorial advances only after its expected actions', (
     WidgetTester tester,
   ) async {
@@ -499,6 +550,7 @@ void main() {
 
     expect(find.text('TUTORIAL'), findsOneWidget);
     expect(find.byKey(const Key('tutorial-objective')), findsOneWidget);
+    expect(find.byKey(const Key('swap-handles-toggle-button')), findsNothing);
     expect(find.byKey(const Key('tutorial-progress')), findsOneWidget);
     expect(find.byKey(const Key('tutorial-guided-cell-0-0')), findsOneWidget);
     expect(find.byKey(const Key('tutorial-guided-cell-0-1')), findsNothing);
