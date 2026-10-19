@@ -316,6 +316,9 @@ class _BoardScreenState extends State<BoardScreen> {
 
   bool get _isTutorial => widget.tutorial != null;
   bool get _disableAnimations => MediaQuery.disableAnimationsOf(context);
+  String? get _targetSelectionHint => _arithmeticSource == null
+      ? null
+      : 'Right or below: add · left or above: subtract. Source stays unchanged.';
   GameFeedback get _sourcePrompt => GameFeedback(
     'Choose a source cell.',
     _historicalGame == null
@@ -1222,6 +1225,7 @@ class _BoardScreenState extends State<BoardScreen> {
                                   isWon: _game.isWon,
                                   isLost: _game.isLost,
                                   showMoveCount: !usesPuzzlePresentation,
+                                  targetSelectionHint: _targetSelectionHint,
                                 ),
                                 if (isTutorial)
                                   _TutorialProgress(

@@ -30,6 +30,7 @@ class GameStatusPanel extends StatelessWidget {
     required this.isWon,
     required this.isLost,
     this.showMoveCount = true,
+    this.targetSelectionHint,
   });
 
   final int moveCount;
@@ -37,6 +38,7 @@ class GameStatusPanel extends StatelessWidget {
   final bool isWon;
   final bool isLost;
   final bool showMoveCount;
+  final String? targetSelectionHint;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -87,6 +89,16 @@ class GameStatusPanel extends StatelessWidget {
           style: const TextStyle(color: Color(0xffbcb6aa), fontSize: 14),
         ),
       ),
+      if (targetSelectionHint case final hint?)
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(
+            hint,
+            key: const Key('target-selection-hint'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Color(0xffbcb6aa), fontSize: 12),
+          ),
+        ),
     ],
   );
 }
