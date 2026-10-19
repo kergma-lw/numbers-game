@@ -1,6 +1,6 @@
 {
-    "name": "numbers_game",
-    "short_name": "numbers_game",
+    "name": "Numbers Game",
+    "short_name": "Numbers Game",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
