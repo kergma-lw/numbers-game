@@ -127,6 +127,16 @@ void main() {
       find.text('1 is the source. Choose a different target cell.'),
       findsOneWidget,
     );
+    expect(
+      find.byKey(const Key('target-selection-hint')),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'Right or below: add · left or above: subtract. Source stays unchanged.',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('applies an arithmetic move after selecting two cells', (
@@ -139,6 +149,7 @@ void main() {
     await tester.pump();
 
     expect(feedbackText(tester), '1 + 2 = 3. Choose a source cell.');
+    expect(find.byKey(const Key('target-selection-hint')), findsNothing);
     final feedback = tester.widget<Text>(find.byKey(const Key('feedback')));
     final headline =
         (feedback.textSpan! as TextSpan).children!.first as TextSpan;

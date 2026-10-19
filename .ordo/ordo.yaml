@@ -64,7 +64,7 @@ workflows:
       common_state: common_state
   merge-task:
     file: workflows/merge-task.yml
-    description: Ask GitHub to merge the published PR or observe a saved merge request
+    description: Merge the published PR, or recheck a pending request after a few minutes.
     category: task-lifecycle
     when: Run to request merge of the verified published head or observe a saved request; GitHub enforces merge eligibility. Never pushes or creates a PR.
     with:
