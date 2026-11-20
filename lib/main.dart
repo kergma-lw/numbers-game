@@ -185,7 +185,7 @@ class _NumbersGameAppState extends State<NumbersGameApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Numbers Game',
+      title: 'Dream Arithmetic',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
       ),
@@ -808,7 +808,9 @@ class _BoardScreenState extends State<BoardScreen> {
             : AppBar(
                 backgroundColor: Colors.transparent,
                 elevation: 0,
-                title: Text(isOneNonZero ? 'ONE NON-ZERO' : 'Numbers Game'),
+                title: Text(
+                  isOneNonZero ? 'ONE NON-ZERO' : 'Dream Arithmetic',
+                ),
                 centerTitle: true,
                 actions: [
                   if (isOneNonZero)
