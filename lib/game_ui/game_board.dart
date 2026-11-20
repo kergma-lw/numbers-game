@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:numbers_game/game_core/board.dart';
 import 'package:numbers_game/game_core/historical_date_game.dart';
 
