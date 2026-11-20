@@ -1,6 +1,6 @@
-# Numbers Game
+# Dream Arithmetic
 
-Numbers Game is a number-grid puzzle. A move copies one cell's value into a
+Dream Arithmetic is a number-grid puzzle. A move copies one cell's value into a
 different cell through addition or subtraction, while leaving the source cell
 unchanged. Rows and columns can also be swapped.
 

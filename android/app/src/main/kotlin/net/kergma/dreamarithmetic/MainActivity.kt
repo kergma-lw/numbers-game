@@ -1,4 +1,4 @@
-package com.example.numbers_game
+package net.kergma.dreamarithmetic
 
 import io.flutter.embedding.android.FlutterActivity
 

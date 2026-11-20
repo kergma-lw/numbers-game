@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:numbers_game/game_state_store.dart';
 import 'package:numbers_game/game_ui/ambient_formula.dart';
 
